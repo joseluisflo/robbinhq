@@ -24,7 +24,6 @@ import {
   SidebarMenuButton,
   SidebarGroup,
   SidebarGroupLabel,
-  SidebarRail,
 } from '@/components/ui/sidebar';
 
 // This is sample data. We'll simplify it for our app.
@@ -37,7 +36,6 @@ const data = {
   agents: [
     {
       name: 'AgentVerse',
-      logo: Bot,
     },
   ],
 };

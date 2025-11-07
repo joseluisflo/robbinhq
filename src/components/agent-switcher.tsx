@@ -18,13 +18,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 export function AgentSwitcher({
   agents,
 }: {
   agents: {
     name: string
-    logo: React.ElementType
   }[]
 }) {
   const { isMobile } = useSidebar()
@@ -32,6 +32,10 @@ export function AgentSwitcher({
 
   if (!activeAgent) {
     return null
+  }
+
+  const getInitials = (name: string) => {
+    return name.substring(0, 2).toUpperCase();
   }
 
   return (
@@ -43,9 +47,11 @@ export function AgentSwitcher({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <activeAgent.logo className="size-4" />
-              </div>
+              <Avatar className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <AvatarFallback className="bg-transparent text-sm font-bold">
+                    {getInitials(activeAgent.name)}
+                  </AvatarFallback>
+              </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
                   {activeAgent.name}
@@ -69,9 +75,11 @@ export function AgentSwitcher({
                 onClick={() => setActiveAgent(agent)}
                 className="gap-2 p-2"
               >
-                <div className="flex size-6 items-center justify-center rounded-sm border">
-                  <agent.logo className="size-4 shrink-0" />
-                </div>
+                <Avatar className="flex size-6 items-center justify-center rounded-sm border bg-secondary text-secondary-foreground">
+                    <AvatarFallback className="bg-transparent text-xs font-bold">
+                      {getInitials(agent.name)}
+                    </AvatarFallback>
+                </Avatar>
                 {agent.name}
               </DropdownMenuItem>
             ))}
