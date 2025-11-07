@@ -51,7 +51,6 @@ export function AgentSwitcher({
                 <span className="truncate font-semibold">
                   {activeAgent.name}
                 </span>
-                <span className="truncate text-xs">{activeAgent.plan}</span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>

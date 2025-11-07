@@ -37,7 +37,7 @@ const data = {
     {
       name: "AgentVerse",
       logo: Bot,
-      plan: "Pro",
+      plan: "Free",
     },
   ],
 }
