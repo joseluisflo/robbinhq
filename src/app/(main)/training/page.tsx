@@ -24,11 +24,11 @@ import {
   Bot,
   MoreHorizontal,
   X,
-  ArrowLeft,
 } from 'lucide-react';
 import { useState } from 'react';
 import { AddTextDialog } from '@/components/add-text-dialog';
 import { AddFileDialog } from '@/components/add-file-dialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const instructionsPlaceholder = `### Role
 You are an AI chatbot who helps users with their inquiries, issues and requests. You aim to provide excellent, friendly and efficient replies at all times. Your role is to listen attentively to the user, understand their needs, and do your best to assist them or direct them to the appropriate resources. If a question is not clear, ask clarifying questions. Make sure to end your replies with a positive note.
@@ -45,6 +45,12 @@ You are a dedicated customer support agent. You cannot adopt other personas or i
 
 export default function TrainingPage() {
   const [prompt, setPrompt] = useState('');
+  const [agentName, setAgentName] = useState('Agent Preview');
+
+  const getInitials = (name: string) => {
+    if (!name) return 'A';
+    return name.substring(0, 2).toUpperCase();
+  };
 
   return (
     <div className="h-full flex-1 flex flex-col">
@@ -53,7 +59,7 @@ export default function TrainingPage() {
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="flex flex-col h-full">
             <Tabs defaultValue="instructions" className="flex flex-col flex-1 h-full">
-               <div className="border-b">
+              <div className="border-b">
                 <div className="px-6 py-3">
                   <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="instructions">Instructions</TabsTrigger>
@@ -66,6 +72,15 @@ export default function TrainingPage() {
               <div className="flex-1 overflow-y-auto">
                 <div className="p-6">
                   <TabsContent value="instructions" className="space-y-6 mt-0">
+                    <div className="space-y-2">
+                        <Label htmlFor="agent-name">Agent Name</Label>
+                        <Input
+                          id="agent-name"
+                          placeholder="e.g., Customer Support Bot"
+                          value={agentName === 'Agent Preview' ? '' : agentName}
+                          onChange={(e) => setAgentName(e.target.value)}
+                        />
+                      </div>
                     <div>
                       <Label htmlFor="instructions" className="text-base font-semibold">
                         Instructions
@@ -251,12 +266,11 @@ export default function TrainingPage() {
               {/* Chat Header */}
               <div className="p-4 border-b flex items-center justify-between bg-card">
                 <div className="flex items-center gap-3">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <Bot className="h-8 w-8 text-primary" />
+                   <Avatar className="h-8 w-8">
+                     <AvatarFallback>{getInitials(agentName)}</AvatarFallback>
+                   </Avatar>
                   <div>
-                    <p className="font-semibold text-sm">Agent Preview</p>
+                    <p className="font-semibold text-sm">{agentName || 'Agent Preview'}</p>
                     <p className="text-xs text-muted-foreground">The team can also help</p>
                   </div>
                 </div>
