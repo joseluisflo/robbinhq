@@ -13,13 +13,14 @@ export default function AppLayout({
 }) {
   const pathname = usePathname();
   const isTrainingPage = pathname.startsWith('/training');
+  const isDesignPage = pathname.startsWith('/design');
 
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset className="grid h-screen grid-rows-[auto_1fr]">
         <AppHeader />
-        <main className={cn("flex flex-col overflow-y-auto", !isTrainingPage && "p-4 sm:p-6")}>
+        <main className={cn("flex flex-col overflow-y-auto", !isTrainingPage && !isDesignPage && "p-4 sm:p-6")}>
           {children}
         </main>
       </SidebarInset>
