@@ -13,6 +13,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { ChatWidgetPreview } from '@/components/chat-widget-preview';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function DesignPage() {
   const [agentName, setAgentName] = useState('Fitness Assistant');
@@ -116,9 +117,26 @@ export default function DesignPage() {
 
         {/* Preview Panel */}
         <ResizablePanel defaultSize={50} minSize={30}>
-            <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-                 <ChatWidgetPreview agentName={agentName} />
-            </div>
+          <div className="flex h-full flex-col">
+            <Tabs defaultValue="chat" className="flex flex-col flex-1 h-full">
+              <div className="px-6 py-3 border-b">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="chat">Chat</TabsTrigger>
+                  <TabsTrigger value="in-call">In call</TabsTrigger>
+                </TabsList>
+              </div>
+              <TabsContent value="chat" className="flex-1 mt-0">
+                <div className="flex h-full items-center justify-center p-8 bg-muted/30">
+                    <ChatWidgetPreview agentName={agentName} />
+                </div>
+              </TabsContent>
+              <TabsContent value="in-call" className="flex-1 mt-0">
+                 <div className="flex h-full items-center justify-center p-8 bg-muted/30">
+                    {/* Placeholder for "in-call" state */}
+                 </div>
+              </TabsContent>
+            </Tabs>
+          </div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
