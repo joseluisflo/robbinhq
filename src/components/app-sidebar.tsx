@@ -51,12 +51,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       isActive: pathname === '/dashboard',
     },
     {
-      title: 'Agents',
-      url: '/agents',
-      icon: Bot,
-      isActive: pathname.startsWith('/agents'),
-    },
-    {
       title: 'Training',
       url: '/training',
       icon: SlidersHorizontal,
