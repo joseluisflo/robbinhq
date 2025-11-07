@@ -46,11 +46,6 @@ export default function TrainingPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <div className="border-b px-6 py-4">
-        <h2 className="text-2xl font-bold tracking-tight">Training</h2>
-      </div>
-
       {/* Main Content */}
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         {/* Configuration Panel */}
