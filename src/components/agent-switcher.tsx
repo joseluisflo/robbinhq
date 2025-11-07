@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { ChevronsUpDown, Plus } from "lucide-react"
 
 import {
@@ -19,6 +18,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { CreateAgentDialog } from "./create-agent-dialog"
 
 export function AgentSwitcher({
   agents,
@@ -84,14 +84,14 @@ export function AgentSwitcher({
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="gap-2 p-2">
-              <Link href="/agents/create">
-                <div className="flex size-6 items-center justify-center rounded-md border bg-background">
-                  <Plus className="size-4" />
-                </div>
-                <div className="font-medium text-muted-foreground">Create Agent</div>
-              </Link>
-            </DropdownMenuItem>
+              <CreateAgentDialog>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="gap-2 p-2">
+                  <div className="flex size-6 items-center justify-center rounded-md border bg-background">
+                    <Plus className="size-4" />
+                  </div>
+                  <div className="font-medium text-muted-foreground">Create Agent</div>
+                </DropdownMenuItem>
+              </CreateAgentDialog>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
