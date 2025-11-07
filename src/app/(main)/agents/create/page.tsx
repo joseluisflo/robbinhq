@@ -51,7 +51,7 @@ export default function CreateAgentPage() {
         title: 'Agent Created',
         description: 'Your new agent is ready.',
       });
-      router.push('/dashboard/agents');
+      router.push('/agents');
     });
   };
 

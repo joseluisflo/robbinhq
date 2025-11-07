@@ -33,7 +33,7 @@ export default function AgentsPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Agents</h2>
         <Button asChild>
-          <Link href="/dashboard/agents/create">
+          <Link href="/agents/create">
             <PlusCircle className="mr-2 h-4 w-4" />
             Create Agent
           </Link>
@@ -85,7 +85,7 @@ export default function AgentsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/agents/${agent.id}`}>View Details</Link>
+                          <Link href={`/agents/${agent.id}`}>View Details</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem>Edit</DropdownMenuItem>
                         <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>

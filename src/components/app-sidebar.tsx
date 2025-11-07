@@ -12,21 +12,19 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { NavMain } from '@/components/nav-main';
-import { NavProjects } from '@/components/nav-projects';
-import { NavUser } from '@/components/nav-user';
 import { AgentSwitcher } from '@/components/agent-switcher';
+import { NavUser } from '@/components/nav-user';
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarRail,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarGroup,
   SidebarGroupLabel,
+  SidebarRail,
 } from '@/components/ui/sidebar';
 
 // This is sample data. We'll simplify it for our app.
@@ -53,6 +51,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: '/dashboard',
       icon: LayoutDashboard,
       isActive: pathname === '/dashboard',
+    },
+    {
+      title: 'Agents',
+      url: '/agents',
+      icon: Bot,
+      isActive: pathname.startsWith('/agents'),
     },
     {
       title: 'Training',

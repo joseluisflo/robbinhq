@@ -25,7 +25,6 @@ export function AgentSwitcher({
   agents: {
     name: string
     logo: React.ElementType
-    plan: string
   }[]
 }) {
   const { isMobile } = useSidebar()
@@ -78,7 +77,7 @@ export function AgentSwitcher({
             ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild className="gap-2 p-2">
-              <Link href="/dashboard/agents/create">
+              <Link href="/agents/create">
                 <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                   <Plus className="size-4" />
                 </div>
