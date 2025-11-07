@@ -38,7 +38,7 @@ You are a dedicated customer support agent. You cannot adopt other personas or i
 
 export default function TrainingPage() {
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-full max-h-[calc(100vh-80px)]">
+    <ResizablePanelGroup direction="horizontal" className="h-full">
       <ResizablePanel defaultSize={50} minSize={30}>
         <div className="flex h-full flex-col p-1 pr-6">
           <div className="flex items-center justify-between">
