@@ -1,18 +1,21 @@
-"use client"
+'use client';
 
-import * as React from "react"
+import * as React from 'react';
 import {
   Bot,
+  DraftingCompass,
+  Globe,
   LayoutDashboard,
   Settings2,
-} from "lucide-react"
+  SlidersHorizontal,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
-import { AgentSwitcher } from "@/components/agent-switcher"
+import { NavMain } from '@/components/nav-main';
+import { NavProjects } from '@/components/nav-projects';
+import { NavUser } from '@/components/nav-user';
+import { AgentSwitcher } from '@/components/agent-switcher';
 import {
   Sidebar,
   SidebarContent,
@@ -24,47 +27,46 @@ import {
   SidebarMenuButton,
   SidebarGroup,
   SidebarGroupLabel,
-} from "@/components/ui/sidebar"
+} from '@/components/ui/sidebar';
 
 // This is sample data. We'll simplify it for our app.
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: 'shadcn',
+    email: 'm@example.com',
+    avatar: '/avatars/shadcn.jpg',
   },
   agents: [
     {
-      name: "AgentVerse",
+      name: 'AgentVerse',
       logo: Bot,
-      plan: "Free",
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
 
   const navMain = [
     {
-      title: 'Dashboard',
-      url: '/dashboard',
-      icon: LayoutDashboard,
-      isActive: pathname === '/dashboard',
+      title: 'Training',
+      url: '/training',
+      icon: SlidersHorizontal,
+      isActive: pathname.startsWith('/training'),
     },
     {
-      title: 'Agents',
-      url: '/dashboard/agents',
-      icon: Bot,
-      isActive: pathname.startsWith('/dashboard/agents'),
+      title: 'Design',
+      url: '/design',
+      icon: DraftingCompass,
+      isActive: pathname.startsWith('/design'),
     },
     {
-      title: 'Settings',
-      url: '#',
-      icon: Settings2,
+      title: 'Domains',
+      url: '/domain',
+      icon: Globe,
+      isActive: pathname.startsWith('/domain'),
     },
   ];
-
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -73,15 +75,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Platform</SidebarGroupLabel>
           <SidebarMenu>
             {navMain.map((item) => (
               <SidebarMenuItem key={item.title}>
-                 <Link href={item.url} passHref>
-                    <SidebarMenuButton tooltip={item.title} isActive={item.isActive}>
-                        {item.icon && <item.icon />}
-                        <span>{item.title}</span>
-                    </SidebarMenuButton>
+                <Link href={item.url} passHref>
+                  <SidebarMenuButton
+                    tooltip={item.title}
+                    isActive={item.isActive}
+                  >
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
             ))}
@@ -93,5 +97,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
