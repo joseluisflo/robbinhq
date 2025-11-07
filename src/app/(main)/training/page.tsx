@@ -36,7 +36,7 @@ export default function TrainingPage() {
           <div className="flex items-center justify-between p-2">
             <h2 className="text-3xl font-bold tracking-tight">Training</h2>
           </div>
-          <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-y-auto">
             <Tabs defaultValue="instructions" className="flex flex-1 flex-col overflow-hidden">
               <div className="px-2">
                 <TabsList className="grid w-full grid-cols-4">
@@ -152,10 +152,10 @@ export default function TrainingPage() {
                 </TabsContent>
               </div>
             </Tabs>
-            <div className="flex justify-end gap-2 p-2 border-t mt-auto">
-              <Button variant="ghost">Discard changes</Button>
-              <Button>Save changes</Button>
-            </div>
+          </div>
+          <div className="flex justify-end gap-2 p-2 border-t mt-auto">
+            <Button variant="ghost">Discard changes</Button>
+            <Button>Save changes</Button>
           </div>
         </div>
       </ResizablePanel>
