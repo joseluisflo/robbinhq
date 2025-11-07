@@ -132,7 +132,15 @@ export default function DesignPage() {
               </TabsContent>
               <TabsContent value="in-call" className="flex-1 mt-0">
                  <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-                    {/* Placeholder for "in-call" state */}
+                    <div className="flex flex-col h-full w-full max-w-lg bg-card rounded-2xl shadow-2xl overflow-hidden items-center justify-center">
+                        <p className="text-muted-foreground text-sm mb-4">This is a preview of the in-call state.</p>
+                        <div className="w-40 h-40 bg-blue-500/10 rounded-full flex items-center justify-center">
+                           <div className="w-32 h-32 bg-blue-500/20 rounded-full flex items-center justify-center">
+                                <div className="w-24 h-24 bg-blue-500/30 rounded-full"/>
+                           </div>
+                        </div>
+                        <Button variant="destructive" className="mt-8">Close</Button>
+                    </div>
                  </div>
               </TabsContent>
             </Tabs>
