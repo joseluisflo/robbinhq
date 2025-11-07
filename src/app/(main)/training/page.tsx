@@ -37,7 +37,7 @@ export default function TrainingPage() {
             <h2 className="text-3xl font-bold tracking-tight">Training</h2>
           </div>
           <div className="flex flex-1 flex-col overflow-hidden">
-            <Tabs defaultValue="instructions" className="flex-1 flex flex-col overflow-hidden">
+            <Tabs defaultValue="instructions" className="flex flex-1 flex-col overflow-hidden">
               <div className="px-2">
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="instructions">Instructions</TabsTrigger>
