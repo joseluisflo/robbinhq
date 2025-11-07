@@ -45,7 +45,7 @@ export default function TrainingPage() {
             <h2 className="text-3xl font-bold tracking-tight">Training</h2>
           </div>
           <Tabs defaultValue="instructions" className="mt-4 flex-1 flex flex-col">
-            <TabsList>
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="instructions">Instructions</TabsTrigger>
               <TabsTrigger value="texts">Texts</TabsTrigger>
               <TabsTrigger value="files">Files</TabsTrigger>
