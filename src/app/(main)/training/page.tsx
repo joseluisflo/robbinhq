@@ -50,20 +50,17 @@ export default function TrainingPage() {
         {/* Configuration Panel */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="flex flex-col h-full">
-            <Tabs defaultValue="instructions" className="flex flex-col flex-1 overflow-hidden">
-              {/* Sticky Header */}
-              <div className="border-b">
-                <div className="px-6 pt-4">
-                  <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="instructions">Instructions</TabsTrigger>
-                    <TabsTrigger value="texts">Texts</TabsTrigger>
-                    <TabsTrigger value="files">Files</TabsTrigger>
-                    <TabsTrigger value="websites">Websites</TabsTrigger>
-                  </TabsList>
-                </div>
+            <div className="border-b">
+              <div className="px-6 py-3">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="instructions">Instructions</TabsTrigger>
+                  <TabsTrigger value="texts">Texts</TabsTrigger>
+                  <TabsTrigger value="files">Files</TabsTrigger>
+                  <TabsTrigger value="websites">Websites</TabsTrigger>
+                </TabsList>
               </div>
-
-              {/* Scrollable Content */}
+            </div>
+            <Tabs defaultValue="instructions" className="flex flex-col flex-1 overflow-y-auto">
               <div className="flex-1 overflow-y-auto">
                 <div className="px-6 py-6">
                   <TabsContent value="instructions" className="space-y-6 mt-0">
