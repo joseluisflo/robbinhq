@@ -49,6 +49,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const navMain = [
     {
+      title: 'Dashboard',
+      url: '/dashboard',
+      icon: LayoutDashboard,
+      isActive: pathname === '/dashboard',
+    },
+    {
       title: 'Training',
       url: '/training',
       icon: SlidersHorizontal,
