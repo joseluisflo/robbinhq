@@ -12,7 +12,7 @@ import { usePathname } from 'next/navigation';
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { AgentSwitcher } from "@/components/agent-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -33,7 +33,7 @@ const data = {
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  teams: [
+  agents: [
     {
       name: "AgentVerse",
       logo: Bot,
@@ -69,7 +69,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <AgentSwitcher agents={data.agents} />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
