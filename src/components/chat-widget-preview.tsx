@@ -17,9 +17,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface ChatWidgetPreviewProps {
     agentName: string;
+    mode?: 'chat' | 'in-call';
 }
 
-export function ChatWidgetPreview({ agentName }: ChatWidgetPreviewProps) {
+export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPreviewProps) {
   const [prompt, setPrompt] = useState('');
 
   const getInitials = (name: string) => {
@@ -50,65 +51,85 @@ export function ChatWidgetPreview({ agentName }: ChatWidgetPreviewProps) {
         </div>
       </div>
 
-      {/* Chat Messages */}
-      <div className="flex-1 p-6 overflow-y-auto bg-background">
-        <div className="flex justify-start">
-          <div className="max-w-[75%]">
-            <div className="p-3 rounded-2xl rounded-tl-sm bg-muted">
-              <p className="text-sm">
-                Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!
+      {mode === 'chat' && (
+        <>
+          {/* Chat Messages */}
+          <div className="flex-1 p-6 overflow-y-auto bg-background">
+            <div className="flex justify-start">
+              <div className="max-w-[75%]">
+                <div className="p-3 rounded-2xl rounded-tl-sm bg-muted">
+                  <p className="text-sm">
+                    Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5 ml-1">Agent • Ahora</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Chat Input */}
+          <div className="p-4 border-t bg-card">
+            <div className="relative">
+              <Textarea
+                placeholder="Haz una pregunta..."
+                className="w-full resize-none pr-12 min-h-[52px] max-h-32 rounded-xl"
+                rows={1}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    // Handle send
+                  }
+                }}
+              />
+              <Button
+                type="submit"
+                size="icon"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                disabled={!prompt.trim()}
+              >
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex items-center justify-between mt-3">
+              <div className="flex gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                  <Smile className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                  <ImageIcon className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                  <Mic className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Bot className="h-3 w-3" /> Powered by AgentVerse
               </p>
             </div>
-            <p className="text-xs text-muted-foreground mt-1.5 ml-1">Agent • Ahora</p>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
-      {/* Chat Input */}
-      <div className="p-4 border-t bg-card">
-        <div className="relative">
-          <Textarea
-            placeholder="Haz una pregunta..."
-            className="w-full resize-none pr-12 min-h-[52px] max-h-32 rounded-xl"
-            rows={1}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                // Handle send
-              }
-            }}
-          />
-          <Button
-            type="submit"
-            size="icon"
-            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
-            disabled={!prompt.trim()}
-          >
-            <ArrowUp className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-              <Smile className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-              <ImageIcon className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-              <Mic className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-            <Bot className="h-3 w-3" /> Powered by AgentVerse
-          </p>
-        </div>
-      </div>
+      {mode === 'in-call' && (
+        <>
+            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
+                <p className="text-muted-foreground text-sm mb-4">This is a preview of the in-call state.</p>
+                <div className="w-40 h-40 bg-blue-500/10 rounded-full flex items-center justify-center">
+                    <div className="w-32 h-32 bg-blue-500/20 rounded-full flex items-center justify-center">
+                        <div className="w-24 h-24 bg-blue-500/30 rounded-full"/>
+                    </div>
+                </div>
+            </div>
+            <div className="p-4 border-t bg-card flex justify-center">
+                <Button variant="destructive">Close</Button>
+            </div>
+        </>
+      )}
     </div>
   );
 }

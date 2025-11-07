@@ -249,7 +249,7 @@ export default function TrainingPage() {
         {/* Preview Panel */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-            <ChatWidgetPreview agentName={agentName} />
+            <ChatWidgetPreview agentName={agentName} mode="chat" />
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
