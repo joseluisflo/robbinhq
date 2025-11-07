@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, use } from 'react';
 import { mockAgents } from '@/lib/data';
 import type { Agent, Task } from '@/lib/types';
 import {
@@ -25,10 +25,11 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Wand2 } from 'lucide-react';
 import { getTasksSummary } from '../actions';
 import { useToast } from '@/hooks/use-toast';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 
-export default function AgentDetailPage({ params }: { params: { agentId: string } }) {
+export default function AgentDetailPage() {
+  const params = useParams() as { agentId: string };
   const [agent, setAgent] = useState<Agent | undefined>(
     mockAgents.find((a) => a.id === params.agentId)
   );
