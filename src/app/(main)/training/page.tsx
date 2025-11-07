@@ -36,99 +36,127 @@ export default function TrainingPage() {
           <div className="flex items-center justify-between p-2">
             <h2 className="text-3xl font-bold tracking-tight">Training</h2>
           </div>
-          <Tabs defaultValue="instructions" className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-2">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="instructions">Instructions</TabsTrigger>
-                <TabsTrigger value="texts">Texts</TabsTrigger>
-                <TabsTrigger value="files">Files</TabsTrigger>
-                <TabsTrigger value="websites">Websites</TabsTrigger>
-              </TabsList>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <TabsContent value="instructions" className="pr-2 space-y-6 mt-4 px-2">
-                <div>
-                  <Label htmlFor="instructions" className="text-lg font-semibold">
-                    Instructions
-                  </Label>
-                  <Textarea
-                    id="instructions"
-                    placeholder="Give your agent a role and instructions..."
-                    defaultValue={instructionsPlaceholder}
-                    className="mt-2 min-h-[300px] text-sm"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-lg font-semibold flex items-center gap-2">
-                      Conversation starters
-                      <Info className="h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <Tabs defaultValue="instructions" className="flex-1 flex flex-col overflow-hidden">
+              <div className="px-2">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="instructions">Instructions</TabsTrigger>
+                  <TabsTrigger value="texts">Texts</TabsTrigger>
+                  <TabsTrigger value="files">Files</TabsTrigger>
+                  <TabsTrigger value="websites">Websites</TabsTrigger>
+                </TabsList>
+              </div>
+              <div className="flex-1 overflow-y-auto mt-4 px-2 pr-2">
+                <TabsContent value="instructions" className="space-y-6">
+                  <div>
+                    <Label htmlFor="instructions" className="text-lg font-semibold">
+                      Instructions
                     </Label>
-                    <Button variant="outline" size="sm">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add
-                    </Button>
+                    <Textarea
+                      id="instructions"
+                      placeholder="Give your agent a role and instructions..."
+                      defaultValue={instructionsPlaceholder}
+                      className="mt-2 min-h-[300px] text-sm"
+                    />
                   </div>
-                  <Card className="mt-2 text-center bg-card">
-                    <CardContent className="p-6">
-                      <p className="font-semibold">No conversation starters yet</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Add starter prompts to suggest below the chat input.
-                      </p>
-                      <Button variant="secondary" className="mt-4">
+
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-lg font-semibold flex items-center gap-2">
+                        Conversation starters
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </Label>
+                      <Button variant="outline" size="sm">
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        Add starter
+                        Add
                       </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="temperature" className="text-lg font-semibold flex items-center gap-2">
-                      Temperature
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </Label>
-                    <span className="text-sm font-medium">0</span>
-                  </div>
-                  <Slider
-                    id="temperature"
-                    defaultValue={[0]}
-                    max={1}
-                    step={0.1}
-                    className="mt-2"
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                    <span>Consistent</span>
-                    <span>Creative</span>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-lg font-semibold">Capabilities</Label>
-                  <div className="space-y-4 mt-2">
-                    <div className="flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="web-search" className="text-base">Web search</Label>
-                      </div>
-                      <Switch id="web-search" />
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="image-generation" className="text-base">Image generation</Label>
-                      </div>
-                      <Switch id="image-generation" />
+                    <Card className="mt-2 text-center bg-card">
+                      <CardContent className="p-6">
+                        <p className="font-semibold">No conversation starters yet</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Add starter prompts to suggest below the chat input.
+                        </p>
+                        <Button variant="secondary" className="mt-4">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Add starter
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="temperature" className="text-lg font-semibold flex items-center gap-2">
+                        Temperature
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </Label>
+                      <span className="text-sm font-medium">0</span>
+                    </div>
+                    <Slider
+                      id="temperature"
+                      defaultValue={[0]}
+                      max={1}
+                      step={0.1}
+                      className="mt-2"
+                    />
+                    <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                      <span>Consistent</span>
+                      <span>Creative</span>
                     </div>
                   </div>
-                </div>
-              </TabsContent>
-            </div>
+
+                  <div>
+                    <Label className="text-lg font-semibold">Capabilities</Label>
+                    <div className="space-y-4 mt-2">
+                      <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="web-search" className="text-base">Web search</Label>
+                        </div>
+                        <Switch id="web-search" />
+                      </div>
+                      <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="image-generation" className="text-base">Image generation</Label>
+                        </div>
+                        <Switch id="image-generation" />
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                <TabsContent value="texts" className="h-full mt-0">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center justify-between pb-4">
+                      <Label className="text-lg font-semibold flex items-center gap-2">
+                        Texts
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </Label>
+                      <Button variant="outline" size="sm">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add
+                      </Button>
+                    </div>
+                    <Card className="flex-1 flex items-center justify-center text-center bg-card">
+                      <CardContent className="p-6">
+                        <p className="font-semibold">No texts added yet</p>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                          Add training texts to provide your AI agent with specific knowledge and information.
+                        </p>
+                        <Button variant="secondary" className="mt-4">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Add text
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </div>
+            </Tabs>
             <div className="flex justify-end gap-2 p-2 border-t mt-auto">
               <Button variant="ghost">Discard changes</Button>
               <Button>Save changes</Button>
             </div>
-          </Tabs>
+          </div>
         </div>
       </ResizablePanel>
       <ResizableHandle withHandle />
