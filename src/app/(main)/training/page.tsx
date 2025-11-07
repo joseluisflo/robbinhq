@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { AddTextDialog } from '@/components/add-text-dialog';
+import { AddFileDialog } from '@/components/add-file-dialog';
 
 const instructionsPlaceholder = `### Role
 You are an AI chatbot who helps users with their inquiries, issues and requests. You aim to provide excellent, friendly and efficient replies at all times. Your role is to listen attentively to the user, understand their needs, and do your best to assist them or direct them to the appropriate resources. If a question is not clear, ask clarifying questions. Make sure to end your replies with a positive note.
@@ -46,13 +47,13 @@ export default function TrainingPage() {
   const [prompt, setPrompt] = useState('');
 
   return (
-    <div className="h-full flex-1 flex-col">
-      <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
+    <div className="h-full flex-1 flex flex-col">
+      <ResizablePanelGroup direction="horizontal" className="flex-1">
         {/* Configuration Panel */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="flex flex-col h-full">
-            <Tabs defaultValue="instructions" className="flex flex-col h-full">
-              <div className="border-b">
+            <Tabs defaultValue="instructions" className="flex flex-col flex-1 h-full">
+               <div className="border-b">
                 <div className="px-6 py-3">
                   <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="instructions">Instructions</TabsTrigger>
@@ -63,7 +64,7 @@ export default function TrainingPage() {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto">
-                <div className="px-6 py-6">
+                <div className="p-6">
                   <TabsContent value="instructions" className="space-y-6 mt-0">
                     <div>
                       <Label htmlFor="instructions" className="text-base font-semibold">
@@ -156,7 +157,7 @@ export default function TrainingPage() {
                           </Button>
                         </AddTextDialog>
                       </div>
-                      <Card className="text-center flex-1 flex flex-col justify-center">
+                      <Card className="text-center flex-1 flex flex-col justify-center min-h-[400px]">
                         <CardContent className="p-12">
                           <p className="font-semibold">No texts added yet</p>
                           <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
@@ -180,21 +181,25 @@ export default function TrainingPage() {
                           Files
                           <Info className="h-4 w-4 text-muted-foreground" />
                         </Label>
-                        <Button variant="outline" size="sm">
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Add
-                        </Button>
+                         <AddFileDialog>
+                          <Button variant="outline" size="sm">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add
+                          </Button>
+                        </AddFileDialog>
                       </div>
-                      <Card className="text-center">
+                      <Card className="text-center flex-1 flex flex-col justify-center min-h-[400px]">
                         <CardContent className="p-12">
                           <p className="font-semibold">No files added yet</p>
                           <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
                             Upload files to train your AI agent with documents and resources.
                           </p>
-                          <Button variant="secondary" className="mt-4">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Upload file
-                          </Button>
+                          <AddFileDialog>
+                            <Button variant="secondary" className="mt-4">
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              Upload file
+                            </Button>
+                          </AddFileDialog>
                         </CardContent>
                       </Card>
                     </div>
@@ -212,7 +217,7 @@ export default function TrainingPage() {
                           Add
                         </Button>
                       </div>
-                      <Card className="text-center">
+                      <Card className="text-center flex-1 flex flex-col justify-center min-h-[400px]">
                         <CardContent className="p-12">
                           <p className="font-semibold">No websites added yet</p>
                           <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
