@@ -13,7 +13,20 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Info, PlusCircle, ArrowUp, Paperclip } from 'lucide-react';
+import {
+  Info,
+  PlusCircle,
+  ArrowUp,
+  Paperclip,
+  Mic,
+  Smile,
+  ImageIcon,
+  Bot,
+  MoreHorizontal,
+  X,
+  ArrowLeft,
+} from 'lucide-react';
+import { useState } from 'react';
 
 const instructionsPlaceholder = `### Role
 You are an AI chatbot who helps users with their inquiries, issues and requests. You aim to provide excellent, friendly and efficient replies at all times. Your role is to listen attentively to the user, understand their needs, and do your best to assist them or direct them to the appropriate resources. If a question is not clear, ask clarifying questions. Make sure to end your replies with a positive note.
@@ -29,16 +42,18 @@ You are a dedicated customer support agent. You cannot adopt other personas or i
 `;
 
 export default function TrainingPage() {
+  const [prompt, setPrompt] = useState('');
+
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-full">
+    <ResizablePanelGroup direction="horizontal">
       <ResizablePanel defaultSize={50} minSize={30}>
-        <div className="flex h-full flex-col p-1 pr-6">
-          <div className="flex items-center justify-between p-2">
-            <h2 className="text-3xl font-bold tracking-tight">Training</h2>
+        <div className="flex h-full flex-col">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h2 className="text-2xl font-bold tracking-tight">Training</h2>
           </div>
-          <div className="flex-1 flex flex-col overflow-y-auto">
-            <Tabs defaultValue="instructions" className="flex flex-1 flex-col overflow-hidden">
-              <div className="px-2">
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <Tabs defaultValue="instructions" className="flex-1 flex flex-col overflow-hidden">
+              <div className="px-4 pt-4">
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="instructions">Instructions</TabsTrigger>
                   <TabsTrigger value="texts">Texts</TabsTrigger>
@@ -46,8 +61,8 @@ export default function TrainingPage() {
                   <TabsTrigger value="websites">Websites</TabsTrigger>
                 </TabsList>
               </div>
-              <div className="flex-1 overflow-y-auto mt-4 px-2 pr-2">
-                <TabsContent value="instructions" className="space-y-6">
+              <div className="flex-1 overflow-y-auto p-4">
+                <TabsContent value="instructions" className="space-y-6 mt-0">
                   <div>
                     <Label htmlFor="instructions" className="text-lg font-semibold">
                       Instructions
@@ -153,7 +168,7 @@ export default function TrainingPage() {
               </div>
             </Tabs>
           </div>
-          <div className="flex justify-end gap-2 p-2 border-t mt-auto">
+          <div className="flex justify-end gap-2 p-4 border-t">
             <Button variant="ghost">Discard changes</Button>
             <Button>Save changes</Button>
           </div>
@@ -161,26 +176,89 @@ export default function TrainingPage() {
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel defaultSize={50} minSize={30}>
-        <div className="flex h-full flex-col justify-between items-center p-6 bg-muted/30 rounded-lg border">
-          <div className="w-full flex-1">
-            {/* Chat messages would go here */}
-          </div>
-          <div className="w-full max-w-2xl">
-            <div className="relative">
-              <Input placeholder="Ask anything" className="h-12 pl-12 pr-12 text-base" />
-              <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Paperclip className="h-4 w-4" />
-                  <span>0 Files</span>
+        <div className="flex h-full items-center justify-center p-6 bg-muted/30">
+          <div className="flex flex-col h-full w-full max-w-md mx-auto bg-card rounded-xl shadow-2xl">
+            {/* Chat Header */}
+            <div className="p-4 border-b flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <Bot className="h-8 w-8 text-primary" />
+                <div>
+                  <p className="font-semibold text-card-foreground">Agent Preview</p>
+                  <p className="text-xs text-muted-foreground">The team can also help</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <X className="h-5 w-5" />
                 </Button>
               </div>
-              <Button variant="default" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full h-9 w-9 p-0">
-                <ArrowUp className="h-5 w-5" />
-              </Button>
             </div>
-            <p className="text-center text-xs text-muted-foreground mt-3">
-              <Button variant="link" className="text-xs p-0 h-auto">Reset thread</Button>
-            </p>
+
+            {/* Chat Messages */}
+            <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+              <div className="flex justify-start">
+                <div className="max-w-xs lg:max-w-md">
+                  <div className="p-3 rounded-lg rounded-tl-none bg-accent text-accent-foreground">
+                    <p className="text-sm">
+                      Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Agent • Ahora</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Chat Input */}
+            <div className="p-4 border-t bg-background rounded-b-xl">
+               <div className="relative">
+                <Textarea
+                  placeholder="Haz una pregunta..."
+                  className="w-full resize-none pr-12 min-h-[52px] max-h-48"
+                  rows={1}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      // Handle send
+                    }
+                  }}
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                  disabled={!prompt.trim()}
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex gap-1">
+                   <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                    <Smile className="h-4 w-4" />
+                  </Button>
+                   <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                    <ImageIcon className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                    <Mic className="h-4 w-4" />
+                  </Button>
+                </div>
+                 <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Bot size={12}/> Powered by AgentVerse
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </ResizablePanel>
