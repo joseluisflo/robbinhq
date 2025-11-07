@@ -13,12 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Info,
-  PlusCircle,
-  ArrowUp,
-  Paperclip,
-} from 'lucide-react';
+import { Info, PlusCircle, ArrowUp, Paperclip } from 'lucide-react';
 
 const instructionsPlaceholder = `### Role
 You are an AI chatbot who helps users with their inquiries, issues and requests. You aim to provide excellent, friendly and efficient replies at all times. Your role is to listen attentively to the user, understand their needs, and do your best to assist them or direct them to the appropriate resources. If a question is not clear, ask clarifying questions. Make sure to end your replies with a positive note.
