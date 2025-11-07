@@ -17,9 +17,11 @@ export default function AppLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="grid h-screen grid-rows-[auto_1fr]">
         <AppHeader />
-        <main className={cn(!isTrainingPage && 'p-4 sm:p-6')}>{children}</main>
+        <main className={cn("flex flex-col overflow-y-auto", !isTrainingPage && "p-4 sm:p-6")}>
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

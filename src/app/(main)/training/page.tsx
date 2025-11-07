@@ -45,287 +45,286 @@ export default function TrainingPage() {
   const [prompt, setPrompt] = useState('');
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Main Content */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
-        {/* Configuration Panel */}
-        <ResizablePanel defaultSize={50} minSize={30}>
-          <div className="flex flex-col h-full">
+    <ResizablePanelGroup direction="horizontal" className="flex-1">
+      {/* Configuration Panel */}
+      <ResizablePanel defaultSize={50} minSize={30}>
+        <div className="flex flex-col h-full">
+          <Tabs defaultValue="instructions" className="flex flex-col flex-1">
+            {/* Sticky Header */}
+            <div className="border-b">
+              <div className="px-6 pt-4">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="instructions">Instructions</TabsTrigger>
+                  <TabsTrigger value="texts">Texts</TabsTrigger>
+                  <TabsTrigger value="files">Files</TabsTrigger>
+                  <TabsTrigger value="websites">Websites</TabsTrigger>
+                </TabsList>
+              </div>
+            </div>
+
+            {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto">
-              {/* Tabs Header - Fixed */}
-              <div className="sticky top-0 bg-background/95 backdrop-blur-sm z-10">
-                <Tabs defaultValue="instructions" className="w-full">
-                  <div className="px-6 pt-4">
-                    <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="instructions">Instructions</TabsTrigger>
-                      <TabsTrigger value="texts">Texts</TabsTrigger>
-                      <TabsTrigger value="files">Files</TabsTrigger>
-                      <TabsTrigger value="websites">Websites</TabsTrigger>
-                    </TabsList>
-                  </div>
-                  <div className="px-6 py-6" style={{ height: 'calc(100vh - 240px)' }}>
-                    <TabsContent value="instructions" className="space-y-6 mt-0">
-                      <div>
-                        <Label htmlFor="instructions" className="text-base font-semibold">
-                          Instructions
-                        </Label>
-                        <Textarea
-                          id="instructions"
-                          placeholder="Give your agent a role and instructions..."
-                          defaultValue={instructionsPlaceholder}
-                          className="mt-2 min-h-[300px] text-sm font-mono"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <Label className="text-base font-semibold flex items-center gap-2">
-                            Conversation starters
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </Label>
-                          <Button variant="outline" size="sm">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add
-                          </Button>
-                        </div>
-                        <Card className="text-center">
-                          <CardContent className="p-8">
-                            <p className="font-semibold">No conversation starters yet</p>
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Add starter prompts to suggest below the chat input.
-                            </p>
-                            <Button variant="secondary" className="mt-4">
-                              <PlusCircle className="mr-2 h-4 w-4" />
-                              Add starter
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <Label htmlFor="temperature" className="text-base font-semibold flex items-center gap-2">
-                            Temperature
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </Label>
-                          <span className="text-sm font-medium">0</span>
-                        </div>
-                        <Slider
-                          id="temperature"
-                          defaultValue={[0]}
-                          max={1}
-                          step={0.1}
-                          className="mt-2"
-                        />
-                        <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                          <span>Consistent</span>
-                          <span>Creative</span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label className="text-base font-semibold">Capabilities</Label>
-                        <div className="space-y-3 mt-3">
-                          <div className="flex items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <Label htmlFor="web-search" className="text-sm font-medium">Web search</Label>
-                            </div>
-                            <Switch id="web-search" />
-                          </div>
-                          <div className="flex items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <Label htmlFor="image-generation" className="text-sm font-medium">Image generation</Label>
-                            </div>
-                            <Switch id="image-generation" />
-                          </div>
-                        </div>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="texts" className="mt-0 h-full">
-                      <div className="flex flex-col h-full">
-                        <div className="flex items-center justify-between mb-4">
-                          <Label className="text-base font-semibold flex items-center gap-2">
-                            Texts
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </Label>
-                          <Button variant="outline" size="sm">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add
-                          </Button>
-                        </div>
-                        <Card className="text-center flex-1 flex flex-col justify-center">
-                          <CardContent className="p-12">
-                            <p className="font-semibold">No texts added yet</p>
-                            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-                              Add training texts to provide your AI agent with specific knowledge and information.
-                            </p>
-                            <Button variant="secondary" className="mt-4">
-                              <PlusCircle className="mr-2 h-4 w-4" />
-                              Add text
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="files" className="mt-0">
-                      <div className="flex flex-col">
-                        <div className="flex items-center justify-between mb-4">
-                          <Label className="text-base font-semibold flex items-center gap-2">
-                            Files
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </Label>
-                          <Button variant="outline" size="sm">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add
-                          </Button>
-                        </div>
-                        <Card className="text-center">
-                          <CardContent className="p-12">
-                            <p className="font-semibold">No files added yet</p>
-                            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-                              Upload files to train your AI agent with documents and resources.
-                            </p>
-                            <Button variant="secondary" className="mt-4">
-                              <PlusCircle className="mr-2 h-4 w-4" />
-                              Upload file
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="websites" className="mt-0">
-                      <div className="flex flex-col">
-                        <div className="flex items-center justify-between mb-4">
-                          <Label className="text-base font-semibold flex items-center gap-2">
-                            Websites
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </Label>
-                          <Button variant="outline" size="sm">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add
-                          </Button>
-                        </div>
-                        <Card className="text-center">
-                          <CardContent className="p-12">
-                            <p className="font-semibold">No websites added yet</p>
-                            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-                              Add website URLs to train your AI agent with web content.
-                            </p>
-                            <Button variant="secondary" className="mt-4">
-                              <PlusCircle className="mr-2 h-4 w-4" />
-                              Add website
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </TabsContent>
-                  </div>
-                </Tabs>
-              </div>
-            </div>
-
-            {/* Footer - Fixed */}
-            <div className="flex justify-between items-center gap-3 px-6 py-4 border-t bg-background mt-auto">
-              <Button variant="ghost">Discard changes</Button>
-              <Button>Save changes</Button>
-            </div>
-          </div>
-        </ResizablePanel>
-
-        <ResizableHandle withHandle />
-
-        {/* Preview Panel */}
-        <ResizablePanel defaultSize={50} minSize={30}>
-          <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-            <div className="flex flex-col h-full w-full max-w-lg bg-card rounded-2xl shadow-2xl overflow-hidden">
-              {/* Chat Header */}
-              <div className="p-4 border-b flex items-center justify-between bg-card">
-                <div className="flex items-center gap-3">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <Bot className="h-8 w-8 text-primary" />
+              <div className="px-6 py-6">
+                <TabsContent value="instructions" className="space-y-6 mt-0">
                   <div>
-                    <p className="font-semibold text-sm">Agent Preview</p>
-                    <p className="text-xs text-muted-foreground">The team can also help</p>
+                    <Label htmlFor="instructions" className="text-base font-semibold">
+                      Instructions
+                    </Label>
+                    <Textarea
+                      id="instructions"
+                      placeholder="Give your agent a role and instructions..."
+                      defaultValue={instructionsPlaceholder}
+                      className="mt-2 min-h-[300px] text-sm font-mono"
+                    />
                   </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
 
-              {/* Chat Messages */}
-              <div className="flex-1 p-6 overflow-y-auto bg-background">
-                <div className="flex justify-start">
-                  <div className="max-w-[75%]">
-                    <div className="p-3 rounded-2xl rounded-tl-sm bg-muted">
-                      <p className="text-sm">
-                        Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!
-                      </p>
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="text-base font-semibold flex items-center gap-2">
+                        Conversation starters
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </Label>
+                      <Button variant="outline" size="sm">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add
+                      </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1.5 ml-1">Agent • Ahora</p>
+                    <Card className="text-center">
+                      <CardContent className="p-8">
+                        <p className="font-semibold">No conversation starters yet</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Add starter prompts to suggest below the chat input.
+                        </p>
+                        <Button variant="secondary" className="mt-4">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Add starter
+                        </Button>
+                      </CardContent>
+                    </Card>
                   </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <Label htmlFor="temperature" className="text-base font-semibold flex items-center gap-2">
+                        Temperature
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </Label>
+                      <span className="text-sm font-medium">0</span>
+                    </div>
+                    <Slider
+                      id="temperature"
+                      defaultValue={[0]}
+                      max={1}
+                      step={0.1}
+                      className="mt-2"
+                    />
+                    <div className="flex justify-between text-sm text-muted-foreground mt-2">
+                      <span>Consistent</span>
+                      <span>Creative</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-base font-semibold">Capabilities</Label>
+                    <div className="space-y-3 mt-3">
+                      <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="web-search" className="text-sm font-medium">Web search</Label>
+                        </div>
+                        <Switch id="web-search" />
+                      </div>
+                      <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="image-generation" className="text-sm font-medium">Image generation</Label>
+                        </div>
+                        <Switch id="image-generation" />
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="texts" className="mt-0 h-full">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center justify-between mb-4">
+                      <Label className="text-base font-semibold flex items-center gap-2">
+                        Texts
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </Label>
+                      <Button variant="outline" size="sm">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add
+                      </Button>
+                    </div>
+                    <Card className="text-center flex-1 flex flex-col justify-center">
+                      <CardContent className="p-12">
+                        <p className="font-semibold">No texts added yet</p>
+                        <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+                          Add training texts to provide your AI agent with specific knowledge and information.
+                        </p>
+                        <Button variant="secondary" className="mt-4">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Add text
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="files" className="mt-0">
+                  <div className="flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                      <Label className="text-base font-semibold flex items-center gap-2">
+                        Files
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </Label>
+                      <Button variant="outline" size="sm">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add
+                      </Button>
+                    </div>
+                    <Card className="text-center">
+                      <CardContent className="p-12">
+                        <p className="font-semibold">No files added yet</p>
+                        <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+                          Upload files to train your AI agent with documents and resources.
+                        </p>
+                        <Button variant="secondary" className="mt-4">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Upload file
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="websites" className="mt-0">
+                  <div className="flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                      <Label className="text-base font-semibold flex items-center gap-2">
+                        Websites
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </Label>
+                      <Button variant="outline" size="sm">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add
+                      </Button>
+                    </div>
+                    <Card className="text-center">
+                      <CardContent className="p-12">
+                        <p className="font-semibold">No websites added yet</p>
+                        <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+                          Add website URLs to train your AI agent with web content.
+                        </p>
+                        <Button variant="secondary" className="mt-4">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Add website
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </div>
+            </div>
+          </Tabs>
+
+          {/* Footer - Fixed */}
+          <div className="flex justify-between items-center gap-3 px-6 py-4 border-t bg-background">
+            <Button variant="ghost">Discard changes</Button>
+            <Button>Save changes</Button>
+          </div>
+        </div>
+      </ResizablePanel>
+
+      <ResizableHandle withHandle />
+
+      {/* Preview Panel */}
+      <ResizablePanel defaultSize={50} minSize={30}>
+        <div className="flex h-full items-center justify-center p-8 bg-muted/30">
+          <div className="flex flex-col h-full w-full max-w-lg bg-card rounded-2xl shadow-2xl overflow-hidden">
+            {/* Chat Header */}
+            <div className="p-4 border-b flex items-center justify-between bg-card">
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <Bot className="h-8 w-8 text-primary" />
+                <div>
+                  <p className="font-semibold text-sm">Agent Preview</p>
+                  <p className="text-xs text-muted-foreground">The team can also help</p>
                 </div>
               </div>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
 
-              {/* Chat Input */}
-              <div className="p-4 border-t bg-card">
-                <div className="relative">
-                  <Textarea
-                    placeholder="Haz una pregunta..."
-                    className="w-full resize-none pr-12 min-h-[52px] max-h-32 rounded-xl"
-                    rows={1}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        // Handle send
-                      }
-                    }}
-                  />
-                  <Button
-                    type="submit"
-                    size="icon"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
-                    disabled={!prompt.trim()}
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between mt-3">
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                      <Paperclip className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                      <Smile className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                      <ImageIcon className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                      <Mic className="h-4 w-4" />
-                    </Button>
+            {/* Chat Messages */}
+            <div className="flex-1 p-6 overflow-y-auto bg-background">
+              <div className="flex justify-start">
+                <div className="max-w-[75%]">
+                  <div className="p-3 rounded-2xl rounded-tl-sm bg-muted">
+                    <p className="text-sm">
+                      Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Bot className="h-3 w-3" /> Powered by AgentVerse
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1.5 ml-1">Agent • Ahora</p>
                 </div>
               </div>
             </div>
+
+            {/* Chat Input */}
+            <div className="p-4 border-t bg-card">
+              <div className="relative">
+                <Textarea
+                  placeholder="Haz una pregunta..."
+                  className="w-full resize-none pr-12 min-h-[52px] max-h-32 rounded-xl"
+                  rows={1}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      // Handle send
+                    }
+                  }}
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                  disabled={!prompt.trim()}
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                    <Smile className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                    <ImageIcon className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                    <Mic className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Bot className="h-3 w-3" /> Powered by AgentVerse
+                </p>
+              </div>
+            </div>
           </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </div>
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }
