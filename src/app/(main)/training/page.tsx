@@ -50,7 +50,7 @@ export default function TrainingPage() {
         {/* Configuration Panel */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="flex flex-col h-full">
-            <Tabs defaultValue="instructions" className="flex flex-col flex-1 h-full">
+            <Tabs defaultValue="instructions" className="flex flex-col flex-1 overflow-hidden">
               {/* Sticky Header */}
               <div className="border-b">
                 <div className="px-6 pt-4">
