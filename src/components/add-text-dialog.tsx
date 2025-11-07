@@ -48,9 +48,9 @@ export function AddTextDialog({ children }: { children: React.ReactNode }) {
             Train your AI Agent with clear, text-based data.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="title" className="text-right">
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">
               Title
             </Label>
             <Input
@@ -58,18 +58,17 @@ export function AddTextDialog({ children }: { children: React.ReactNode }) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Return Policy"
-              className="col-span-3"
             />
           </div>
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="content" className="text-right pt-2">
+          <div className="space-y-2">
+            <Label htmlFor="content">
               Content
             </Label>
             <Textarea
               id="content"
               value={content}
-              onChange={(e) => setContent(e.taget.value)}
-              className="col-span-3 min-h-[120px]"
+              onChange={(e) => setContent(e.target.value)}
+              className="min-h-[120px]"
               placeholder="Enter your text content here."
             />
           </div>
