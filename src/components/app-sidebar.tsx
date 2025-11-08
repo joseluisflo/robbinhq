@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import {
-  DraftingCompass,
   UploadCloud,
   MessageSquare,
   Users,
@@ -25,7 +24,7 @@ import {
   SidebarRail,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
-import { DashboardIcon, AiChemistryIcon } from '@/components/lo-icons';
+import { DashboardIcon, AiChemistryIcon, PenToolIcon } from '@/components/lo-icons';
 
 // This is sample data. We'll simplify it for our app.
 const data = {
@@ -54,7 +53,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       title: 'Design',
       url: '/design',
-      icon: DraftingCompass,
+      icon: PenToolIcon,
       isActive: pathname.startsWith('/design'),
     },
     {
