@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { ChatWidgetPreview } from '@/components/chat-widget-preview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Slider } from '@/components/ui/slider';
 
 export default function DesignPage() {
   const [agentName, setAgentName] = useState('Fitness Assistant');
@@ -44,7 +45,7 @@ export default function DesignPage() {
                                 <div className="flex items-center justify-between rounded-lg border p-4">
                                     <div>
                                         <Label htmlFor="display-name-toggle">Display name</Label>
-                                        <Input id="display-name" value={agentName} onChange={(e) => setAgentName(e.targe.value)} className="mt-2"/>
+                                        <Input id="display-name" value={agentName} onChange={(e) => setAgentName(e.target.value)} className="mt-2"/>
                                     </div>
                                     <Switch id="display-name-toggle" defaultChecked />
                                 </div>
@@ -118,15 +119,57 @@ export default function DesignPage() {
                       </div>
                     </TabsContent>
                     <TabsContent value="in-call">
-                       <div className="p-6">
+                       <div className="p-6 space-y-6">
                          <Card>
                            <CardHeader>
-                             <CardTitle>In-call Design</CardTitle>
-                             <CardDescription>Customize the appearance of the in-call experience.</CardDescription>
+                             <CardTitle>Orb Customization</CardTitle>
+                             <CardDescription>Customize the appearance and animation of the in-call orb.</CardDescription>
                            </CardHeader>
-                           <CardContent>
-                              <p className="text-sm text-muted-foreground">In-call design options will go here.</p>
+                           <CardContent className="space-y-6">
+                              <div className="space-y-2">
+                                <Label htmlFor="orb-size">Orb Size</Label>
+                                <Input id="orb-size" placeholder="e.g., 192px" defaultValue="160px" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="orb-animation">Animation Duration (seconds)</Label>
+                                <Slider id="orb-animation" defaultValue={[20]} max={60} step={1} />
+                              </div>
                            </CardContent>
+                         </Card>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Orb Colors</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="color-bg">Background</Label>
+                                    <div className='flex items-center gap-2'>
+                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: 'oklch(95% 0.02 264.695)' }} />
+                                        <Input id="color-bg" defaultValue="oklch(95% 0.02 264.695)" className="w-48" />
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="color-c1">Gradient Color 1</Label>
+                                     <div className='flex items-center gap-2'>
+                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: 'oklch(75% 0.15 350)' }} />
+                                        <Input id="color-c1" defaultValue="oklch(75% 0.15 350)" className="w-48" />
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="color-c2">Gradient Color 2</Label>
+                                     <div className='flex items-center gap-2'>
+                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: 'oklch(80% 0.12 200)' }} />
+                                        <Input id="color-c2" defaultValue="oklch(80% 0.12 200)" className="w-48" />
+                                    </div>
+                                </div>
+                                 <div className="flex items-center justify-between">
+                                    <Label htmlFor="color-c3">Gradient Color 3</Label>
+                                     <div className='flex items-center gap-2'>
+                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: 'oklch(78% 0.14 280)' }} />
+                                        <Input id="color-c3" defaultValue="oklch(78% 0.14 280)" className="w-48" />
+                                    </div>
+                                </div>
+                            </CardContent>
                          </Card>
                        </div>
                     </TabsContent>
