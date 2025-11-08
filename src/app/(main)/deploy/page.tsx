@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Rocket } from 'lucide-react'
+import { RocketIcon } from '@/components/lo-icons/RocketIcon'
 
 export default function DeployPage() {
   return (
@@ -22,7 +22,7 @@ export default function DeployPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
-            <Rocket className="mx-auto h-12 w-12 text-muted-foreground" />
+            <RocketIcon className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-semibold">Ready to Launch?</h3>
             <p className="mb-4 mt-2 text-sm text-muted-foreground">
               Deploy your agent to a shareable URL with just one click.

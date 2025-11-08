@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import {
-  UploadCloud,
   MessageSquare,
   Users,
 } from 'lucide-react';
@@ -23,7 +22,7 @@ import {
   SidebarRail,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
-import { DashboardIcon, AiChemistryIcon, PenToolIcon, MotionIcon } from '@/components/lo-icons';
+import { DashboardIcon, AiChemistryIcon, PenToolIcon, MotionIcon, RocketIcon } from '@/components/lo-icons';
 
 // This is sample data. We'll simplify it for our app.
 const data = {
@@ -64,7 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       title: 'Deploy',
       url: '/deploy',
-      icon: UploadCloud,
+      icon: RocketIcon,
       isActive: pathname.startsWith('/deploy'),
     },
   ];
