@@ -5,7 +5,6 @@ import {
   DraftingCompass,
   UploadCloud,
   MessageSquare,
-  SlidersHorizontal,
   Users,
   Workflow,
 } from 'lucide-react';
@@ -26,7 +25,7 @@ import {
   SidebarRail,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
-import { DashboardIcon } from '@/components/lo-icons';
+import { DashboardIcon, AiChemistryIcon } from '@/components/lo-icons';
 
 // This is sample data. We'll simplify it for our app.
 const data = {
@@ -49,7 +48,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       title: 'Training',
       url: '/training',
-      icon: SlidersHorizontal,
+      icon: AiChemistryIcon,
       isActive: pathname.startsWith('/training'),
     },
     {
@@ -120,7 +119,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     tooltip={item.title}
                     isActive={item.isActive}
                   >
-                    {item.icon && <item.icon />}
+                    {item.icon && <item.icon variant={item.isActive ? 'filled' : 'stroke'} />}
                     <span>{item.title}</span>
                   </SidebarMenuButton>
                 </Link>
