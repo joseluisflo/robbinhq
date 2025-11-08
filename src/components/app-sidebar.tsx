@@ -1,8 +1,8 @@
+
 'use client';
 
 import * as React from 'react';
 import {
-  MessageSquare,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -22,7 +22,7 @@ import {
   SidebarRail,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
-import { DashboardIcon, AiChemistryIcon, PenToolIcon, MotionIcon, RocketIcon } from '@/components/lo-icons';
+import { DashboardIcon, AiChemistryIcon, PenToolIcon, MotionIcon, RocketIcon, ChatSimpleIcon } from '@/components/lo-icons';
 
 // This is sample data. We'll simplify it for our app.
 const data = {
@@ -72,7 +72,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       title: 'Chat logs',
       url: '/chat-logs',
-      icon: MessageSquare,
+      icon: ChatSimpleIcon,
       isActive: pathname.startsWith('/chat-logs'),
     },
     {
@@ -134,7 +134,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     tooltip={item.title}
                     isActive={item.isActive}
                   >
-                    {item.icon && <item.icon />}
+                    {item.icon && <item.icon variant={item.isActive ? 'filled' : 'stroke'} />}
                     <span>{item.title}</span>
                   </SidebarMenuButton>
                 </Link>
@@ -150,3 +150,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     </Sidebar>
   );
 }
+
+    
