@@ -24,6 +24,7 @@ import {
   SidebarMenuButton,
   SidebarGroup,
   SidebarRail,
+  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 
 // This is sample data. We'll simplify it for our app.
@@ -43,13 +44,7 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
 
-  const navMain = [
-    {
-      title: 'Dashboard',
-      url: '/dashboard',
-      icon: LayoutDashboard,
-      isActive: pathname === '/dashboard',
-    },
+  const navPlatform = [
     {
       title: 'Training',
       url: '/training',
@@ -77,8 +72,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
+           <SidebarMenu>
+             <SidebarMenuItem>
+                <Link href="/dashboard" passHref>
+                  <SidebarMenuButton
+                    tooltip="Dashboard"
+                    isActive={pathname === '/dashboard'}
+                  >
+                    <LayoutDashboard />
+                    <span>Dashboard</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+           </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Platform</SidebarGroupLabel>
           <SidebarMenu>
-            {navMain.map((item) => (
+            {navPlatform.map((item) => (
               <SidebarMenuItem key={item.title}>
                 <Link href={item.url} passHref>
                   <SidebarMenuButton
