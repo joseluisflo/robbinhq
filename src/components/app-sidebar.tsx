@@ -6,8 +6,9 @@ import {
   DraftingCompass,
   UploadCloud,
   LayoutDashboard,
-  Settings2,
+  MessageSquare,
   SlidersHorizontal,
+  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -65,6 +66,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
   ];
 
+  const navActivity = [
+    {
+      title: 'Chat logs',
+      url: '/chat-logs',
+      icon: MessageSquare,
+      isActive: pathname.startsWith('/chat-logs'),
+    },
+    {
+      title: 'Leads',
+      url: '/leads',
+      icon: Users,
+      isActive: pathname.startsWith('/leads'),
+    },
+  ];
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -90,6 +106,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroupLabel>Platform</SidebarGroupLabel>
           <SidebarMenu>
             {navPlatform.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <Link href={item.url} passHref>
+                  <SidebarMenuButton
+                    tooltip={item.title}
+                    isActive={item.isActive}
+                  >
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Activity</SidebarGroupLabel>
+          <SidebarMenu>
+            {navActivity.map((item) => (
               <SidebarMenuItem key={item.title}>
                 <Link href={item.url} passHref>
                   <SidebarMenuButton
