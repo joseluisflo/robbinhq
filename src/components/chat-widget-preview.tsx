@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import SiriOrb from '@/components/smoothui/ui/SiriOrb';
 
 interface ChatWidgetPreviewProps {
     agentName: string;
@@ -119,11 +120,7 @@ export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPrevie
         <>
             <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
                 <p className="text-muted-foreground text-sm mb-4">This is a preview of the in-call state.</p>
-                <div className="w-40 h-40 bg-blue-500/10 rounded-full flex items-center justify-center">
-                    <div className="w-32 h-32 bg-blue-500/20 rounded-full flex items-center justify-center">
-                        <div className="w-24 h-24 bg-blue-500/30 rounded-full"/>
-                    </div>
-                </div>
+                <SiriOrb size="160px" />
             </div>
             <div className="p-4 border-t bg-card flex justify-center">
                 <Button variant="destructive">Close</Button>
