@@ -4,7 +4,7 @@ import * as React from 'react';
 import {
   Bot,
   DraftingCompass,
-  Globe,
+  UploadCloud,
   LayoutDashboard,
   Settings2,
   SlidersHorizontal,
@@ -63,10 +63,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       isActive: pathname.startsWith('/design'),
     },
     {
-      title: 'Domains',
-      url: '/domain',
-      icon: Globe,
-      isActive: pathname.startsWith('/domain'),
+      title: 'Deploy',
+      url: '/deploy',
+      icon: UploadCloud,
+      isActive: pathname.startsWith('/deploy'),
     },
   ];
 
