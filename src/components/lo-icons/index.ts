@@ -4,5 +4,4 @@ export * from './PenToolIcon';
 export * from './MotionIcon';
 export * from './RocketIcon';
 export * from './ChatSimpleIcon';
-
-    
+export * from './UserGroupIcon';
