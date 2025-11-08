@@ -9,6 +9,7 @@ import {
   MessageSquare,
   SlidersHorizontal,
   Users,
+  Workflow,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -57,6 +58,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: '/design',
       icon: DraftingCompass,
       isActive: pathname.startsWith('/design'),
+    },
+    {
+      title: 'Workflow',
+      url: '/workflow',
+      icon: Workflow,
+      isActive: pathname.startsWith('/workflow'),
     },
     {
       title: 'Deploy',
