@@ -12,6 +12,8 @@ import {
   Bot,
   MoreHorizontal,
   X,
+  PhoneOff,
+  MicOff,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import SiriOrb from '@/components/smoothui/ui/SiriOrb';
@@ -119,11 +121,15 @@ export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPrevie
       {mode === 'in-call' && (
         <>
             <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
-                <p className="text-muted-foreground text-sm mb-4">This is a preview of the in-call state.</p>
                 <SiriOrb size="160px" />
             </div>
-            <div className="p-4 border-t bg-card flex justify-center">
-                <Button variant="destructive">Close</Button>
+            <div className="p-4 border-t bg-card flex justify-center gap-4">
+                <Button variant="outline" size="icon" className="h-12 w-12 rounded-full">
+                    <MicOff className="h-6 w-6" />
+                </Button>
+                 <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full">
+                    <PhoneOff className="h-6 w-6" />
+                </Button>
             </div>
         </>
       )}
