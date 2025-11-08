@@ -2,10 +2,8 @@
 
 import * as React from 'react';
 import {
-  Bot,
   DraftingCompass,
   UploadCloud,
-  LayoutDashboard,
   MessageSquare,
   SlidersHorizontal,
   Users,
@@ -28,6 +26,7 @@ import {
   SidebarRail,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
+import { DashboardIcon } from '@/components/lo-icons';
 
 // This is sample data. We'll simplify it for our app.
 const data = {
@@ -88,6 +87,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
   ];
 
+  const isDashboardActive = pathname === '/dashboard';
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -100,9 +101,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <Link href="/dashboard" passHref>
                   <SidebarMenuButton
                     tooltip="Dashboard"
-                    isActive={pathname === '/dashboard'}
+                    isActive={isDashboardActive}
                   >
-                    <LayoutDashboard />
+                    <DashboardIcon variant={isDashboardActive ? 'filled' : 'stroke'} />
                     <span>Dashboard</span>
                   </SidebarMenuButton>
                 </Link>
