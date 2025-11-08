@@ -5,7 +5,6 @@ import {
   UploadCloud,
   MessageSquare,
   Users,
-  Workflow,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -24,7 +23,7 @@ import {
   SidebarRail,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
-import { DashboardIcon, AiChemistryIcon, PenToolIcon } from '@/components/lo-icons';
+import { DashboardIcon, AiChemistryIcon, PenToolIcon, MotionIcon } from '@/components/lo-icons';
 
 // This is sample data. We'll simplify it for our app.
 const data = {
@@ -59,7 +58,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       title: 'Workflow',
       url: '/workflow',
-      icon: Workflow,
+      icon: MotionIcon,
       isActive: pathname.startsWith('/workflow'),
     },
     {
