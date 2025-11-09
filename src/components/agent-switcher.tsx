@@ -45,7 +45,7 @@ export function AgentSwitcher({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="group data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <AvatarFallback className="bg-transparent text-sm font-bold">
@@ -57,7 +57,7 @@ export function AgentSwitcher({
                   {activeAgent.name}
                 </span>
               </div>
-              <ChevronsUpDown className="ml-auto" />
+              <ChevronsUpDown className="ml-auto opacity-0 transition-opacity group-hover:opacity-100" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
