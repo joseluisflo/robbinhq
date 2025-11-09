@@ -40,9 +40,7 @@ const blockGroups = [
   {
     group: "Data",
     items: [
-      { value: "Block 6" },
-      { value: "Block 7" },
-      { value: "Block 8" },
+      { value: "Set variable" },
     ],
   },
 ]

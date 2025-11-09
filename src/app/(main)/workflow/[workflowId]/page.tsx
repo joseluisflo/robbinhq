@@ -13,6 +13,7 @@ import { AddBlockPopover } from '@/components/add-block-popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 
 export default function WorkflowDetailPage() {
   const [blocks, setBlocks] = useState<string[]>([]);
@@ -199,6 +200,30 @@ export default function WorkflowDetailPage() {
                                   Add block
                                 </Button>
                               </AddBlockPopover>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+                  if (block === 'Set variable') {
+                    return (
+                      <Card key={index}>
+                        <CardHeader>
+                          <CardTitle>Set variable</CardTitle>
+                          <CardDescription>
+                            Store a value in a variable to use later in the workflow.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className='grid grid-cols-2 gap-4'>
+                            <div className="space-y-2">
+                              <Label htmlFor={`variable-name-${index}`}>Variable Name</Label>
+                              <Input id={`variable-name-${index}`} placeholder="e.g. userEmail" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`variable-value-${index}`}>Value</Label>
+                              <Input id={`variable-value-${index}`} placeholder="e.g. '{{answer_from_previous_step}}' " />
                             </div>
                           </div>
                         </CardContent>
