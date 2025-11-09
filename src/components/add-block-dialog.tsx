@@ -16,7 +16,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -45,7 +44,31 @@ const data = {
 }
 
 export function AddBlockDialog({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
+  const [activeItem, setActiveItem] = React.useState("Core");
+
+  const renderContent = () => {
+    switch (activeItem) {
+      case "Core":
+        return Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="aspect-video max-w-3xl rounded-xl bg-blue-500/10" />
+        ));
+      case "Tools":
+        return Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="aspect-video max-w-3xl rounded-xl bg-green-500/10" />
+        ));
+      case "Logic":
+        return Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="aspect-video max-w-3xl rounded-xl bg-yellow-500/10" />
+        ));
+      case "Data":
+        return Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="aspect-video max-w-3xl rounded-xl bg-purple-500/10" />
+        ));
+      default:
+        return null;
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -66,13 +89,16 @@ export function AddBlockDialog({ children }: { children: React.ReactNode }) {
                     {data.nav.map((item) => (
                       <SidebarMenuItem key={item.name}>
                         <SidebarMenuButton
-                          asChild
-                          isActive={item.name === "Core"}
+                          as="a"
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setActiveItem(item.name);
+                          }}
+                          isActive={item.name === activeItem}
                         >
-                          <a href="#">
-                            <item.icon />
-                            <span>{item.name}</span>
-                          </a>
+                          <item.icon />
+                          <span>{item.name}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     ))}
@@ -91,19 +117,14 @@ export function AddBlockDialog({ children }: { children: React.ReactNode }) {
                     </BreadcrumbItem>
                     <BreadcrumbSeparator className="hidden md:block" />
                     <BreadcrumbItem>
-                      <BreadcrumbPage>Core</BreadcrumbPage>
+                      <BreadcrumbPage>{activeItem}</BreadcrumbPage>
                     </BreadcrumbItem>
                   </BreadcrumbList>
                 </Breadcrumb>
               </div>
             </header>
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="aspect-video max-w-3xl rounded-xl bg-muted/50"
-                />
-              ))}
+              {renderContent()}
             </div>
           </main>
         </SidebarProvider>
