@@ -35,6 +35,12 @@
       "description": "Abstract shapes and nodes on a dark background, representing AI and creativity.",
       "imageUrl": "https://images.unsplash.com/photo-1533709475520-a2737233a652?q=80&w=1920&auto=format&fit=crop",
       "imageHint": "ai creativity"
+    },
+    {
+      "id": "dialog-create-workflow",
+      "description": "A flowchart or diagram representing a workflow process.",
+      "imageUrl": "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=1920&auto=format&fit=crop",
+      "imageHint": "workflow diagram"
     }
   ]
 }
