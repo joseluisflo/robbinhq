@@ -17,7 +17,6 @@ export default function WorkflowDetailPage() {
   const [blocks, setBlocks] = useState<string[]>([]);
 
   const handleAddBlock = (blockType: string) => {
-    // For now, only allow one of each block type for simplicity
     if (!blocks.includes(blockType)) {
       setBlocks((prevBlocks) => [...prevBlocks, blockType]);
     }
@@ -75,6 +74,28 @@ export default function WorkflowDetailPage() {
                               <Textarea 
                                 id="trigger-description"
                                 placeholder="e.g. When the user asks to create a new marketing campaign..."
+                                className="min-h-[100px]"
+                              />
+                           </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+                  if (block === 'Ask a question') {
+                    return (
+                      <Card key={block}>
+                        <CardHeader>
+                          <CardTitle>Ask a question</CardTitle>
+                          <CardDescription>
+                            Prompt the user for specific information.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           <div>
+                              <Label htmlFor="ask-a-question-prompt" className="sr-only">Question to ask</Label>
+                              <Textarea 
+                                id="ask-a-question-prompt"
+                                placeholder="e.g. What is your email address?"
                                 className="min-h-[100px]"
                               />
                            </div>

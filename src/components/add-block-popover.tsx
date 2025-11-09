@@ -26,7 +26,7 @@ const blockGroups = [
   {
     group: "Tools",
     items: [
-      { value: "Block 3" },
+      { value: "Ask a question" },
       { value: "Block 4" },
     ],
   },
