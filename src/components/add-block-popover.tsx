@@ -33,7 +33,7 @@ const blockGroups = [
   {
     group: "Logic",
     items: [
-      { value: "Block 5" },
+      { value: "Condition" },
     ],
   },
   {

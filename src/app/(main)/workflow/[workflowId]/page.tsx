@@ -12,6 +12,7 @@ import { Info, PlusCircle } from 'lucide-react';
 import { AddBlockPopover } from '@/components/add-block-popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 export default function WorkflowDetailPage() {
   const [blocks, setBlocks] = useState<string[]>([]);
@@ -121,6 +122,52 @@ export default function WorkflowDetailPage() {
                                 className="min-h-[100px]"
                               />
                            </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+                  if (block === 'Condition') {
+                    return (
+                      <Card key={index}>
+                        <CardHeader>
+                          <CardTitle>Condition</CardTitle>
+                          <CardDescription>
+                            Split the workflow based on a condition.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <Label htmlFor={`condition-if-${index}`} className="text-xs font-semibold">IF</Label>
+                            <Textarea 
+                              id={`condition-if-${index}`}
+                              placeholder="e.g. User's message contains 'help'"
+                              className="min-h-[80px] mt-1"
+                            />
+                          </div>
+                          <div className="flex gap-4">
+                            <div className="flex-1 space-y-2">
+                              <Label className="text-xs font-semibold">THEN</Label>
+                              <div className="p-4 bg-muted/50 rounded-lg min-h-[100px] border border-dashed">
+                                <AddBlockPopover onAddBlock={handleAddBlock}>
+                                    <Button variant="ghost" size="sm" className="w-full">
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Add block
+                                    </Button>
+                                 </AddBlockPopover>
+                              </div>
+                            </div>
+                             <div className="flex-1 space-y-2">
+                              <Label className="text-xs font-semibold">ELSE</Label>
+                               <div className="p-4 bg-muted/50 rounded-lg min-h-[100px] border border-dashed">
+                                 <AddBlockPopover onAddBlock={handleAddBlock}>
+                                    <Button variant="ghost" size="sm" className="w-full">
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Add block
+                                    </Button>
+                                 </AddBlockPopover>
+                              </div>
+                            </div>
+                          </div>
                         </CardContent>
                       </Card>
                     );
