@@ -1,9 +1,7 @@
 "use client"
 
 import { Fragment, useState } from "react"
-import { CheckIcon } from "lucide-react"
 
-import { cn } from "@/lib/utils"
 import {
   Command,
   CommandEmpty,
@@ -51,7 +49,6 @@ const blockGroups = [
 
 export function AddBlockPopover({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState<boolean>(false)
-  const [value, setValue] = useState<string>("")
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -74,18 +71,11 @@ export function AddBlockPopover({ children }: { children: React.ReactNode }) {
                       key={item.value}
                       value={item.value}
                       onSelect={(currentValue) => {
-                        setValue(currentValue === value ? "" : currentValue)
                         setOpen(false)
                         // TODO: Handle adding the block to the workflow
                         console.log("Selected block:", currentValue);
                       }}
                     >
-                      <CheckIcon
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === item.value ? "opacity-100" : "opacity-0"
-                        )}
-                      />
                       {item.value}
                     </CommandItem>
                   ))}
