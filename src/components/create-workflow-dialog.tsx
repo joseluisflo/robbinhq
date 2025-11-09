@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,12 +21,14 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 export function CreateWorkflowDialog({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
+  const router = useRouter();
 
   const dialogImage = PlaceHolderImages.find((img) => img.id === 'dialog-create-workflow');
 
   const handleCreateWorkflow = () => {
-    // In a real app, you would handle workflow creation here.
-    console.log('Creating workflow:', { name });
+    if (!name) return;
+    const workflowId = name.toLowerCase().replace(/\s+/g, '-');
+    router.push(`/workflow/${workflowId}`);
     setIsOpen(false);
   };
 
