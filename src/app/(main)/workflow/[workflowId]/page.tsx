@@ -8,7 +8,7 @@ import {
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
 import { Info, PlusCircle } from 'lucide-react';
-import { AddBlockDialog } from '@/components/add-block-dialog';
+import { AddBlockPopover } from '@/components/add-block-popover';
 
 export default function WorkflowDetailPage() {
   return (
@@ -22,12 +22,12 @@ export default function WorkflowDetailPage() {
                 Blocks
                 <Info className="h-4 w-4 text-muted-foreground" />
               </h3>
-              <AddBlockDialog>
+              <AddBlockPopover>
                 <Button variant="outline" size="sm">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Add
                 </Button>
-              </AddBlockDialog>
+              </AddBlockPopover>
             </div>
             <Card className="text-center flex-1 flex flex-col justify-center border-dashed">
               <CardContent className="p-12">
@@ -35,12 +35,12 @@ export default function WorkflowDetailPage() {
                 <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
                   Add block to start to build your workflow
                 </p>
-                <AddBlockDialog>
+                <AddBlockPopover>
                   <Button variant="secondary" className="mt-4">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add block
                   </Button>
-                </AddBlockDialog>
+                </AddBlockPopover>
               </CardContent>
             </Card>
           </div>
