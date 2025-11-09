@@ -60,13 +60,13 @@ const data = {
   ],
 }
 
-export function DialogSidebar() {
-  const [open, setOpen] = React.useState(true)
+export function DialogSidebar({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = React.useState(false)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm">Open Dialog</Button>
+        {children}
       </DialogTrigger>
       <DialogContent className="overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px]">
         <DialogTitle className="sr-only">Dialog with Sidebar</DialogTitle>
