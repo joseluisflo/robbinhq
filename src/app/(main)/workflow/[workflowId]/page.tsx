@@ -17,9 +17,9 @@ export default function WorkflowDetailPage() {
   const [blocks, setBlocks] = useState<string[]>([]);
 
   const handleAddBlock = (blockType: string) => {
-    if (!blocks.includes(blockType)) {
-      setBlocks((prevBlocks) => [...prevBlocks, blockType]);
-    }
+    // For now, allow adding multiple blocks of the same type.
+    // We can add logic to prevent duplicates if needed.
+    setBlocks((prevBlocks) => [...prevBlocks, blockType]);
   };
 
   return (
@@ -27,7 +27,7 @@ export default function WorkflowDetailPage() {
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         {/* Configuration Panel */}
         <ResizablePanel defaultSize={50} minSize={30}>
-          <div className="flex h-full flex-col p-6 space-y-6">
+          <div className="flex h-full flex-col p-6 space-y-6 overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 Blocks
@@ -58,10 +58,10 @@ export default function WorkflowDetailPage() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {blocks.map((block) => {
+                {blocks.map((block, index) => {
                   if (block === 'Trigger') {
                     return (
-                      <Card key={block}>
+                      <Card key={index}>
                         <CardHeader>
                           <CardTitle>When to use</CardTitle>
                           <CardDescription>
@@ -83,7 +83,7 @@ export default function WorkflowDetailPage() {
                   }
                   if (block === 'Ask a question') {
                     return (
-                      <Card key={block}>
+                      <Card key={index}>
                         <CardHeader>
                           <CardTitle>Ask a question</CardTitle>
                           <CardDescription>
@@ -92,10 +92,32 @@ export default function WorkflowDetailPage() {
                         </CardHeader>
                         <CardContent>
                            <div>
-                              <Label htmlFor="ask-a-question-prompt" className="sr-only">Question to ask</Label>
+                              <Label htmlFor={`ask-a-question-prompt-${index}`} className="sr-only">Question to ask</Label>
                               <Textarea 
-                                id="ask-a-question-prompt"
+                                id={`ask-a-question-prompt-${index}`}
                                 placeholder="e.g. What is your email address?"
+                                className="min-h-[100px]"
+                              />
+                           </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+                  if (block === 'Search web') {
+                    return (
+                      <Card key={index}>
+                        <CardHeader>
+                          <CardTitle>Search web</CardTitle>
+                          <CardDescription>
+                            Define what the agent should search for on the internet.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           <div>
+                              <Label htmlFor={`search-web-query-${index}`} className="sr-only">Search query</Label>
+                              <Textarea 
+                                id={`search-web-query-${index}`}
+                                placeholder="e.g. Latest trends in AI development"
                                 className="min-h-[100px]"
                               />
                            </div>
