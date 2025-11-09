@@ -34,6 +34,7 @@ const blockGroups = [
     group: "Logic",
     items: [
       { value: "Condition" },
+      { value: "Loop" },
     ],
   },
   {

@@ -172,6 +172,39 @@ export default function WorkflowDetailPage() {
                       </Card>
                     );
                   }
+                  if (block === 'Loop') {
+                    return (
+                      <Card key={index}>
+                        <CardHeader>
+                          <CardTitle>Loop</CardTitle>
+                          <CardDescription>
+                            Repeat a set of actions a specific number of times or for each item in a list.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <Label htmlFor={`loop-condition-${index}`} className="text-xs font-semibold">REPEAT</Label>
+                            <Textarea 
+                              id={`loop-condition-${index}`}
+                              placeholder="e.g. 5 times, or 'For each customer in leads list'"
+                              className="min-h-[80px] mt-1"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs font-semibold">DO</Label>
+                            <div className="p-4 bg-muted/50 rounded-lg min-h-[100px] border border-dashed">
+                              <AddBlockPopover onAddBlock={handleAddBlock}>
+                                <Button variant="ghost" size="sm" className="w-full">
+                                  <PlusCircle className="mr-2 h-4 w-4" />
+                                  Add block
+                                </Button>
+                              </AddBlockPopover>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  }
                   return null;
                 })}
                  <AddBlockPopover onAddBlock={handleAddBlock}>
