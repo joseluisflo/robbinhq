@@ -20,8 +20,7 @@ const blockGroups = [
   {
     group: "Core",
     items: [
-      { value: "Block 1" },
-      { value: "Block 2" },
+      { value: "Trigger" },
     ],
   },
   {
@@ -70,10 +69,10 @@ export function AddBlockPopover({ children }: { children: React.ReactNode }) {
                     <CommandItem
                       key={item.value}
                       value={item.value}
-                      onSelect={(currentValue) => {
+                      onSelect={() => {
                         setOpen(false)
                         // TODO: Handle adding the block to the workflow
-                        console.log("Selected block:", currentValue);
+                        console.log("Selected block:", item.value);
                       }}
                     >
                       {item.value}
