@@ -1,17 +1,32 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable';
 
 export default function WorkflowDetailPage() {
-  const params = useParams() as { workflowId: string };
-  const workflowName = params.workflowId.replace(/-/g, ' ');
 
   return (
-    <div className="space-y-8">
-      <h2 className="text-3xl font-bold tracking-tight capitalize">
-        {workflowName}
-      </h2>
-      <p>Details for this workflow will be displayed here.</p>
+    <div className="h-full flex-1 flex flex-col">
+      <ResizablePanelGroup direction="horizontal" className="flex-1">
+        {/* Configuration Panel */}
+        <ResizablePanel defaultSize={50} minSize={30}>
+          <div className="flex h-full items-center justify-center p-6">
+            <span className="font-semibold">Configurations Panel</span>
+          </div>
+        </ResizablePanel>
+
+        <ResizableHandle withHandle />
+
+        {/* Preview/Canvas Panel */}
+        <ResizablePanel defaultSize={50} minSize={30}>
+          <div className="flex h-full items-center justify-center p-6">
+            <span className="font-semibold">Preview/Canvas Panel</span>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }
