@@ -2,18 +2,10 @@
 
 import * as React from "react"
 import {
-  Bell,
-  Check,
-  Globe,
-  Home,
-  Keyboard,
-  Link,
-  Lock,
-  Menu,
-  MessageCircle,
-  Paintbrush,
-  Settings,
-  Video,
+  Box,
+  Database,
+  GitFork,
+  Wrench,
 } from "lucide-react"
 
 import {
@@ -45,18 +37,10 @@ import {
 
 const data = {
   nav: [
-    { name: "Notifications", icon: Bell },
-    { name: "Navigation", icon: Menu },
-    { name: "Home", icon: Home },
-    { name: "Appearance", icon: Paintbrush },
-    { name: "Messages & media", icon: MessageCircle },
-    { name: "Language & region", icon: Globe },
-    { name: "Accessibility", icon: Keyboard },
-    { name: "Mark as read", icon: Check },
-    { name: "Audio & video", icon: Video },
-    { name: "Connected accounts", icon: Link },
-    { name: "Privacy & visibility", icon: Lock },
-    { name: "Advanced", icon: Settings },
+    { name: "Core", icon: Box },
+    { name: "Tools", icon: Wrench },
+    { name: "Logic", icon: GitFork },
+    { name: "Data", icon: Database },
   ],
 }
 
@@ -69,9 +53,9 @@ export function AddBlockDialog({ children }: { children: React.ReactNode }) {
         {children}
       </DialogTrigger>
       <DialogContent className="overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px]">
-        <DialogTitle className="sr-only">Dialog with Sidebar</DialogTitle>
+        <DialogTitle className="sr-only">Add a new block</DialogTitle>
         <DialogDescription className="sr-only">
-          A dialog with a sidebar for navigation.
+          Select a block to add to your workflow.
         </DialogDescription>
         <SidebarProvider className="items-start">
           <Sidebar collapsible="none" className="hidden md:flex">
@@ -83,7 +67,7 @@ export function AddBlockDialog({ children }: { children: React.ReactNode }) {
                       <SidebarMenuItem key={item.name}>
                         <SidebarMenuButton
                           asChild
-                          isActive={item.name === "Messages & media"}
+                          isActive={item.name === "Core"}
                         >
                           <a href="#">
                             <item.icon />
@@ -103,11 +87,11 @@ export function AddBlockDialog({ children }: { children: React.ReactNode }) {
                 <Breadcrumb>
                   <BreadcrumbList>
                     <BreadcrumbItem className="hidden md:block">
-                      <BreadcrumbLink href="#">Settings</BreadcrumbLink>
+                      <BreadcrumbLink href="#">Blocks</BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator className="hidden md:block" />
                     <BreadcrumbItem>
-                      <BreadcrumbPage>Messages & media</BreadcrumbPage>
+                      <BreadcrumbPage>Core</BreadcrumbPage>
                     </BreadcrumbItem>
                   </BreadcrumbList>
                 </Breadcrumb>
