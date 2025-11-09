@@ -60,7 +60,7 @@ const data = {
   ],
 }
 
-export function SettingsDialog() {
+export function DialogSidebar() {
   const [open, setOpen] = React.useState(true)
 
   return (
@@ -69,9 +69,9 @@ export function SettingsDialog() {
         <Button size="sm">Open Dialog</Button>
       </DialogTrigger>
       <DialogContent className="overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px]">
-        <DialogTitle className="sr-only">Settings</DialogTitle>
+        <DialogTitle className="sr-only">Dialog with Sidebar</DialogTitle>
         <DialogDescription className="sr-only">
-          Customize your settings here.
+          A dialog with a sidebar for navigation.
         </DialogDescription>
         <SidebarProvider className="items-start">
           <Sidebar collapsible="none" className="hidden md:flex">
