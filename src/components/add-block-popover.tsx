@@ -46,7 +46,7 @@ const blockGroups = [
   },
 ]
 
-export function AddBlockPopover({ children }: { children: React.ReactNode }) {
+export function AddBlockPopover({ children, onAddBlock }: { children: React.ReactNode, onAddBlock: (blockType: string) => void }) {
   const [open, setOpen] = useState<boolean>(false)
 
   return (
@@ -70,9 +70,8 @@ export function AddBlockPopover({ children }: { children: React.ReactNode }) {
                       key={item.value}
                       value={item.value}
                       onSelect={() => {
+                        onAddBlock(item.value);
                         setOpen(false)
-                        // TODO: Handle adding the block to the workflow
-                        console.log("Selected block:", item.value);
                       }}
                     >
                       {item.value}
