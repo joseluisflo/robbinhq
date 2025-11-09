@@ -17,7 +17,7 @@ export default function WorkflowDetailPage() {
   const [blocks, setBlocks] = useState<string[]>([]);
 
   const handleAddBlock = (blockType: string) => {
-    // For now, only allow one of each block type
+    // For now, only allow one of each block type for simplicity
     if (!blocks.includes(blockType)) {
       setBlocks((prevBlocks) => [...prevBlocks, blockType]);
     }
@@ -84,6 +84,12 @@ export default function WorkflowDetailPage() {
                   }
                   return null;
                 })}
+                 <AddBlockPopover onAddBlock={handleAddBlock}>
+                    <Button variant="outline" className="w-full">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add block
+                    </Button>
+                 </AddBlockPopover>
               </div>
             )}
           </div>
