@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/resizable';
 import { Info, PlusCircle } from 'lucide-react';
 import { AddBlockPopover } from '@/components/add-block-popover';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function WorkflowDetailPage() {
   return (
@@ -16,8 +18,26 @@ export default function WorkflowDetailPage() {
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         {/* Configuration Panel */}
         <ResizablePanel defaultSize={50} minSize={30}>
-          <div className="flex h-full flex-col p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="flex h-full flex-col p-6 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>When to use</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="trigger-description" className="text-sm font-normal text-muted-foreground">
+                    Explain when the AI Agent should use this action. Include a description of what this action does, the data it provides, and any updates it makes. Include example queries that should trigger this action.
+                  </Label>
+                  <Textarea
+                    id="trigger-description"
+                    placeholder="Example: Use this action to retrieve the user's invoice history. Example queries: 'Show me my invoice history', 'What are my invoices?'..."
+                    className="min-h-[100px]"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 Blocks
                 <Info className="h-4 w-4 text-muted-foreground" />
