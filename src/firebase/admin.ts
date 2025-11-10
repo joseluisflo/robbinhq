@@ -5,9 +5,13 @@ const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
   : undefined;
 
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+  if (serviceAccount) {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+  } else {
+    console.warn('Firebase Admin SDK service account is not provided. Server-side Firebase features will be disabled.');
+  }
 }
 
 export const firebaseAdmin = admin;
