@@ -62,7 +62,7 @@ export default function DeployEmailPage() {
                 Customize how your agent interacts with incoming emails.
             </p>
         </div>
-        <div className="space-y-6 rounded-lg border p-6">
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
                 <Label htmlFor="auto-reply-toggle" className="font-medium">Enable Auto-Reply</Label>
