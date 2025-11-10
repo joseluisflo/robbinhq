@@ -21,20 +21,13 @@ import {
   SidebarGroup,
   SidebarRail,
   SidebarGroupLabel,
+  SidebarMenuSkeleton,
 } from '@/components/ui/sidebar';
 import { DashboardIcon, AiChemistryIcon, PenToolIcon, MotionIcon, RocketIcon, ChatSimpleIcon, UserGroupIcon } from '@/components/lo-icons';
 import { useUser } from '@/firebase';
+import type { Agent } from '@/lib/types';
 
-// This is sample data. We'll simplify it for our app.
-const data = {
-  agents: [
-    {
-      name: 'AgentVerse',
-    },
-  ],
-};
-
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ agents, agentsLoading, ...props }: React.ComponentProps<typeof Sidebar> & { agents: Agent[], agentsLoading: boolean }) {
   const pathname = usePathname();
   const { user } = useUser();
 
@@ -85,7 +78,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <AgentSwitcher agents={data.agents} />
+        {agentsLoading ? <SidebarMenuSkeleton showIcon /> : <AgentSwitcher agents={agents} />}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

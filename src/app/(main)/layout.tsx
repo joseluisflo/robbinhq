@@ -51,7 +51,7 @@ export default function AppLayout({
 
   const noPadding = isTrainingPage || isDesignPage || isWorkflowDetailPage || isChatLogsPage;
 
-  const loading = userLoading || agentsLoading;
+  const loading = userLoading || (agents === null && agentsLoading);
 
   if (loading) {
     return (
@@ -76,7 +76,7 @@ export default function AppLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar agents={agents || []} agentsLoading={agentsLoading} />
       <SidebarInset className="grid h-screen grid-rows-[auto_1fr]">
         <AppHeader />
         <main className={cn("flex flex-col overflow-y-auto", !noPadding && "p-4 sm:p-6")}>
