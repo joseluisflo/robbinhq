@@ -251,7 +251,7 @@ export default function LeadsPage() {
                 table.setPageSize(Number(value));
               }}
             >
-              <SelectTrigger id={id} className="w-fit whitespace-nowrap">
+              <SelectTrigger id={id} className="w-fit whitespace-nowrap h-9 px-3 py-2">
                 <SelectValue placeholder="Select number of results" />
               </SelectTrigger>
               <SelectContent>
@@ -280,7 +280,7 @@ export default function LeadsPage() {
               <PaginationContent>
                 <PaginationItem>
                   <Button
-                    size="icon"
+                    size="sm"
                     variant="outline"
                     onClick={() => table.firstPage()}
                     disabled={!table.getCanPreviousPage()}
@@ -291,7 +291,7 @@ export default function LeadsPage() {
                 </PaginationItem>
                 <PaginationItem>
                   <Button
-                    size="icon"
+                    size="sm"
                     variant="outline"
                     onClick={() => table.previousPage()}
                     disabled={!table.getCanPreviousPage()}
@@ -302,7 +302,7 @@ export default function LeadsPage() {
                 </PaginationItem>
                 <PaginationItem>
                   <Button
-                    size="icon"
+                    size="sm"
                     variant="outline"
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
@@ -313,7 +313,7 @@ export default function LeadsPage() {
                 </PaginationItem>
                 <PaginationItem>
                   <Button
-                    size="icon"
+                    size="sm"
                     variant="outline"
                     onClick={() => table.lastPage()}
                     disabled={!table.getCanNextPage()}
