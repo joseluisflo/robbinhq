@@ -5,9 +5,11 @@ import { AppHeader } from '@/components/layout/app-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useUser } from '@/firebase';
-import { useEffect } from 'react';
+import { useUser, useCollection, useFirestore, collection, query } from '@/firebase';
+import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { CreateAgentDialog } from '@/components/create-agent-dialog';
+import type { Agent } from '@/lib/types';
 
 export default function AppLayout({
   children,
@@ -16,21 +18,40 @@ export default function AppLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading } = useUser();
+  const { user, loading: userLoading } = useUser();
+  const firestore = useFirestore();
 
+  const agentsQuery = useMemo(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'users', user.uid, 'agents'));
+  }, [firestore, user]);
+
+  const { data: agents, loading: agentsLoading } = useCollection<Agent>(agentsQuery);
+
+  const [needsAgent, setNeedsAgent] = useState(false);
+
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, userLoading, router]);
+
+  useEffect(() => {
+    if (!agentsLoading && agents && agents.length === 0) {
+      setNeedsAgent(true);
+    } else {
+      setNeedsAgent(false);
+    }
+  }, [agents, agentsLoading]);
+  
   const isTrainingPage = pathname.startsWith('/training');
   const isDesignPage = pathname.startsWith('/design');
   const isWorkflowDetailPage = /^\/workflow\/.+/.test(pathname);
   const isChatLogsPage = pathname.startsWith('/chat-logs');
 
-
   const noPadding = isTrainingPage || isDesignPage || isWorkflowDetailPage || isChatLogsPage;
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
+  const loading = userLoading || agentsLoading;
 
   if (loading) {
     return (
@@ -42,6 +63,15 @@ export default function AppLayout({
 
   if (!user) {
     return null;
+  }
+  
+  if (needsAgent) {
+    return (
+      <CreateAgentDialog 
+        open={true}
+        onAgentCreated={() => setNeedsAgent(false)}
+      />
+    );
   }
 
   return (

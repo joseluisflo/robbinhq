@@ -7,7 +7,7 @@ export type Task = {
 };
 
 export type Agent = {
-  id: string;
+  id?: string;
   name: string;
   description: string;
   goals: string[];

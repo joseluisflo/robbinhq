@@ -3,7 +3,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
-import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getFirestore, type Firestore, collection, query } from 'firebase/firestore';
 import { firebaseConfig } from './config';
 
 type FirebaseContextType = {
@@ -57,3 +57,5 @@ export function useAuth() {
 export function useFirestore() {
   return useFirebase().firestore;
 }
+
+export { collection, query };
