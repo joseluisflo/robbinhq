@@ -1,29 +1,38 @@
 import {
   Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MessageCircle, Mail, Phone } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { MessageCircle, Mail, Phone, MoreHorizontal } from 'lucide-react'
+import Link from 'next/link'
 
 const channels = [
   {
     name: 'Chat',
-    description: 'Deploy your agent as a chat widget on your website.',
+    description: 'Deploy as a chat widget',
     icon: MessageCircle,
+    href: '#',
   },
   {
     name: 'Email',
-    description: 'Connect your agent to an email address to automate responses.',
+    description: 'Connect to an email address',
     icon: Mail,
+    href: '#',
   },
   {
     name: 'Phone',
-    description: 'Integrate your agent with a phone number for voice interactions.',
+    description: 'Integrate with a phone number',
     icon: Phone,
+    href: '#',
   },
 ]
 
@@ -34,20 +43,40 @@ export default function DeployPage() {
         <h2 className="text-3xl font-bold tracking-tight">Deploy</h2>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {channels.map((channel) => (
-          <Card key={channel.name} className="flex flex-col">
-            <div className="flex h-32 items-center justify-center rounded-t-lg bg-muted">
-                <channel.icon className="h-12 w-12 text-muted-foreground" />
-            </div>
-            <CardHeader>
-                <CardTitle>{channel.name}</CardTitle>
-                <CardDescription>{channel.description}</CardDescription>
-            </CardHeader>
-            <CardFooter className="mt-auto">
-              <Button variant="outline" className="w-full">
-                Configure
-              </Button>
+          <Card key={channel.name}>
+            <Link href={channel.href}>
+              <div className="h-32 bg-gradient-to-br from-gray-400 to-gray-600 rounded-t-lg flex items-center justify-center">
+                <channel.icon className="h-12 w-12 text-white/80" />
+              </div>
+            </Link>
+            <CardFooter className="flex items-center justify-between p-4">
+              <div className="grid gap-0.5">
+                <Link href={channel.href} className="group">
+                  <p className="font-semibold group-hover:underline">
+                    {channel.name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {channel.description}
+                  </p>
+                </Link>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 shrink-0"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">Actions</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>Configure</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </CardFooter>
           </Card>
         ))}
