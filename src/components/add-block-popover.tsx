@@ -27,6 +27,8 @@ const blockGroups = [
     group: "Tools",
     items: [
       { value: "Ask a question" },
+      { value: "Wait for User Reply" },
+      { value: "Show Multiple Choice" },
       { value: "Search web" },
       { value: "Send Email" },
       { value: "Send SMS" },

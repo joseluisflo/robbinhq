@@ -301,6 +301,53 @@ export default function WorkflowDetailPage() {
                           </Card>
                         );
                       }
+                       if (block === 'Wait for User Reply') {
+                        return (
+                          <Card key={index}>
+                            <CardHeader>
+                              <CardTitle>Wait for User Reply</CardTitle>
+                              <CardDescription>
+                                Pause the workflow and wait for the user's input, saving it to a variable.
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2">
+                                <Label htmlFor={`wait-for-reply-variable-${index}`}>Save reply to variable</Label>
+                                <Input id={`wait-for-reply-variable-${index}`} placeholder="e.g. userFeedback" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      }
+                      if (block === 'Show Multiple Choice') {
+                        return (
+                          <Card key={index}>
+                            <CardHeader>
+                              <CardTitle>Show Multiple Choice</CardTitle>
+                              <CardDescription>
+                                Present the user with a set of options to choose from.
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor={`multiple-choice-prompt-${index}`}>Prompt / Question</Label>
+                                <Textarea 
+                                  id={`multiple-choice-prompt-${index}`}
+                                  placeholder="e.g. What would you like to do next?"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`multiple-choice-options-${index}`}>Options (one per line)</Label>
+                                <Textarea 
+                                  id={`multiple-choice-options-${index}`}
+                                  placeholder="Option 1&#10;Option 2&#10;Option 3"
+                                  className="min-h-[100px]"
+                                />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      }
                     return null;
                   })}
                   <AddBlockPopover onAddBlock={handleAddBlock}>
