@@ -42,23 +42,21 @@ export default function DeployChatPage() {
         <Button>Save changes</Button>
       </div>
 
-      {/* Allowed Domains Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                Allowed domains
-                <Info className="h-4 w-4 text-muted-foreground" />
-              </CardTitle>
-              <CardDescription>
-                Only allow embedding the agent on specific domains
-              </CardDescription>
-            </div>
-            <Switch defaultChecked />
+      {/* Allowed Domains Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              Allowed domains
+              <Info className="h-4 w-4 text-muted-foreground" />
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Only allow embedding the agent on specific domains
+            </p>
           </div>
-        </CardHeader>
-        <CardContent>
+          <Switch defaultChecked />
+        </div>
+        <div>
           <Textarea
             placeholder="https://example.com"
             defaultValue={'https://example.com\nhttps://*.example.com'}
@@ -68,8 +66,8 @@ export default function DeployChatPage() {
             <Info className="h-3 w-3" />
             Enter each domain in a new line
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Embed Type Card */}
       <Card>
