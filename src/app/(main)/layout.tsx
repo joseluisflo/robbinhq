@@ -3,8 +3,11 @@
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppHeader } from '@/components/layout/app-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/firebase';
+import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 export default function AppLayout({
   children,
@@ -12,6 +15,9 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useUser();
+
   const isTrainingPage = pathname.startsWith('/training');
   const isDesignPage = pathname.startsWith('/design');
   const isWorkflowDetailPage = /^\/workflow\/.+/.test(pathname);
@@ -19,6 +25,24 @@ export default function AppLayout({
 
 
   const noPadding = isTrainingPage || isDesignPage || isWorkflowDetailPage || isChatLogsPage;
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <SidebarProvider>
