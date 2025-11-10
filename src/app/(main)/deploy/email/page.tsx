@@ -97,7 +97,7 @@ export default function DeployEmailPage() {
             Only process emails from specific domains to prevent spam.
           </p>
         </div>
-         <div className="rounded-lg border p-6">
+         <div>
           <Label htmlFor="allowed-domains">Allowed Domains</Label>
           <Textarea
             id="allowed-domains"
