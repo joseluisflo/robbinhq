@@ -257,11 +257,11 @@ export default function WorkflowDetailPage() {
                         </Card>
                       );
                     }
-                    if (block === 'Send SMS (Twilio)') {
+                    if (block === 'Send SMS') {
                         return (
                           <Card key={index}>
                             <CardHeader>
-                              <CardTitle>Send SMS (Twilio)</CardTitle>
+                              <CardTitle>Send SMS</CardTitle>
                               <CardDescription>
                                 Send an SMS message to a specified phone number.
                               </CardDescription>

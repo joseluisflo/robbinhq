@@ -28,6 +28,8 @@ const blockGroups = [
     items: [
       { value: "Ask a question" },
       { value: "Search web" },
+      { value: "Send Email" },
+      { value: "Send SMS" },
     ],
   },
   {
@@ -41,13 +43,6 @@ const blockGroups = [
     group: "Data",
     items: [
       { value: "Set variable" },
-    ],
-  },
-  {
-    group: "Integrations",
-    items: [
-      { value: "Send Email" },
-      { value: "Send SMS (Twilio)" },
     ],
   },
 ]
