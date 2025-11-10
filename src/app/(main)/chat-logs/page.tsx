@@ -202,12 +202,6 @@ export default function ChatLogsPage() {
                     </div>
                   ))}
                 </div>
-                <div className="p-4 border-t">
-                  <Textarea placeholder="Type your message..." />
-                  <div className="flex justify-end mt-2">
-                    <Button>Send</Button>
-                  </div>
-                </div>
               </TabsContent>
 
               <TabsContent value="details" className="flex-1 overflow-y-auto p-6 mt-0">
