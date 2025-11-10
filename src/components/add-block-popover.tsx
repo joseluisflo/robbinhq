@@ -43,6 +43,12 @@ const blockGroups = [
       { value: "Set variable" },
     ],
   },
+  {
+    group: "Integrations",
+    items: [
+      { value: "Send Email" },
+    ],
+  },
 ]
 
 export function AddBlockPopover({ children, onAddBlock }: { children: React.ReactNode, onAddBlock: (blockType: string) => void }) {

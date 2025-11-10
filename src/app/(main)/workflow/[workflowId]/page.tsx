@@ -231,6 +231,32 @@ export default function WorkflowDetailPage() {
                         </Card>
                       );
                     }
+                    if (block === 'Send Email') {
+                      return (
+                        <Card key={index}>
+                          <CardHeader>
+                            <CardTitle>Send Email</CardTitle>
+                            <CardDescription>
+                              Send an email to a specified recipient.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`email-to-${index}`}>To</Label>
+                              <Input id={`email-to-${index}`} placeholder="recipient@example.com" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`email-subject-${index}`}>Subject</Label>
+                              <Input id={`email-subject-${index}`} placeholder="Your email subject" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`email-body-${index}`}>Body</Label>
+                              <Textarea id={`email-body-${index}`} placeholder="Write your email content here." className="min-h-[120px]" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
                     return null;
                   })}
                   <AddBlockPopover onAddBlock={handleAddBlock}>
