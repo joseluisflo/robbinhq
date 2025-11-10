@@ -30,6 +30,7 @@ const blockGroups = [
       { value: "Search web" },
       { value: "Send Email" },
       { value: "Send SMS" },
+      { value: "Create PDF" },
     ],
   },
   {

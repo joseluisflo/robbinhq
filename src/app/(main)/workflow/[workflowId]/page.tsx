@@ -279,6 +279,28 @@ export default function WorkflowDetailPage() {
                           </Card>
                         );
                       }
+                      if (block === 'Create PDF') {
+                        return (
+                          <Card key={index}>
+                            <CardHeader>
+                              <CardTitle>Create PDF</CardTitle>
+                              <CardDescription>
+                                Describe the content of the PDF. You can use variables from previous steps.
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div>
+                                <Label htmlFor={`create-pdf-content-${index}`} className="sr-only">PDF Content</Label>
+                                <Textarea 
+                                  id={`create-pdf-content-${index}`}
+                                  placeholder="e.g. Create a summary with the results: {{search_results}} for client {{client_name}}"
+                                  className="min-h-[120px]"
+                                />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      }
                     return null;
                   })}
                   <AddBlockPopover onAddBlock={handleAddBlock}>
