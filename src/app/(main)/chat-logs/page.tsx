@@ -165,20 +165,6 @@ export default function ChatLogsPage() {
                         msg.sender === 'You' && 'flex-row-reverse'
                       )}
                     >
-                      {msg.sender !== 'You' && (
-                        <Avatar className="h-8 w-8">
-                          {avatarImage && (
-                            <AvatarImage
-                              src={avatarImage.imageUrl}
-                              alt={msg.sender}
-                              data-ai-hint={avatarImage.imageHint}
-                            />
-                          )}
-                          <AvatarFallback>
-                            {msg.sender.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
                       <div
                         className={cn(
                           'max-w-[70%] rounded-lg p-3 text-sm',
