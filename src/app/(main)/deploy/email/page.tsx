@@ -68,13 +68,13 @@ export default function DeployEmailPage() {
                 <Label htmlFor="auto-reply-toggle" className="font-medium">Enable Auto-Reply</Label>
                 <p className="text-sm text-muted-foreground">Allow the agent to automatically reply to emails.</p>
             </div>
-            <Switch id="auto-reply-toggle" defaultChecked />
+            <Switch id="auto-reply-toggle" />
           </div>
            <div className="space-y-2">
             <Label htmlFor="signature">Email Signature</Label>
             <Textarea
               id="signature"
-              placeholder="e.g., Best,&#10;Your Friendly AI Assistant"
+              placeholder="e.g., Best, Your Friendly AI Assistant"
               rows={3}
             />
              <p className="text-sm text-muted-foreground">This signature will be appended to all emails sent by the agent.</p>
