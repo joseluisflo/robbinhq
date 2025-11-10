@@ -15,9 +15,10 @@ export default function AppLayout({
   const isTrainingPage = pathname.startsWith('/training');
   const isDesignPage = pathname.startsWith('/design');
   const isWorkflowDetailPage = /^\/workflow\/.+/.test(pathname);
+  const isChatLogsPage = pathname.startsWith('/chat-logs');
 
 
-  const noPadding = isTrainingPage || isDesignPage || isWorkflowDetailPage;
+  const noPadding = isTrainingPage || isDesignPage || isWorkflowDetailPage || isChatLogsPage;
 
   return (
     <SidebarProvider>
