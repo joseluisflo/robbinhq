@@ -257,6 +257,28 @@ export default function WorkflowDetailPage() {
                         </Card>
                       );
                     }
+                    if (block === 'Send SMS (Twilio)') {
+                        return (
+                          <Card key={index}>
+                            <CardHeader>
+                              <CardTitle>Send SMS (Twilio)</CardTitle>
+                              <CardDescription>
+                                Send an SMS message to a specified phone number.
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor={`sms-to-${index}`}>Phone Number</Label>
+                                <Input id={`sms-to-${index}`} placeholder="+15551234567" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`sms-body-${index}`}>Message</Label>
+                                <Textarea id={`sms-body-${index}`} placeholder="Write your SMS content here." className="min-h-[100px]" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      }
                     return null;
                   })}
                   <AddBlockPopover onAddBlock={handleAddBlock}>

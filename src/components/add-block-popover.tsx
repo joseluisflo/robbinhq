@@ -47,6 +47,7 @@ const blockGroups = [
     group: "Integrations",
     items: [
       { value: "Send Email" },
+      { value: "Send SMS (Twilio)" },
     ],
   },
 ]
