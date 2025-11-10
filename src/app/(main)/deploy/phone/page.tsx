@@ -39,14 +39,14 @@ export default function DeployPhonePage() {
             </p>
         </div>
         <div className="space-y-6">
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="active-number" className="font-semibold">Active Number</Label>
-            <div className="flex items-center justify-between p-4 mt-2 border rounded-lg">
+            <div className="flex items-center justify-between">
                 <p className="text-muted-foreground">No number assigned</p>
                 <Button variant="secondary" size="sm">Manage</Button>
             </div>
           </div>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="search-number" className="font-semibold">Purchase a New Number</Label>
             <div className="flex gap-2 mt-2">
               <Select defaultValue="us">
