@@ -20,3 +20,11 @@ export type Workflow = {
   name: string;
   lastModified: string;
 };
+
+export type Lead = {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  chat: string;
+};
