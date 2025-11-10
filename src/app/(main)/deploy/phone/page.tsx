@@ -31,27 +31,25 @@ export default function DeployPhonePage() {
         <Button>Save changes</Button>
       </div>
 
-      {/* Provider Connection Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Telephony Provider Connection</CardTitle>
-          <CardDescription>
+      {/* Provider Connection Section */}
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold">Telephony Provider Connection</h3>
+          <p className="text-sm text-muted-foreground">
             Connect your provider account to purchase and manage phone numbers.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
-            <div className="flex items-center gap-4">
-              <Phone className="h-6 w-6 text-muted-foreground" />
-              <div>
-                <p className="font-semibold">Twilio Account</p>
-                <p className="text-sm text-muted-foreground">Status: Not Connected</p>
-              </div>
+          </p>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Phone className="h-6 w-6 text-muted-foreground" />
+            <div>
+              <p className="font-semibold">Twilio Account</p>
+              <p className="text-sm text-muted-foreground">Status: Not Connected</p>
             </div>
-            <Button variant="outline">Connect Account</Button>
           </div>
-        </CardContent>
-      </Card>
+          <Button variant="outline">Connect Account</Button>
+        </div>
+      </div>
 
       {/* Number Management Card */}
       <Card>
@@ -158,7 +156,7 @@ export default function DeployPhonePage() {
           </CardDescription>
         </CardHeader>
         <CardFooter>
-            <Button variant="destructive">Disconnect Account</Button>
+            <Button variant="destructive">Disconnect Provider</Button>
         </CardFooter>
       </Card>
 
