@@ -77,7 +77,7 @@ export function CreateWorkflowDialog({ children }: { children: React.ReactNode }
             </div>
           </DialogHeader>
 
-          <DialogFooter>
+          <DialogFooter className="grid grid-cols-2 gap-2 sm:flex-row sm:space-x-0">
             <DialogClose asChild>
               <Button type="button" variant="outline">
                 Cancel
