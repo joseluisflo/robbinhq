@@ -87,45 +87,6 @@ export default function DeployPhonePage() {
         </div>
       </div>
       
-      {/* Voice Configuration Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Voice Configuration</CardTitle>
-          <CardDescription>
-            Customize the agent's voice and how it behaves during calls.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="agent-voice">Agent Voice</Label>
-            <Select defaultValue="alloy">
-              <SelectTrigger id="agent-voice">
-                <SelectValue placeholder="Select a voice" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="alloy">Alloy (Male)</SelectItem>
-                <SelectItem value="echo">Echo (Male)</SelectItem>
-                <SelectItem value="fable">Fable (Male)</SelectItem>
-                <SelectItem value="onyx">Onyx (Male)</SelectItem>
-                <SelectItem value="nova">Nova (Female)</SelectItem>
-                <SelectItem value="shimmer">Shimmer (Female)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="welcome-message">Welcome Message</Label>
-            <Input id="welcome-message" placeholder="e.g., Hello, how can I help you today?" />
-          </div>
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-                <Label htmlFor="barge-in-toggle" className="font-medium">Enable Interruptions (Barge-in)</Label>
-                <p className="text-sm text-muted-foreground">Allow callers to interrupt the agent while it's speaking.</p>
-            </div>
-            <Switch id="barge-in-toggle" defaultChecked />
-          </div>
-        </CardContent>
-      </Card>
-
     </div>
   );
 }

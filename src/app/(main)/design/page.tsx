@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,6 +16,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { ChatWidgetPreview } from '@/components/chat-widget-preview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 
 export default function DesignPage() {
   const [agentName, setAgentName] = useState('Fitness Assistant');
@@ -120,6 +129,43 @@ export default function DesignPage() {
                     </TabsContent>
                     <TabsContent value="in-call">
                        <div className="p-6 space-y-6">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle>Voice Configuration</CardTitle>
+                              <CardDescription>
+                                Customize the agent's voice and how it behaves during calls.
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                              <div className="space-y-2">
+                                <Label htmlFor="agent-voice">Agent Voice</Label>
+                                <Select defaultValue="alloy">
+                                  <SelectTrigger id="agent-voice">
+                                    <SelectValue placeholder="Select a voice" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="alloy">Alloy (Male)</SelectItem>
+                                    <SelectItem value="echo">Echo (Male)</SelectItem>
+                                    <SelectItem value="fable">Fable (Male)</SelectItem>
+                                    <SelectItem value="onyx">Onyx (Male)</SelectItem>
+                                    <SelectItem value="nova">Nova (Female)</SelectItem>
+                                    <SelectItem value="shimmer">Shimmer (Female)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="welcome-message">Welcome Message</Label>
+                                <Input id="welcome-message" placeholder="e.g., Hello, how can I help you today?" />
+                              </div>
+                              <div className="flex items-center justify-between rounded-lg border p-4">
+                                <div>
+                                    <Label htmlFor="barge-in-toggle" className="font-medium">Enable Interruptions (Barge-in)</Label>
+                                    <p className="text-sm text-muted-foreground">Allow callers to interrupt the agent while it's speaking.</p>
+                                </div>
+                                <Switch id="barge-in-toggle" defaultChecked />
+                              </div>
+                            </CardContent>
+                          </Card>
                          <Card>
                            <CardHeader>
                              <CardTitle>Orb Customization</CardTitle>
