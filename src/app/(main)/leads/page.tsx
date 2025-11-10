@@ -273,7 +273,7 @@ export default function LeadsPage() {
               aria-live="polite"
             >
               Page{' '}
-              <span className="text-foreground">
+              <span className="font-medium text-foreground">
                 {table.getState().pagination.pageIndex + 1} of{' '}
                 {table.getPageCount()}
               </span>
