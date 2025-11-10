@@ -2,35 +2,60 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { RocketIcon } from '@/components/lo-icons/RocketIcon'
+import { MessageCircle, Mail, Phone } from 'lucide-react'
+
+const channels = [
+  {
+    name: 'Chat',
+    description: 'Deploy your agent as a chat widget on your website.',
+    icon: MessageCircle,
+  },
+  {
+    name: 'Email',
+    description: 'Connect your agent to an email address to automate responses.',
+    icon: Mail,
+  },
+  {
+    name: 'Phone',
+    description: 'Integrate your agent with a phone number for voice interactions.',
+    icon: Phone,
+  },
+]
 
 export default function DeployPage() {
   return (
     <div className="space-y-8">
-      <h2 className="text-3xl font-bold tracking-tight">Deploy</h2>
-      <Card>
-        <CardHeader>
-          <CardTitle>Deploy Your Agent</CardTitle>
-          <CardDescription>
-            When you're ready, you can deploy your agent to make it available
-            online.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
-            <RocketIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">Ready to Launch?</h3>
-            <p className="mb-4 mt-2 text-sm text-muted-foreground">
-              Deploy your agent to a shareable URL with just one click.
-            </p>
-            <Button>Deploy Agent</Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">Deploy</h2>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {channels.map((channel) => (
+          <Card key={channel.name}>
+            <CardHeader>
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-accent rounded-lg">
+                        <channel.icon className="h-6 w-6 text-accent-foreground" />
+                    </div>
+                    <CardTitle>{channel.name}</CardTitle>
+                </div>
+            </CardHeader>
+            <CardContent>
+              <CardDescription>{channel.description}</CardDescription>
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full">
+                Configure
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
     </div>
   )
 }
