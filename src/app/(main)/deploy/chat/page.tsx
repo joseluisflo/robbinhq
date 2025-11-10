@@ -75,8 +75,7 @@ export default function DeployChatPage() {
         <RadioGroup defaultValue="chat-widget" className="space-y-4">
           <Label
             htmlFor="chat-widget"
-            className="flex items-start space-x-4 rounded-md border p-4 cursor-pointer [&[data-state=checked]]:border-primary"
-            data-state="checked"
+            className="flex items-start space-x-4 rounded-md border p-4 cursor-pointer has-[:checked]:border-primary"
           >
             <RadioGroupItem value="chat-widget" id="chat-widget" />
             <div className="grid gap-1.5">
@@ -93,7 +92,7 @@ export default function DeployChatPage() {
           </Label>
           <Label
             htmlFor="iframe"
-            className="flex items-start space-x-4 rounded-md border p-4 cursor-pointer"
+            className="flex items-start space-x-4 rounded-md border p-4 cursor-pointer has-[:checked]:border-primary"
           >
             <RadioGroupItem value="iframe" id="iframe" />
             <div className="grid gap-1.5">
