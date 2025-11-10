@@ -32,7 +32,10 @@ export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPrevie
   };
 
   return (
-    <div className="flex flex-col h-full w-full max-w-lg bg-card rounded-2xl shadow-2xl overflow-hidden">
+    <div
+      className="flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden"
+      style={{ width: '400px', height: '650px' }}
+    >
       {/* Chat Header */}
       <div className="p-4 border-b flex items-center justify-between bg-card">
         <div className="flex items-center gap-3">
