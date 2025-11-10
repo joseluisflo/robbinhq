@@ -9,6 +9,9 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MessageSquare, Info } from 'lucide-react';
 
 const conversations = [
   {
@@ -30,6 +33,15 @@ const conversations = [
         time: '09:35 AM',
       },
     ],
+    details: {
+      source: 'Widget or Iframe',
+      status: 'Ongoing',
+      sentiment: 'Not analyzed',
+      messages: 2,
+      country: 'United States',
+      created: 'Nov 8, 2025, 11:52 PM',
+      lastActivity: '1 day ago',
+    },
   },
   {
     id: 2,
@@ -39,17 +51,26 @@ const conversations = [
     time: 'Yesterday',
     avatarId: 'avatar-1',
     messages: [
-        {
+      {
         sender: 'You',
         text: 'Here\'s the latest update on Project Alpha. We are on track to meet the deadline.',
         time: 'Yesterday 3:45 PM',
       },
-       {
+      {
         sender: 'Michael Chen',
         text: 'Thanks for the update. The progress looks great so far. Keep up the good work!',
         time: 'Yesterday 4:02 PM',
       },
     ],
+    details: {
+      source: 'Email',
+      status: 'Completed',
+      sentiment: 'Positive',
+      messages: 2,
+      country: 'Canada',
+      created: 'Nov 7, 2025, 03:45 PM',
+      lastActivity: 'Yesterday',
+    },
   },
   {
     id: 3,
@@ -59,8 +80,24 @@ const conversations = [
     time: '2 days ago',
     avatarId: 'avatar-1',
     messages: [],
+    details: {
+      source: 'Internal Chat',
+      status: 'New',
+      sentiment: 'Neutral',
+      messages: 0,
+      country: 'United Kingdom',
+      created: 'Nov 6, 2025, 10:00 AM',
+      lastActivity: '2 days ago',
+    },
   },
 ];
+
+const DetailRow = ({ label, value }: { label: string; value: string | number }) => (
+  <div className="flex justify-between items-center text-sm">
+    <p className="text-muted-foreground">{label}:</p>
+    <p className="font-medium text-right">{value}</p>
+  </div>
+);
 
 export default function ChatLogsPage() {
   const [selectedConversation, setSelectedConversation] = useState(
@@ -110,61 +147,89 @@ export default function ChatLogsPage() {
         {/* Right Panel: Conversation View */}
         <div className="flex flex-col h-full bg-background">
           {selectedConversation ? (
-            <>
-              <div className="p-4 border-b flex items-center gap-3">
-                {avatarImage && (
-                    <Avatar>
-                        <AvatarImage src={avatarImage.imageUrl} alt={selectedConversation.name} data-ai-hint={avatarImage.imageHint}/>
-                        <AvatarFallback>
-                        {selectedConversation.name.charAt(0)}
-                        </AvatarFallback>
-                    </Avatar>
-                )}
-                <div>
-                  <h3 className="font-semibold">
-                    {selectedConversation.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Online
-                  </p>
-                </div>
+            <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+              <div className="px-4 py-2 border-b">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="chat">Chat</TabsTrigger>
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                </TabsList>
               </div>
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                {selectedConversation.messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      'flex items-end gap-3',
-                      msg.sender === 'You' && 'flex-row-reverse'
-                    )}
-                  >
-                    {msg.sender !== 'You' && (
-                        <Avatar className="h-8 w-8">
-                            {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt={msg.sender} data-ai-hint={avatarImage.imageHint} />}
-                            <AvatarFallback>{msg.sender.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                    )}
+
+              <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  {selectedConversation.messages.map((msg, index) => (
                     <div
+                      key={index}
                       className={cn(
-                        'max-w-[70%] rounded-lg p-3 text-sm',
-                        msg.sender === 'You'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
+                        'flex items-end gap-3',
+                        msg.sender === 'You' && 'flex-row-reverse'
                       )}
                     >
-                      <p>{msg.text}</p>
-                       <p className={cn("text-xs mt-2", msg.sender === 'You' ? 'text-primary-foreground/70' : 'text-muted-foreground')}>{msg.time}</p>
+                      {msg.sender !== 'You' && (
+                        <Avatar className="h-8 w-8">
+                          {avatarImage && (
+                            <AvatarImage
+                              src={avatarImage.imageUrl}
+                              alt={msg.sender}
+                              data-ai-hint={avatarImage.imageHint}
+                            />
+                          )}
+                          <AvatarFallback>
+                            {msg.sender.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      <div
+                        className={cn(
+                          'max-w-[70%] rounded-lg p-3 text-sm',
+                          msg.sender === 'You'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted'
+                        )}
+                      >
+                        <p>{msg.text}</p>
+                        <p
+                          className={cn(
+                            'text-xs mt-2',
+                            msg.sender === 'You'
+                              ? 'text-primary-foreground/70'
+                              : 'text-muted-foreground'
+                          )}
+                        >
+                          {msg.time}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <div className="p-4 border-t">
-                <Textarea placeholder="Type your message..." />
-                <div className="flex justify-end mt-2">
-                    <Button>Send</Button>
+                  ))}
                 </div>
-              </div>
-            </>
+                <div className="p-4 border-t">
+                  <Textarea placeholder="Type your message..." />
+                  <div className="flex justify-end mt-2">
+                    <Button>Send</Button>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="details" className="flex-1 overflow-y-auto p-6 mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                      GENERAL DETAILS
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <DetailRow label="Source" value={selectedConversation.details.source} />
+                    <DetailRow label="Status" value={selectedConversation.details.status} />
+                    <DetailRow label="Sentiment" value={selectedConversation.details.sentiment} />
+                    <DetailRow label="Messages" value={selectedConversation.details.messages} />
+                    <DetailRow label="Country" value={selectedConversation.details.country} />
+                    <DetailRow label="Created" value={selectedConversation.details.created} />
+                    <DetailRow label="Last activity" value={selectedConversation.details.lastActivity} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           ) : (
             <div className="flex h-full items-center justify-center text-muted-foreground">
               <p>Select a conversation to view</p>
