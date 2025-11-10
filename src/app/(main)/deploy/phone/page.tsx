@@ -31,26 +31,6 @@ export default function DeployPhonePage() {
         <Button>Save changes</Button>
       </div>
 
-      {/* Provider Connection Section */}
-      <div className="space-y-4">
-        <div>
-          <h3 className="text-lg font-semibold">Telephony Provider Connection</h3>
-          <p className="text-sm text-muted-foreground">
-            Connect your provider account to purchase and manage phone numbers.
-          </p>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Phone className="h-6 w-6 text-muted-foreground" />
-            <div>
-              <p className="font-semibold">Twilio Account</p>
-              <p className="text-sm text-muted-foreground">Status: Not Connected</p>
-            </div>
-          </div>
-          <Button variant="outline">Connect Account</Button>
-        </div>
-      </div>
-
       {/* Number Management Card */}
       <Card>
         <CardHeader>
@@ -145,19 +125,6 @@ export default function DeployPhonePage() {
             <Switch id="barge-in-toggle" defaultChecked />
           </div>
         </CardContent>
-      </Card>
-
-      {/* Disconnect Card */}
-      <Card className="border-destructive">
-         <CardHeader>
-          <CardTitle className="text-destructive">Disconnect Provider</CardTitle>
-           <CardDescription>
-            This will disconnect your account and release all assigned numbers. This action cannot be undone.
-          </CardDescription>
-        </CardHeader>
-        <CardFooter>
-            <Button variant="destructive">Disconnect Provider</Button>
-        </CardFooter>
       </Card>
 
     </div>
