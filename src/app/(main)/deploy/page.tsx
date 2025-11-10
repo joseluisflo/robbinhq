@@ -36,19 +36,15 @@ export default function DeployPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {channels.map((channel) => (
-          <Card key={channel.name}>
+          <Card key={channel.name} className="flex flex-col">
+            <div className="flex h-32 items-center justify-center rounded-t-lg bg-muted">
+                <channel.icon className="h-12 w-12 text-muted-foreground" />
+            </div>
             <CardHeader>
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-accent rounded-lg">
-                        <channel.icon className="h-6 w-6 text-accent-foreground" />
-                    </div>
-                    <CardTitle>{channel.name}</CardTitle>
-                </div>
+                <CardTitle>{channel.name}</CardTitle>
+                <CardDescription>{channel.description}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <CardDescription>{channel.description}</CardDescription>
-            </CardContent>
-            <CardFooter>
+            <CardFooter className="mt-auto">
               <Button variant="outline" className="w-full">
                 Configure
               </Button>
