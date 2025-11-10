@@ -69,47 +69,44 @@ export default function DeployChatPage() {
         </div>
       </div>
 
-      {/* Embed Type Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Embed type</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup defaultValue="chat-widget" className="space-y-4">
-            <Label
-              htmlFor="chat-widget"
-              className="flex items-start space-x-4 rounded-md border p-4 cursor-pointer [&[data-state=checked]]:border-primary"
-              data-state="checked"
-            >
-              <RadioGroupItem value="chat-widget" id="chat-widget" />
-              <div className="grid gap-1.5">
-                <span className="font-semibold">Chat widget</span>
-                <span className="text-sm text-muted-foreground">
-                  Embed a chat bubble on your website. Allows you to use all the
-                  advanced features of the agent. Explore the{' '}
-                  <a href="#" className="underline">
-                    docs
-                  </a>
-                  .
-                </span>
-              </div>
-            </Label>
-            <Label
-              htmlFor="iframe"
-              className="flex items-start space-x-4 rounded-md border p-4 cursor-pointer"
-            >
-              <RadioGroupItem value="iframe" id="iframe" />
-              <div className="grid gap-1.5">
-                <span className="font-semibold">Iframe</span>
-                <span className="text-sm text-muted-foreground">
-                  Embed the chat interface directly using an iframe. Note: Advanced
-                  features are not supported.
-                </span>
-              </div>
-            </Label>
-          </RadioGroup>
-        </CardContent>
-      </Card>
+      {/* Embed Type Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Embed type</h3>
+        <RadioGroup defaultValue="chat-widget" className="space-y-4">
+          <Label
+            htmlFor="chat-widget"
+            className="flex items-start space-x-4 rounded-md border p-4 cursor-pointer [&[data-state=checked]]:border-primary"
+            data-state="checked"
+          >
+            <RadioGroupItem value="chat-widget" id="chat-widget" />
+            <div className="grid gap-1.5">
+              <span className="font-semibold">Chat widget</span>
+              <span className="text-sm text-muted-foreground">
+                Embed a chat bubble on your website. Allows you to use all the
+                advanced features of the agent. Explore the{' '}
+                <a href="#" className="underline">
+                  docs
+                </a>
+                .
+              </span>
+            </div>
+          </Label>
+          <Label
+            htmlFor="iframe"
+            className="flex items-start space-x-4 rounded-md border p-4 cursor-pointer"
+          >
+            <RadioGroupItem value="iframe" id="iframe" />
+            <div className="grid gap-1.5">
+              <span className="font-semibold">Iframe</span>
+              <span className="text-sm text-muted-foreground">
+                Embed the chat interface directly using an iframe. Note: Advanced
+                features are not supported.
+              </span>
+            </div>
+          </Label>
+        </RadioGroup>
+      </div>
+
 
       {/* Widget Setup Card */}
       <Card>
