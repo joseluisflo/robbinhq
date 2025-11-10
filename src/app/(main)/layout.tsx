@@ -65,17 +65,14 @@ export default function AppLayout({
     return null;
   }
   
-  if (needsAgent) {
-    return (
-      <CreateAgentDialog 
-        open={true}
-        onAgentCreated={() => setNeedsAgent(false)}
-      />
-    );
-  }
-
   return (
     <SidebarProvider>
+      {needsAgent && (
+        <CreateAgentDialog 
+          open={true}
+          onAgentCreated={() => setNeedsAgent(false)}
+        />
+      )}
       <AppSidebar agents={agents || []} agentsLoading={agentsLoading} />
       <SidebarInset className="grid h-screen grid-rows-[auto_1fr]">
         <AppHeader />

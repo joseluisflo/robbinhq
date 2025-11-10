@@ -14,11 +14,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowRightIcon, Loader2, Wand2 } from 'lucide-react';
+import { ArrowRightIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { getGoalSuggestions, createAgent } from '@/app/actions/agents';
+import { createAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 
@@ -37,9 +37,7 @@ export function CreateAgentDialog({
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [goals, setGoals] = useState<string[]>([]);
 
-  const [isSuggesting, startSuggestionTransition] = useTransition();
   const [isCreating, startCreationTransition] = useTransition();
   
   const { user } = useUser();
@@ -50,23 +48,8 @@ export function CreateAgentDialog({
 
   const dialogImage = PlaceHolderImages.find((img) => img.id === 'dialog-create-agent');
 
-  const handleSuggestGoals = () => {
-    if (!description) return;
-    startSuggestionTransition(async () => {
-      const result = await getGoalSuggestions(description);
-      if ('error' in result) {
-        toast({ title: 'Error', description: result.error, variant: 'destructive' });
-      } else {
-        setGoals(result);
-      }
-    });
-  };
-
   const handleContinue = () => {
-    if (step === 2) {
-      handleSuggestGoals();
-    }
-    if (step < 3) {
+    if (step < 2) {
       setStep(step + 1);
     }
   };
@@ -74,7 +57,7 @@ export function CreateAgentDialog({
   const handleCreateAgent = () => {
     if (!user || !name) return;
     startCreationTransition(async () => {
-      const result = await createAgent(user.uid, name, description, goals);
+      const result = await createAgent(user.uid, name, description, []);
       if ('error' in result) {
         toast({ title: 'Failed to create agent', description: result.error, variant: 'destructive' });
       } else {
@@ -94,7 +77,6 @@ export function CreateAgentDialog({
         setStep(1);
         setName('');
         setDescription('');
-        setGoals([]);
       }, 200);
     }
   };
@@ -135,27 +117,10 @@ export function CreateAgentDialog({
             {step === 2 && (
               <DialogHeader>
                 <DialogTitle>Describe your agent's purpose</DialogTitle>
-                <DialogDescription>This will be used to generate initial instructions and goals for your agent.</DialogDescription>
+                <DialogDescription>A brief description of what your agent will do.</DialogDescription>
                 <div className="pt-4">
                   <Label htmlFor="description" className="sr-only">Description</Label>
                   <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. An assistant that suggests bodyweight workouts and meal plans." className="min-h-[80px]" />
-                </div>
-              </DialogHeader>
-            )}
-             {step === 3 && (
-              <DialogHeader>
-                <DialogTitle>Generated Goals</DialogTitle>
-                <DialogDescription>Here are some suggested goals. You can edit them later.</DialogDescription>
-                <div className="pt-4 space-y-2">
-                  {isSuggesting ? (
-                    <div className="flex items-center justify-center h-24">
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : (
-                    <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg">
-                      {goals.map((goal, i) => <li key={i}>{goal}</li>)}
-                    </ul>
-                  )}
                 </div>
               </DialogHeader>
             )}
@@ -164,16 +129,15 @@ export function CreateAgentDialog({
             <div className="flex justify-center space-x-1.5 max-sm:order-1">
               <div className={cn("size-1.5 rounded-full bg-primary", step === 1 ? "bg-primary" : "opacity-20")} />
               <div className={cn("size-1.5 rounded-full bg-primary", step === 2 ? "bg-primary" : "opacity-20")} />
-              <div className={cn("size-1.5 rounded-full bg-primary", step === 3 ? "bg-primary" : "opacity-20")} />
             </div>
             <DialogFooter>
-              {step < 3 ? (
-                <Button className="group" type="button" onClick={handleContinue} disabled={isNextDisabled || isSuggesting}>
-                  {isSuggesting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : "Next"}
-                  {!isSuggesting && <ArrowRightIcon className="-me-1 opacity-60 transition-transform group-hover:translate-x-0.5" size={16} aria-hidden="true" />}
+              {step < 2 ? (
+                <Button className="group" type="button" onClick={handleContinue} disabled={isNextDisabled}>
+                  Next
+                  <ArrowRightIcon className="-me-1 opacity-60 transition-transform group-hover:translate-x-0.5" size={16} aria-hidden="true" />
                 </Button>
               ) : (
-                <Button type="button" onClick={handleCreateAgent} disabled={isCreating}>
+                <Button type="button" onClick={handleCreateAgent} disabled={isCreating || isNextDisabled}>
                   {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Agent
                 </Button>
