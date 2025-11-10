@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's public profile information.",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the user's profile picture."
+        }
+      },
+      "required": ["displayName", "email"]
+    },
+    "agent": {
+      "title": "Agent",
+      "description": "Represents an AI agent workspace.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the agent."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the agent's purpose."
+        },
+        "goals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of goals for the agent."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this agent."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the agent was created."
+        }
+      },
+      "required": ["name", "userId", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": ["email", "google.com"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/userProfile"
+      },
+      "description": "Stores public profile information for each user."
+    },
+    "/users/{userId}/agents/{agentId}": {
+      "schema": {
+        "$ref": "#/entities/agent"
+      },
+      "description": "Stores the agents created by a specific user."
+    }
+  }
+}
