@@ -14,3 +14,9 @@ export type Agent = {
   status: 'idle' | 'working' | 'stopped';
   tasks: Task[];
 };
+
+export type Workflow = {
+  id: string;
+  name: string;
+  lastModified: string;
+};

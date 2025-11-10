@@ -1,4 +1,4 @@
-import type { Agent } from './types';
+import type { Agent, Workflow } from './types';
 
 export const mockAgents: Agent[] = [
   {
@@ -58,5 +58,23 @@ export const mockAgents: Agent[] = [
     ],
     status: 'stopped',
     tasks: [],
+  },
+];
+
+export const mockWorkflows: Workflow[] = [
+  {
+    id: 'customer-onboarding',
+    name: 'Customer Onboarding',
+    lastModified: '2024-07-15T14:20:00Z',
+  },
+  {
+    id: 'lead-qualification',
+    name: 'Lead Qualification',
+    lastModified: '2024-07-28T09:05:00Z',
+  },
+  {
+    id: 'support-ticket-escalation',
+    name: 'Support Ticket Escalation',
+    lastModified: '2024-06-30T18:00:00Z',
   },
 ];
