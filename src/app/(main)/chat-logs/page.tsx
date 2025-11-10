@@ -70,9 +70,9 @@ export default function ChatLogsPage() {
 
   return (
     <div className="flex h-full flex-1">
-      <div className="grid h-full w-full grid-cols-[350px_1fr] border bg-card text-card-foreground shadow-sm rounded-lg overflow-hidden">
+      <div className="grid h-full w-full grid-cols-[350px_1fr] overflow-hidden">
         {/* Left Panel: Conversation List */}
-        <div className="flex flex-col border-r">
+        <div className="flex flex-col border-r bg-card text-card-foreground">
           <div className="p-4 space-y-4 border-b">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Chat logs</h2>
