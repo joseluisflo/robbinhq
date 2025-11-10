@@ -23,14 +23,10 @@ import {
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { DashboardIcon, AiChemistryIcon, PenToolIcon, MotionIcon, RocketIcon, ChatSimpleIcon, UserGroupIcon } from '@/components/lo-icons';
+import { useUser } from '@/firebase';
 
 // This is sample data. We'll simplify it for our app.
 const data = {
-  user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg',
-  },
   agents: [
     {
       name: 'AgentVerse',
@@ -40,6 +36,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
+  const { user } = useUser();
 
   const navPlatform = [
     {
@@ -144,11 +141,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
 }
-
-    
