@@ -1,6 +1,7 @@
 import {
   Card,
   CardFooter,
+  CardContent,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, Mail, Phone, MoreHorizontal } from 'lucide-react'
@@ -12,19 +13,19 @@ const channels = [
     name: 'Chat',
     description: 'Deploy as a chat widget',
     icon: MessageCircle,
-    href: '#',
+    href: '/deploy/chat',
   },
   {
     name: 'Email',
     description: 'Connect to an email address',
     icon: Mail,
-    href: '#',
+    href: '/deploy/email',
   },
   {
     name: 'Phone',
     description: 'Integrate with a phone number',
     icon: Phone,
-    href: '#',
+    href: '/deploy/phone',
   },
 ]
 
@@ -43,7 +44,7 @@ export default function DeployPage() {
                 <channel.icon className="h-12 w-12 text-white/80" />
               </div>
             </Link>
-             <div className="p-4 border-b">
+             <CardContent className="p-4 border-b">
                 <Link href={channel.href} className="group">
                   <p className="font-semibold group-hover:underline">
                     {channel.name}
@@ -52,9 +53,11 @@ export default function DeployPage() {
                     {channel.description}
                   </p>
                 </Link>
-              </div>
+              </CardContent>
             <CardFooter className="p-4 flex items-center justify-between">
-               <Button variant="outline">Setup</Button>
+               <Button variant="outline" asChild>
+                 <Link href={channel.href}>Setup</Link>
+               </Button>
                <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">
