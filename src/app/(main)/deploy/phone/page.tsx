@@ -7,7 +7,6 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Globe, Phone, Search, Trash2 } from 'lucide-react';
+import { Globe, Search } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function DeployPhonePage() {
@@ -31,15 +30,15 @@ export default function DeployPhonePage() {
         <Button>Save changes</Button>
       </div>
 
-      {/* Number Management Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Phone Number Management</CardTitle>
-          <CardDescription>
-            Search, purchase, and assign a phone number for your agent.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      {/* Number Management Section */}
+      <div className="space-y-4">
+        <div>
+            <h3 className="text-lg font-semibold">Phone Number Management</h3>
+            <p className="text-sm text-muted-foreground">
+                Search, purchase, and assign a phone number for your agent.
+            </p>
+        </div>
+        <div className="space-y-6">
           <div>
             <Label htmlFor="active-number" className="font-semibold">Active Number</Label>
             <div className="flex items-center justify-between p-4 mt-2 border rounded-lg">
@@ -82,11 +81,11 @@ export default function DeployPhonePage() {
            <Alert variant="destructive">
               <AlertTitle>Billing Notice</AlertTitle>
               <AlertDescription>
-                Phone number purchases and usage are billed directly through your connected Twilio account.
+                Phone number purchases and usage are billed directly through your platform account.
               </AlertDescription>
             </Alert>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
       
       {/* Voice Configuration Card */}
       <Card>
