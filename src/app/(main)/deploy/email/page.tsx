@@ -25,45 +25,45 @@ export default function DeployEmailPage() {
         <Button>Save changes</Button>
       </div>
 
-      {/* Connection Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Email Account Connection</CardTitle>
-          <CardDescription>
-            Connect a Google or Microsoft account to allow the agent to read and send emails.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="flex items-center gap-4">
-              <Mail className="h-6 w-6 text-muted-foreground" />
-              <div>
-                <p className="font-semibold">Not Connected</p>
-                <p className="text-sm text-muted-foreground">Connect an email account to get started.</p>
-              </div>
+      {/* Connection Section */}
+      <div className="space-y-4">
+        <div>
+            <h3 className="text-lg font-semibold">Email Account Connection</h3>
+            <p className="text-sm text-muted-foreground">
+                Connect a Google or Microsoft account to allow the agent to read and send emails.
+            </p>
+        </div>
+        <div className="space-y-4 rounded-lg border p-6">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                <Mail className="h-6 w-6 text-muted-foreground" />
+                <div>
+                    <p className="font-semibold">Not Connected</p>
+                    <p className="text-sm text-muted-foreground">Connect an email account to get started.</p>
+                </div>
+                </div>
+                <Button variant="outline">Connect</Button>
             </div>
-             <Button variant="outline">Connect</Button>
-          </div>
-           <Alert>
-              <Info className="h-4 w-4" />
-              <AlertTitle>How it works</AlertTitle>
-              <AlertDescription>
+            <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>How it works</AlertTitle>
+                <AlertDescription>
                 The agent will only read and reply to new, unread emails in the inbox. It will not have access to your historical emails.
-              </AlertDescription>
+                </AlertDescription>
             </Alert>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Behavior Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Behavior</CardTitle>
-          <CardDescription>
-            Customize how your agent interacts with incoming emails.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between rounded-lg border p-4">
+      {/* Behavior Section */}
+      <div className="space-y-4">
+         <div>
+            <h3 className="text-lg font-semibold">Behavior</h3>
+            <p className="text-sm text-muted-foreground">
+                Customize how your agent interacts with incoming emails.
+            </p>
+        </div>
+        <div className="space-y-6 rounded-lg border p-6">
+          <div className="flex items-center justify-between">
             <div>
                 <Label htmlFor="auto-reply-toggle" className="font-medium">Enable Auto-Reply</Label>
                 <p className="text-sm text-muted-foreground">Allow the agent to automatically reply to emails.</p>
@@ -86,18 +86,18 @@ export default function DeployEmailPage() {
               If the agent cannot answer, it will forward the email to this address.
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Security Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Security</CardTitle>
-           <CardDescription>
+      {/* Security Section */}
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold">Security</h3>
+           <p className="text-sm text-muted-foreground">
             Only process emails from specific domains to prevent spam.
-          </CardDescription>
-        </CardHeader>
-         <CardContent>
+          </p>
+        </div>
+         <div className="rounded-lg border p-6">
           <Label htmlFor="allowed-domains">Allowed Domains</Label>
           <Textarea
             id="allowed-domains"
@@ -110,21 +110,21 @@ export default function DeployEmailPage() {
             <Info className="h-3 w-3" />
             Enter each domain in a new line. Use * as a wildcard.
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Delete Zone */}
-      <Card className="border-destructive">
-         <CardHeader>
-          <CardTitle className="text-destructive">Disconnect Email</CardTitle>
-           <CardDescription>
+      <div className="space-y-4 rounded-lg border border-destructive p-6">
+         <div>
+          <h3 className="text-lg font-semibold text-destructive">Disconnect Email</h3>
+           <p className="text-sm text-muted-foreground">
             Disconnecting the email will stop the agent from processing new emails. This action cannot be undone.
-          </CardDescription>
-        </CardHeader>
-        <CardFooter>
+          </p>
+        </div>
+        <div>
             <Button variant="destructive">Disconnect</Button>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
 
     </div>
   );
