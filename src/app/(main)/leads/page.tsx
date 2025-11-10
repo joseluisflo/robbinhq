@@ -82,22 +82,18 @@ const columns: ColumnDef<Lead>[] = [
     header: 'Name',
     accessorKey: 'name',
     cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
-    size: 180,
   },
   {
     header: 'Email',
     accessorKey: 'email',
-    size: 200,
   },
   {
     header: 'Phone Number',
     accessorKey: 'phoneNumber',
-    size: 180,
   },
   {
     header: 'Chat',
     accessorKey: 'chat',
-    size: 120,
   },
   {
     id: 'actions',
@@ -160,7 +156,7 @@ export default function LeadsPage() {
       </div>
       <div className="space-y-4">
         <div className="overflow-hidden rounded-md border bg-background">
-          <Table className="table-fixed">
+          <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="hover:bg-transparent">
@@ -168,8 +164,8 @@ export default function LeadsPage() {
                     return (
                       <TableHead
                         key={header.id}
-                        style={{ width: `${header.getSize()}px` }}
-                        className="h-11"
+                        style={{ width: header.getSize() !== 150 ? `${header.getSize()}px` : undefined }}
+                        className="h-11 px-3"
                       >
                         {header.isPlaceholder ? null : header.column.getCanSort() ? (
                           <div
@@ -220,7 +216,7 @@ export default function LeadsPage() {
                     data-state={row.getIsSelected() && 'selected'}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell key={cell.id} className="p-3">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
