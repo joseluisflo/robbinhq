@@ -20,6 +20,7 @@ import { Loader2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import Link from 'next/link';
 import { Input } from './ui/input';
+import { createUserProfile } from '@/app/actions/users';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -57,6 +58,12 @@ export function SignupForm({
         await updateProfile(userCredential.user, {
             displayName: values.name,
         });
+
+        const profileResult = await createUserProfile(userCredential.user.uid, values.name, values.email);
+        if ('error' in profileResult) {
+            console.error('Failed to create user profile in Firestore:', profileResult.error);
+            // Decide if you want to notify the user. For now, we'll log it.
+        }
       }
       toast({ title: 'Signup Successful', description: 'Welcome! You are now logged in.' });
       router.push('/dashboard');
