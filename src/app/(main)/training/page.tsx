@@ -169,10 +169,9 @@ export default function TrainingPage() {
                           </Button>
                         </AddStarterDialog>
                       </div>
-                      <Card className="text-center">
-                        <CardContent className={cn("p-4", starters.length === 0 && "p-8")}>
-                          {starters.length === 0 ? (
-                            <>
+                       {starters.length === 0 ? (
+                        <Card className="text-center">
+                           <CardContent className="p-8">
                               <p className="font-semibold">No conversation starters yet</p>
                               <p className="text-sm text-muted-foreground mt-2">
                                 Add starter prompts to suggest below the chat input.
@@ -183,21 +182,20 @@ export default function TrainingPage() {
                                   Add starter
                                 </Button>
                               </AddStarterDialog>
-                            </>
-                          ) : (
-                             <ul className="space-y-2">
-                                {starters.map((starter, index) => (
-                                  <li key={index} className="flex items-center justify-between text-sm p-3 border rounded-lg bg-muted/50">
-                                    <span className="truncate pr-4">{starter}</span>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveStarter(index)}>
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                  </li>
-                                ))}
-                             </ul>
-                          )}
-                        </CardContent>
-                      </Card>
+                           </CardContent>
+                        </Card>
+                       ) : (
+                         <ul className="space-y-2">
+                            {starters.map((starter, index) => (
+                              <li key={index} className="flex items-center justify-between text-sm p-3 border rounded-lg bg-muted/50 text-left">
+                                <span className="truncate pr-4">{starter}</span>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveStarter(index)}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                              </li>
+                            ))}
+                         </ul>
+                       )}
                     </div>
 
                     <div>
