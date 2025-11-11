@@ -38,6 +38,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const agentId = formData.get('agentId') as string | null;
+    const uploadType = formData.get('uploadType') as 'file' | 'logo' | null;
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -50,9 +51,18 @@ export async function POST(request: Request) {
     
     // Sanitize filename and create a unique path
     const originalName = file.name.replace(/[^a-zA-Z0-9._-]/g, '');
-    const uniqueId = uuidv4();
-    const fileExtension = originalName.split('.').pop();
-    const storagePath = `users/${userId}/agents/${agentId}/files/${uniqueId}.${fileExtension}`;
+    const fileExtension = originalName.split('.').pop() || 'file';
+
+    let storagePath: string;
+    
+    if (uploadType === 'logo') {
+      // For logos, use a predictable path to allow overwrites.
+      storagePath = `users/${userId}/agents/${agentId}/logo.${fileExtension}`;
+    } else {
+      // For other files, use a unique ID to prevent collisions.
+      const uniqueId = uuidv4();
+      storagePath = `users/${userId}/agents/${agentId}/files/${uniqueId}.${fileExtension}`;
+    }
     
     // Upload to R2
     const putObjectCommand = new PutObjectCommand({
@@ -64,11 +74,16 @@ export async function POST(request: Request) {
     
     await s3Client.send(putObjectCommand);
 
-    // Create a record in Firestore
+    const publicUrl = `${R2_PUBLIC_HOSTNAME}/${storagePath}`;
+
+    // If it's a logo, we just return the URL. The client will update the agent document.
+    if (uploadType === 'logo') {
+      return NextResponse.json({ success: true, url: publicUrl }, { status: 200 });
+    }
+
+    // Otherwise, create a record in the 'files' subcollection for a training file.
     const firestore = firebaseAdmin.firestore();
     const fileRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId).collection('files').doc();
-
-    const publicUrl = `${R2_PUBLIC_HOSTNAME}/${storagePath}`;
 
     const newFileData = {
       name: file.name,

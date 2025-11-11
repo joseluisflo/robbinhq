@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useRef, useEffect, type DragEvent } from 'react';
+import { useState, useRef, useEffect, type DragEvent, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import Image from 'next/image';
 import type { Agent } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useUser } from '@/firebase';
+import { useActiveAgent } from '@/app/(main)/layout';
+import { updateAgent } from '@/app/actions/agents';
+
 
 interface LogoUploaderProps {
   agent: Agent | null;
@@ -20,26 +23,35 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProps) {
   const [preview, setPreview] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, startUploading] = useTransition();
+
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user } = useUser();
+  const { activeAgent, setActiveAgent } = useActiveAgent();
+  
+  useEffect(() => {
+    if (isSaving) { // When parent starts saving, upload the file if there is one
+        handleUpload();
+    }
+  }, [isSaving]);
 
   useEffect(() => {
-    // If there's an existing logoUrl and no new preview, show the existing logo.
-    if (agent?.logoUrl && !preview) {
-      setPreview(agent.logoUrl);
+    // Reset component state when agent changes
+    if (agent) {
+        setPreview(agent.logoUrl || null);
+        setFile(null);
+        if(inputRef.current) inputRef.current.value = '';
     }
-    // If the agent changes and has no logo, clear the preview.
-    if (!agent?.logoUrl && !preview) {
-      setPreview(null);
-    }
-  }, [agent?.logoUrl]);
+  }, [agent]);
 
 
-  const handleFileSelect = (file: File | null) => {
-    if (!file) return;
+  const handleFileSelect = (selectedFile: File | null) => {
+    if (!selectedFile) return;
 
-    if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
+    if (!SUPPORTED_FILE_TYPES.includes(selectedFile.type)) {
       toast({
         title: 'Unsupported file type',
         description: 'Please upload a JPG, PNG, or SVG image.',
@@ -48,7 +60,7 @@ export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProp
       return;
     }
 
-    if (file.size > MAX_FILE_SIZE) {
+    if (selectedFile.size > MAX_FILE_SIZE) {
       toast({
         title: 'File too large',
         description: 'Image must be smaller than 2MB.',
@@ -61,9 +73,51 @@ export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProp
     reader.onloadend = () => {
       setPreview(reader.result as string);
     };
-    reader.readAsDataURL(file);
-    onLogoChange(file);
+    reader.readAsDataURL(selectedFile);
+    setFile(selectedFile);
+    onLogoChange(selectedFile);
   };
+  
+  const handleUpload = async () => {
+    if (!file || !user || !activeAgent?.id) return;
+
+    startUploading(async () => {
+      const token = await user.getIdToken();
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('agentId', activeAgent.id!);
+      formData.append('uploadType', 'logo');
+
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+           // The API returns the new URL, now update the agent document in Firestore.
+           const updateResult = await updateAgent(user.uid, activeAgent.id!, { logoUrl: result.url });
+           if ('error' in updateResult) {
+                toast({ title: 'Failed to save logo', description: updateResult.error, variant: 'destructive' });
+           } else {
+                if (setActiveAgent && activeAgent) {
+                    setActiveAgent({ ...activeAgent, logoUrl: result.url });
+                }
+           }
+        } else {
+          toast({ title: 'Logo upload failed', description: result.error || 'An unknown error occurred.', variant: 'destructive'});
+        }
+      } catch (e: any) {
+        toast({ title: 'Logo upload failed', description: e.message || 'An unknown error occurred.', variant: 'destructive'});
+      }
+    });
+  };
+
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -75,11 +129,25 @@ export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProp
     }
   };
 
-  const handleRemoveLogo = () => {
+  const handleRemoveLogo = async () => {
+    if (!user || !activeAgent?.id) return;
+    
+    // Optimistically update UI
     setPreview(null);
-    onLogoChange(null); // Signal to parent that we want to remove the logo
-    if (inputRef.current) {
-        inputRef.current.value = '';
+    onLogoChange(null);
+    if (inputRef.current) inputRef.current.value = '';
+
+    // Update firestore
+    const updateResult = await updateAgent(user.uid, activeAgent.id, { logoUrl: '' });
+    if ('error' in updateResult) {
+        toast({ title: 'Failed to remove logo', description: updateResult.error, variant: 'destructive' });
+        // Revert optimistic update if failed
+        setPreview(agent?.logoUrl || null);
+    } else {
+        toast({ title: 'Logo removed'});
+        if (setActiveAgent && activeAgent) {
+            setActiveAgent({ ...activeAgent, logoUrl: '' });
+        }
     }
   }
 
@@ -103,9 +171,9 @@ export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProp
             size="icon"
             className="h-8 w-8"
             onClick={handleRemoveLogo}
-            disabled={isSaving}
+            disabled={isSaving || isUploading}
         >
-            <X className="h-4 w-4" />
+            {isUploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="h-4 w-4" />}
         </Button>
       </div>
     </div>
@@ -130,7 +198,7 @@ export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProp
   );
   
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4 w-full">
         {preview ? renderPreview() : renderUploader()}
         <input
             ref={inputRef}

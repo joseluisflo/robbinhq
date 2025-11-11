@@ -54,6 +54,7 @@ export async function createAgent(userId: string, name: string, description: str
       welcomeMessage: 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!',
       isWelcomeMessageEnabled: true,
       isDisplayNameEnabled: true,
+      logoUrl: '',
     };
 
     await agentRef.set(newAgent);
@@ -74,8 +75,14 @@ export async function updateAgent(userId: string, agentId: string, data: Partial
     const firestore = firebaseAdmin.firestore();
     const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
     
+    // Prepare data for update, ensuring we handle nullish values for deletion
+    const updateData: { [key: string]: any } = { ...data };
+    if (data.logoUrl === '') {
+        updateData.logoUrl = FieldValue.delete();
+    }
+    
     await agentRef.update({
-      ...data,
+      ...updateData,
       lastModified: FieldValue.serverTimestamp(),
     });
 
