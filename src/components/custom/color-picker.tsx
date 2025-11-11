@@ -246,7 +246,11 @@ export const ColorPickerEyeDropper = ({
       setSaturation(s);
       setLightness(l);
       setAlpha(100);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        // User canceled the eye dropper, do nothing.
+        return;
+      }
       console.error('EyeDropper failed:', error);
     }
   };
