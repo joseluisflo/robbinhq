@@ -85,6 +85,11 @@
         "isDisplayNameEnabled": {
             "type": "boolean",
             "description": "Determines if the display name is shown in the chat widget."
+        },
+        "logoUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL of the agent's logo."
         }
       },
       "required": ["name", "userId", "createdAt"]

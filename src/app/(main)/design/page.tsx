@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,8 @@ import {
 } from '@/components/ui/select';
 import { useActiveAgent } from '../layout';
 import type { Agent } from '@/lib/types';
+import { LogoUploader } from '@/components/logo-uploader';
+import { Loader2 } from 'lucide-react';
 
 
 export default function DesignPage() {
@@ -32,28 +34,59 @@ export default function DesignPage() {
   
   const [agentName, setAgentName] = useState('Agent Name');
   const [isDisplayNameEnabled, setIsDisplayNameEnabled] = useState(true);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+
+  const [isSaving, startSaving] = useTransition();
+
+  const isChanged = 
+    agentName !== activeAgent?.name ||
+    isDisplayNameEnabled !== (activeAgent?.isDisplayNameEnabled ?? true) ||
+    logoFile !== null;
+
 
   useEffect(() => {
     if (activeAgent) {
       setAgentName(activeAgent.name);
       setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
+      setLogoFile(null); // Reset file on agent change
     }
   }, [activeAgent]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value;
     setAgentName(newName);
-    if (activeAgent) {
-      setActiveAgent({ ...activeAgent, name: newName });
-    }
   };
 
-  const handleSwitchChange = (checked: boolean) => {
+  const handleDisplayNameSwitchChange = (checked: boolean) => {
     setIsDisplayNameEnabled(checked);
+  }
+
+  const handleSaveChanges = () => {
+    // TODO: Implement saving logic including logo upload
+    startSaving(async () => {
+        console.log("Saving changes...", { agentName, isDisplayNameEnabled, logoFile });
+        // Mock saving
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (activeAgent) {
+            setActiveAgent({ 
+                ...activeAgent, 
+                name: agentName,
+                isDisplayNameEnabled: isDisplayNameEnabled,
+                // In a real scenario, we'd get a new logoUrl from the upload
+            });
+        }
+        setLogoFile(null); // Reset file state after "saving"
+    });
+  }
+
+  const handleDiscardChanges = () => {
     if (activeAgent) {
-      setActiveAgent({ ...activeAgent, isDisplayNameEnabled: checked });
+        setAgentName(activeAgent.name);
+        setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
+        setLogoFile(null);
     }
   }
+
 
   const agentData: Partial<Agent> & { isDisplayNameEnabled?: boolean } = {
     name: agentName,
@@ -87,7 +120,7 @@ export default function DesignPage() {
                                <Switch 
                                 id="display-name-toggle" 
                                 checked={isDisplayNameEnabled}
-                                onCheckedChange={handleSwitchChange}
+                                onCheckedChange={handleDisplayNameSwitchChange}
                               />
                            </div>
                            <Input id="display-name" value={agentName} onChange={handleNameChange} />
@@ -95,11 +128,9 @@ export default function DesignPage() {
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="logo-toggle">Logo</Label>
-                                <Switch id="logo-toggle" />
+                                <Switch id="logo-toggle" defaultChecked/>
                             </div>
-                            <div className="w-full h-24 mt-2 bg-muted rounded-md flex items-center justify-center text-sm text-muted-foreground">
-                                Logo upload area
-                            </div>
+                            <LogoUploader agent={activeAgent} onLogoChange={setLogoFile} isSaving={isSaving} />
                         </div>
 
                         <Card>
@@ -249,8 +280,11 @@ export default function DesignPage() {
 
               {/* Footer */}
               <div className="flex justify-between items-center gap-3 px-6 py-4 border-t bg-background">
-                  <Button variant="ghost">Discard changes</Button>
-                  <Button>Save changes</Button>
+                  <Button variant="ghost" onClick={handleDiscardChanges} disabled={!isChanged || isSaving}>Discard changes</Button>
+                  <Button onClick={handleSaveChanges} disabled={!isChanged || isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save changes
+                  </Button>
               </div>
             </div>
           </ResizablePanel>

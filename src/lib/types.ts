@@ -27,6 +27,7 @@ export type Agent = {
   welcomeMessage?: string;
   isWelcomeMessageEnabled?: boolean;
   isDisplayNameEnabled?: boolean;
+  logoUrl?: string;
 };
 
 export type Workflow = {
