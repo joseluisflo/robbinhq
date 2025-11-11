@@ -29,15 +29,9 @@ import { Loader2 } from 'lucide-react';
 import { updateAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
-import {
-  ColorPicker,
-  ColorPickerAlpha,
-  ColorPickerEyeDropper,
-  ColorPickerFormat,
-  ColorPickerHue,
-  ColorPickerOutput,
-  ColorPickerSelection,
-} from '@/components/custom/color-picker';
+import { ColorPicker } from '@/components/custom/color-picker';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 
 export default function DesignPage() {
   const { activeAgent, setActiveAgent } = useActiveAgent();
@@ -169,29 +163,32 @@ export default function DesignPage() {
                         </div>
 
                         <Card>
-                            <CardHeader>
-                                <CardTitle>Theme</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <ColorPicker
-                                value={themeColor}
-                                onChange={(rgba) => {
-                                  const newColor = `rgba(${rgba.join(', ')})`;
-                                  setThemeColor(newColor);
-                                }}
-                              >
-                                <ColorPickerSelection className="h-32" />
-                                <div className="mt-4 flex flex-col gap-4">
-                                  <ColorPickerHue />
-                                  <ColorPickerAlpha />
-                                </div>
-                                <div className="mt-4 flex items-center gap-2">
-                                  <ColorPickerEyeDropper />
-                                  <ColorPickerFormat />
-                                  <ColorPickerOutput />
-                                </div>
-                              </ColorPicker>
-                            </CardContent>
+                          <CardHeader>
+                            <CardTitle>Theme</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex items-center justify-between">
+                              <Label>Accent</Label>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    className="h-8 w-8 rounded-full p-0 border"
+                                    style={{ backgroundColor: themeColor }}
+                                  />
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 border-none">
+                                  <ColorPicker
+                                    value={themeColor}
+                                    onChange={(rgba) => {
+                                      const newColor = `rgba(${rgba.join(', ')})`;
+                                      setThemeColor(newColor);
+                                    }}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                          </CardContent>
                         </Card>
 
                          <Card>
