@@ -55,12 +55,23 @@
           "format": "date-time",
           "description": "The timestamp when the agent was created."
         },
-        "allowedDomains": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "A list of domains where the agent is allowed to be embedded."
+        "rateLimiting": {
+          "type": "object",
+          "description": "Configuration for rate limiting user interactions.",
+          "properties": {
+            "maxMessages": {
+              "type": "number",
+              "description": "The maximum number of messages a user can send within the timeframe."
+            },
+            "timeframe": {
+              "type": "number",
+              "description": "The duration of the time window in seconds."
+            },
+            "limitExceededMessage": {
+              "type": "string",
+              "description": "The message to display when the rate limit is exceeded."
+            }
+          }
         }
       },
       "required": ["name", "userId", "createdAt"]

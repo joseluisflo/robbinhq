@@ -15,10 +15,14 @@ export type Agent = {
   status: 'idle' | 'working' | 'stopped';
   tasks: Task[];
   conversationStarters?: string[];
-  allowedDomains?: string[];
   temperature?: number;
   lastModified?: string;
   createdAt?: any;
+  rateLimiting?: {
+    maxMessages: number;
+    timeframe: number;
+    limitExceededMessage: string;
+  };
 };
 
 export type Workflow = {
@@ -39,7 +43,7 @@ export type TextSource = {
   id: string;
   title: string;
   content: string;
-  createdAt: string;
+  createdAt: any;
 };
 
 export type AgentFile = {
@@ -49,6 +53,6 @@ export type AgentFile = {
   size: number;
   url: string;
   storagePath: string;
-  createdAt: string;
+  createdAt: any;
   extractedText?: string;
 };

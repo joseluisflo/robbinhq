@@ -43,9 +43,13 @@ export async function createAgent(userId: string, name: string, description: str
       status: 'idle',
       tasks: [],
       conversationStarters: [],
-      allowedDomains: [],
       temperature: 0.4,
       createdAt: FieldValue.serverTimestamp(),
+      rateLimiting: {
+        maxMessages: 20,
+        timeframe: 240,
+        limitExceededMessage: 'Too many messages in a row',
+      },
     };
 
     await agentRef.set(newAgent);
@@ -66,11 +70,8 @@ export async function updateAgent(userId: string, agentId: string, data: Partial
     const firestore = firebaseAdmin.firestore();
     const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
     
-    // Create a new object without the properties that shouldn't be updated from this form.
-    const { allowedDomains, ...updatableData } = data;
-
     await agentRef.update({
-      ...updatableData,
+      ...data,
       lastModified: FieldValue.serverTimestamp(),
     });
 

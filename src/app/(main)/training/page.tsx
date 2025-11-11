@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -13,7 +13,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Info, Loader2, PlusCircle, X, Trash2, FileText, File as FileIcon, Shield } from 'lucide-react';
+import { Info, Loader2, PlusCircle, X, Trash2, FileText, File as FileIcon } from 'lucide-react';
 import { AddTextDialog } from '@/components/add-text-dialog';
 import { AddFileDialog } from '@/components/add-file-dialog';
 import { ChatWidgetPreview } from '@/components/chat-widget-preview';
@@ -49,6 +49,9 @@ export default function TrainingPage() {
   const [starters, setStarters] = useState<string[]>([]);
   const [temperature, setTemperature] = useState(0.4);
   const [isNameInvalid, setIsNameInvalid] = useState(false);
+  const [maxMessages, setMaxMessages] = useState(20);
+  const [timeframe, setTimeframe] = useState(240);
+  const [limitExceededMessage, setLimitExceededMessage] = useState('Too many messages in a row');
 
   const [isSaving, startSavingTransition] = useTransition();
 
@@ -72,7 +75,10 @@ export default function TrainingPage() {
     activeAgent?.name !== agentName ||
     activeAgent?.instructions !== instructions ||
     activeAgent?.temperature !== temperature ||
-    JSON.stringify(activeAgent?.conversationStarters) !== JSON.stringify(starters);
+    JSON.stringify(activeAgent?.conversationStarters) !== JSON.stringify(starters) ||
+    activeAgent?.rateLimiting?.maxMessages !== maxMessages ||
+    activeAgent?.rateLimiting?.timeframe !== timeframe ||
+    activeAgent?.rateLimiting?.limitExceededMessage !== limitExceededMessage;
 
 
   useEffect(() => {
@@ -82,6 +88,9 @@ export default function TrainingPage() {
       setStarters(activeAgent.conversationStarters || []);
       setTemperature(activeAgent.temperature ?? 0.4);
       setIsNameInvalid(activeAgent.name.length < 3);
+      setMaxMessages(activeAgent.rateLimiting?.maxMessages ?? 20);
+      setTimeframe(activeAgent.rateLimiting?.timeframe ?? 240);
+      setLimitExceededMessage(activeAgent.rateLimiting?.limitExceededMessage ?? 'Too many messages in a row');
     }
   }, [activeAgent]);
 
@@ -105,6 +114,9 @@ export default function TrainingPage() {
       setInstructions(activeAgent.instructions || '');
       setStarters(activeAgent.conversationStarters || []);
       setTemperature(activeAgent.temperature ?? 0.4);
+      setMaxMessages(activeAgent.rateLimiting?.maxMessages ?? 20);
+      setTimeframe(activeAgent.rateLimiting?.timeframe ?? 240);
+      setLimitExceededMessage(activeAgent.rateLimiting?.limitExceededMessage ?? 'Too many messages in a row');
     }
   }
 
@@ -117,6 +129,11 @@ export default function TrainingPage() {
         instructions: instructions,
         conversationStarters: starters,
         temperature: temperature,
+        rateLimiting: {
+            maxMessages: maxMessages,
+            timeframe: timeframe,
+            limitExceededMessage: limitExceededMessage,
+        }
       };
       const result = await updateAgent(user.uid, activeAgent.id!, updatedData);
 
@@ -168,6 +185,11 @@ export default function TrainingPage() {
     conversationStarters: starters,
     textSources: textSources || [],
     fileSources: fileSources || [],
+    rateLimiting: {
+        maxMessages: maxMessages,
+        timeframe: timeframe,
+        limitExceededMessage: limitExceededMessage,
+    }
   };
 
   return (
@@ -178,11 +200,11 @@ export default function TrainingPage() {
           <div className="flex flex-col h-full">
             <Tabs defaultValue="instructions" className="flex flex-col flex-1 h-full">
                <div className="px-6 py-3 border-b">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="instructions">Instructions</TabsTrigger>
                   <TabsTrigger value="texts">Texts</TabsTrigger>
                   <TabsTrigger value="files">Files</TabsTrigger>
-                  <TabsTrigger value="security">Security</TabsTrigger>
+                  {/* <TabsTrigger value="security">Security</TabsTrigger> */}
                 </TabsList>
               </div>
 
@@ -390,17 +412,42 @@ export default function TrainingPage() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="security" className="mt-0">
-                    <Card className="text-center">
-                      <CardContent className="p-8">
-                        <div className="mx-auto bg-muted rounded-full h-12 w-12 flex items-center justify-center">
-                          <Shield className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <p className="font-semibold mt-4">Security Settings</p>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Domain restrictions and other security settings are managed in the Deploy section.
-                        </p>
-                      </CardContent>
+                  <TabsContent value="security" className="mt-0 space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Rate limit</CardTitle>
+                            <CardDescription>
+                                Limit the number of messages sent from one device on the iframe and chat bubble to prevent abuse.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex items-center gap-2 text-sm">
+                                Limit to
+                                <Input 
+                                  type="number" 
+                                  className="w-20" 
+                                  value={maxMessages} 
+                                  onChange={(e) => setMaxMessages(parseInt(e.target.value, 10) || 0)}
+                                />
+                                messages every
+                                <Input 
+                                  type="number" 
+                                  className="w-24" 
+                                  value={timeframe}
+                                  onChange={(e) => setTimeframe(parseInt(e.target.value, 10) || 0)}
+                                />
+                                seconds.
+                            </div>
+                             <div>
+                                <Label htmlFor="limit-message">Message to show when limit is hit</Label>
+                                <Input
+                                    id="limit-message"
+                                    className="mt-2"
+                                    value={limitExceededMessage}
+                                    onChange={(e) => setLimitExceededMessage(e.target.value)}
+                                />
+                            </div>
+                        </CardContent>
                     </Card>
                   </TabsContent>
                 </div>
