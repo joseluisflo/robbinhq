@@ -25,11 +25,13 @@ import {
 } from '@/components/ui/sidebar';
 import { DashboardIcon, AiChemistryIcon, PenToolIcon, MotionIcon, RocketIcon, ChatSimpleIcon, UserGroupIcon } from '@/components/lo-icons';
 import { useUser } from '@/firebase';
-import type { Agent } from '@/lib/types';
+import { useActiveAgent } from '@/app/(main)/layout';
 
-export function AppSidebar({ agents, agentsLoading, ...props }: React.ComponentProps<typeof Sidebar> & { agents: Agent[], agentsLoading: boolean }) {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { user } = useUser();
+  const { agents, agentsLoading } = useActiveAgent();
+
 
   const navPlatform = [
     {
@@ -78,7 +80,7 @@ export function AppSidebar({ agents, agentsLoading, ...props }: React.ComponentP
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        {agentsLoading ? <SidebarMenuSkeleton showIcon /> : <AgentSwitcher agents={agents} />}
+        {agentsLoading ? <SidebarMenuSkeleton showIcon /> : <AgentSwitcher />}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

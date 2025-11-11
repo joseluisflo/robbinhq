@@ -20,23 +20,34 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { CreateAgentDialog } from "./create-agent-dialog"
 import type { Agent } from "@/lib/types"
+import { useActiveAgent } from "@/app/(main)/layout"
 
-export function AgentSwitcher({
-  agents,
-}: {
-  agents: Agent[]
-}) {
+export function AgentSwitcher() {
   const { isMobile } = useSidebar()
-  const [activeAgent, setActiveAgent] = React.useState<Agent | null>(null);
+  const { agents, activeAgent, setActiveAgent } = useActiveAgent();
 
-  React.useEffect(() => {
-    if (agents && agents.length > 0 && !activeAgent) {
-      setActiveAgent(agents[0]);
-    }
-  }, [agents, activeAgent]);
-
+  if (!activeAgent && agents.length === 0) {
+    return (
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <CreateAgentDialog>
+              <SidebarMenuButton size="lg">
+                <div className="flex size-8 items-center justify-center rounded-lg border-2 border-dashed border-sidebar-border">
+                  <Plus className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="font-medium text-sidebar-foreground/70">Create Agent</span>
+                </div>
+              </SidebarMenuButton>
+            </CreateAgentDialog>
+          </SidebarMenuItem>
+        </SidebarMenu>
+    );
+  }
+  
   if (!activeAgent) {
-    return null
+    // This can happen briefly while the active agent is being set.
+    return null;
   }
 
   const getInitials = (name: string) => {
