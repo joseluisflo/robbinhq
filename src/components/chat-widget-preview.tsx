@@ -82,7 +82,7 @@ export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPrevie
                 </div>
             </div>
              {/* Conversation Starters */}
-            <div className="pb-2">
+            <div>
                 <ScrollArea className="w-full whitespace-nowrap">
                     <div className="flex w-max space-x-2 pb-2">
                         {mockStarters.map((starter, index) => (
