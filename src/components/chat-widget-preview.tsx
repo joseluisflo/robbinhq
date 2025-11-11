@@ -28,6 +28,8 @@ interface ChatWidgetPreviewProps {
   agentData: {
     name: string;
     instructions?: string;
+    welcomeMessage?: string;
+    isWelcomeMessageEnabled?: boolean;
     temperature?: number;
     conversationStarters?: string[];
     escalationRules?: string[];
@@ -49,14 +51,7 @@ export function ChatWidgetPreview({
   mode = 'chat',
 }: ChatWidgetPreviewProps) {
   const [prompt, setPrompt] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: 'agent',
-      text: 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isResponding, startResponding] = useTransition();
 
   const { toast } = useToast();
@@ -65,6 +60,22 @@ export function ChatWidgetPreview({
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+
+  useEffect(() => {
+    // Set initial welcome message when agent data changes
+    if (agentData.isWelcomeMessageEnabled && agentData.welcomeMessage) {
+      setMessages([
+        {
+          id: '1',
+          sender: 'agent',
+          text: agentData.welcomeMessage,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    } else {
+      setMessages([]);
+    }
+  }, [agentData.welcomeMessage, agentData.isWelcomeMessageEnabled]);
 
   useEffect(() => {
     if (chatContainerRef.current) {

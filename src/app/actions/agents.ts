@@ -50,6 +50,8 @@ export async function createAgent(userId: string, name: string, description: str
         timeframe: 240,
         limitExceededMessage: 'Too many messages in a row',
       },
+      welcomeMessage: 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!',
+      isWelcomeMessageEnabled: true,
     };
 
     await agentRef.set(newAgent);

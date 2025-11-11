@@ -72,6 +72,14 @@
               "description": "The message to display when the rate limit is exceeded."
             }
           }
+        },
+        "welcomeMessage": {
+          "type": "string",
+          "description": "The initial message the agent displays to the user."
+        },
+        "isWelcomeMessageEnabled": {
+          "type": "boolean",
+          "description": "Determines if the welcome message is active."
         }
       },
       "required": ["name", "userId", "createdAt"]

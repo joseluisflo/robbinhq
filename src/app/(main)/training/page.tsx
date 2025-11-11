@@ -13,7 +13,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Info, Loader2, PlusCircle, X, Trash2, FileText, File as FileIcon } from 'lucide-react';
+import { Info, Loader2, PlusCircle, X, Trash2, FileText, File as FileIcon, MessagesSquare } from 'lucide-react';
 import { AddTextDialog } from '@/components/add-text-dialog';
 import { AddFileDialog } from '@/components/add-file-dialog';
 import { ChatWidgetPreview } from '@/components/chat-widget-preview';
@@ -26,6 +26,7 @@ import { updateAgent } from '@/app/actions/agents';
 import type { TextSource, AgentFile } from '@/lib/types';
 import { deleteAgentText } from '@/app/actions/texts';
 import { deleteAgentFile } from '@/app/actions/files';
+import { Switch } from '@/components/ui/switch';
 
 
 function formatBytes(bytes: number, decimals = 2) {
@@ -46,6 +47,8 @@ export default function TrainingPage() {
 
   const [agentName, setAgentName] = useState('');
   const [instructions, setInstructions] = useState('');
+  const [welcomeMessage, setWelcomeMessage] = useState('');
+  const [isWelcomeMessageEnabled, setIsWelcomeMessageEnabled] = useState(true);
   const [starters, setStarters] = useState<string[]>([]);
   const [temperature, setTemperature] = useState(0.4);
   const [isNameInvalid, setIsNameInvalid] = useState(false);
@@ -74,6 +77,8 @@ export default function TrainingPage() {
   const isChanged =
     activeAgent?.name !== agentName ||
     activeAgent?.instructions !== instructions ||
+    activeAgent?.welcomeMessage !== welcomeMessage ||
+    activeAgent?.isWelcomeMessageEnabled !== isWelcomeMessageEnabled ||
     activeAgent?.temperature !== temperature ||
     JSON.stringify(activeAgent?.conversationStarters) !== JSON.stringify(starters) ||
     activeAgent?.rateLimiting?.maxMessages !== maxMessages ||
@@ -85,6 +90,8 @@ export default function TrainingPage() {
     if (activeAgent) {
       setAgentName(activeAgent.name);
       setInstructions(activeAgent.instructions || '');
+      setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
+      setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
       setStarters(activeAgent.conversationStarters || []);
       setTemperature(activeAgent.temperature ?? 0.4);
       setIsNameInvalid(activeAgent.name.length < 3);
@@ -112,6 +119,8 @@ export default function TrainingPage() {
     if (activeAgent) {
       setAgentName(activeAgent.name);
       setInstructions(activeAgent.instructions || '');
+      setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
+      setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
       setStarters(activeAgent.conversationStarters || []);
       setTemperature(activeAgent.temperature ?? 0.4);
       setMaxMessages(activeAgent.rateLimiting?.maxMessages ?? 20);
@@ -127,6 +136,8 @@ export default function TrainingPage() {
       const updatedData = {
         name: agentName,
         instructions: instructions,
+        welcomeMessage: welcomeMessage,
+        isWelcomeMessageEnabled: isWelcomeMessageEnabled,
         conversationStarters: starters,
         temperature: temperature,
         rateLimiting: {
@@ -181,6 +192,8 @@ export default function TrainingPage() {
   const currentAgentData = {
     name: agentName,
     instructions: instructions,
+    welcomeMessage: welcomeMessage,
+    isWelcomeMessageEnabled: isWelcomeMessageEnabled,
     temperature: temperature,
     conversationStarters: starters,
     textSources: textSources || [],
@@ -235,6 +248,27 @@ export default function TrainingPage() {
                         value={instructions}
                         onChange={(e) => setInstructions(e.target.value)}
                         className="mt-2 min-h-[300px] text-sm font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label htmlFor="welcome-message" className="text-base font-semibold flex items-center gap-2">
+                          Welcome Message
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </Label>
+                        <Switch
+                          checked={isWelcomeMessageEnabled}
+                          onCheckedChange={setIsWelcomeMessageEnabled}
+                        />
+                      </div>
+                      <Textarea
+                        id="welcome-message"
+                        placeholder="Set a welcome message for your agent..."
+                        value={welcomeMessage}
+                        onChange={(e) => setWelcomeMessage(e.target.value)}
+                        className="mt-2 min-h-[100px]"
+                        disabled={!isWelcomeMessageEnabled}
                       />
                     </div>
 

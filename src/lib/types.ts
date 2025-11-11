@@ -23,6 +23,8 @@ export type Agent = {
     timeframe: number;
     limitExceededMessage: string;
   };
+  welcomeMessage?: string;
+  isWelcomeMessageEnabled?: boolean;
 };
 
 export type Workflow = {
