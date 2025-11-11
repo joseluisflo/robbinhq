@@ -39,3 +39,13 @@ export type TextSource = {
   content: string;
   createdAt: string;
 };
+
+export type AgentFile = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  url: string;
+  storagePath: string;
+  createdAt: string;
+};

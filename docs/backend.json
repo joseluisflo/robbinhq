@@ -78,6 +78,40 @@
         }
       },
       "required": ["title", "content", "createdAt"]
+    },
+    "agentFile": {
+      "title": "Agent File Source",
+      "description": "A file-based knowledge source for an agent.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the file."
+        },
+        "type": {
+          "type": "string",
+          "description": "The MIME type of the file."
+        },
+        "size": {
+          "type": "number",
+          "description": "The size of the file in bytes."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "The public URL to access the file."
+        },
+        "storagePath": {
+          "type": "string",
+          "description": "The path to the file in the storage bucket."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the file was uploaded."
+        }
+      },
+      "required": ["name", "type", "size", "url", "storagePath", "createdAt"]
     }
   },
   "auth": {
@@ -101,6 +135,12 @@
         "$ref": "#/entities/agentText"
       },
       "description": "Stores text-based knowledge sources for a specific agent."
+    },
+    "/users/{userId}/agents/{agentId}/files/{fileId}": {
+      "schema": {
+        "$ref": "#/entities/agentFile"
+      },
+      "description": "Stores file-based knowledge sources for a specific agent."
     }
   }
 }
