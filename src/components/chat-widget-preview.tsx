@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect, type MouseEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -20,23 +20,68 @@ import SiriOrb from '@/components/smoothui/ui/SiriOrb';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
 
 interface ChatWidgetPreviewProps {
-    agentName: string;
-    mode?: 'chat' | 'in-call';
+  agentName: string;
+  mode?: 'chat' | 'in-call';
+  starters?: string[];
 }
 
-const mockStarters = [
-    "Dame una rutina rápida",
-    "Explícame los beneficios del cardio",
-    "Sugiéreme un desayuno saludable"
-];
-
-
-export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPreviewProps) {
+export function ChatWidgetPreview({
+  agentName,
+  mode = 'chat',
+  starters = [],
+}: ChatWidgetPreviewProps) {
   const [prompt, setPrompt] = useState('');
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
 
   const getInitials = (name: string) => {
     if (!name) return 'A';
     return name.substring(0, 2).toUpperCase();
+  };
+
+  const handleWheel = (e: WheelEvent) => {
+    if (viewportRef.current) {
+      e.preventDefault();
+      viewportRef.current.scrollLeft += e.deltaY;
+    }
+  };
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (viewport) {
+      viewport.addEventListener('wheel', handleWheel, { passive: false });
+    }
+    return () => {
+      if (viewport) {
+        viewport.removeEventListener('wheel', handleWheel);
+      }
+    };
+  }, []);
+
+  const onMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    if (!viewportRef.current) return;
+    isDragging.current = true;
+    startX.current = e.pageX - viewportRef.current.offsetLeft;
+    scrollLeft.current = viewportRef.current.scrollLeft;
+    viewportRef.current.style.cursor = 'grabbing';
+    viewportRef.current.style.userSelect = 'none';
+  };
+
+  const onMouseLeaveOrUp = () => {
+    if (!viewportRef.current) return;
+    isDragging.current = false;
+    viewportRef.current.style.cursor = 'grab';
+    viewportRef.current.style.removeProperty('user-select');
+  };
+
+  const onMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current || !viewportRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - viewportRef.current.offsetLeft;
+    const walk = (x - startX.current) * 2; //scroll-fast
+    viewportRef.current.scrollLeft = scrollLeft.current - walk;
   };
 
   return (
@@ -51,8 +96,12 @@ export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPrevie
             <AvatarFallback>{getInitials(agentName)}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-semibold text-sm">{agentName || 'Agent Preview'}</p>
-            <p className="text-xs text-muted-foreground">The team can also help</p>
+            <p className="font-semibold text-sm">
+              {agentName || 'Agent Preview'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              The team can also help
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -68,37 +117,50 @@ export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPrevie
       {mode === 'chat' && (
         <>
           {/* Chat Messages */}
-          <div className="flex-1 px-4 pt-4 pb-2 overflow-y-auto bg-background flex flex-col justify-between">
+          <div className="flex-1 px-4 pt-4 bg-background flex flex-col justify-between">
             <div>
-                <div className="flex justify-start">
-                    <div className="max-w-[75%]">
-                        <div className="p-3 rounded-2xl rounded-tl-sm bg-muted">
-                        <p className="text-sm">
-                            Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!
-                        </p>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1.5 ml-1">Agent • Ahora</p>
-                    </div>
+              <div className="flex justify-start">
+                <div className="max-w-[75%]">
+                  <div className="p-3 rounded-2xl rounded-tl-sm bg-muted">
+                    <p className="text-sm">
+                      Hola, estás hablando con el agente de vista previa.
+                      ¡Hazme una pregunta para empezar!
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5 ml-1">
+                    Agent • Ahora
+                  </p>
                 </div>
+              </div>
             </div>
-             {/* Conversation Starters */}
-            <div>
-                <ScrollArea className="w-full whitespace-nowrap">
-                    <div className="flex w-max space-x-2">
-                        {mockStarters.map((starter, index) => (
-                        <Button
-                            key={index}
-                            variant="outline"
-                            className="rounded-full h-8 text-sm"
-                            onClick={() => setPrompt(starter)}
-                        >
-                            {starter}
-                        </Button>
-                        ))}
-                    </div>
-                    <ScrollBar orientation="horizontal" className="h-2" />
+            {/* Conversation Starters */}
+            {starters.length > 0 && (
+              <div className="pb-2">
+                <ScrollArea
+                  viewportRef={viewportRef}
+                  className="w-full whitespace-nowrap"
+                  onMouseDown={onMouseDown}
+                  onMouseLeave={onMouseLeaveOrUp}
+                  onMouseUp={onMouseLeaveOrUp}
+                  onMouseMove={onMouseMove}
+                  style={{ cursor: 'grab' }}
+                >
+                  <div className="flex w-max space-x-2">
+                    {starters.map((starter, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        className="rounded-full h-8 text-sm"
+                        onClick={() => setPrompt(starter)}
+                      >
+                        {starter}
+                      </Button>
+                    ))}
+                  </div>
+                  <ScrollBar orientation="horizontal" className="h-2" />
                 </ScrollArea>
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Chat Input */}
@@ -128,16 +190,32 @@ export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPrevie
             </div>
             <div className="flex items-center justify-between mt-3">
               <div className="flex gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground"
+                >
                   <Paperclip className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground"
+                >
                   <Smile className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground"
+                >
                   <ImageIcon className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground"
+                >
                   <Mic className="h-4 w-4" />
                 </Button>
               </div>
@@ -151,17 +229,25 @@ export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPrevie
 
       {mode === 'in-call' && (
         <>
-            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
-                <SiriOrb size="160px" />
-            </div>
-            <div className="p-4 border-t bg-card flex justify-center gap-4">
-                <Button variant="outline" size="icon" className="h-12 w-12 rounded-full">
-                    <MicOff className="h-6 w-6" />
-                </Button>
-                 <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full">
-                    <PhoneOff className="h-6 w-6" />
-                </Button>
-            </div>
+          <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
+            <SiriOrb size="160px" />
+          </div>
+          <div className="p-4 border-t bg-card flex justify-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 rounded-full"
+            >
+              <MicOff className="h-6 w-6" />
+            </Button>
+            <Button
+              variant="destructive"
+              size="icon"
+              className="h-12 w-12 rounded-full"
+            >
+              <PhoneOff className="h-6 w-6" />
+            </Button>
+          </div>
         </>
       )}
     </div>
