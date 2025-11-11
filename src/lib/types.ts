@@ -48,4 +48,5 @@ export type AgentFile = {
   url: string;
   storagePath: string;
   createdAt: string;
+  extractedText?: string;
 };

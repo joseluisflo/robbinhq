@@ -109,6 +109,10 @@
           "type": "string",
           "format": "date-time",
           "description": "The timestamp when the file was uploaded."
+        },
+        "extractedText": {
+          "type": "string",
+          "description": "The extracted text content of the file."
         }
       },
       "required": ["name", "type", "size", "url", "storagePath", "createdAt"]

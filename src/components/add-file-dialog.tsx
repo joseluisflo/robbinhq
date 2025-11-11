@@ -27,6 +27,16 @@ function formatBytes(bytes: number, decimals = 2) {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
 
+const SUPPORTED_FILE_TYPES = [
+  'text/plain',
+  'text/markdown',
+  'text/html',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+
+
 export function AddFileDialog({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -37,6 +47,24 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const { activeAgent } = useActiveAgent();
   const { user } = useUser();
+
+  const triggerFileProcessing = async (fileId: string, agentId: string, token: string) => {
+    try {
+        await fetch('/api/process-file', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ fileId, agentId }),
+        });
+        // This is a fire-and-forget call. The user will be notified of success/failure via a different mechanism if needed.
+    } catch (e) {
+        console.error('Failed to trigger file processing:', e);
+        // Silently fail for now. The file is uploaded, but text extraction failed.
+    }
+  };
+
 
   const handleFiles = (newFiles: FileList) => {
     const totalFiles = files.length + newFiles.length;
@@ -58,6 +86,13 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
           title: 'File too large',
           description: `"${file.name}" exceeds the 100MB limit.`,
           variant: 'destructive',
+        });
+        hasError = true;
+      } else if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
+        toast({
+            title: 'Unsupported file type',
+            description: `"${file.name}" is not a supported file type.`,
+            variant: 'destructive',
         });
         hasError = true;
       } else {
@@ -128,6 +163,7 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
 
           if (response.ok) {
             successCount++;
+            triggerFileProcessing(result.fileId, activeAgent.id!, token);
           } else {
             errorCount++;
             console.error(`Failed to upload ${file.name}:`, result.error);
@@ -169,7 +205,7 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
         <DialogHeader>
           <DialogTitle>Upload files</DialogTitle>
           <DialogDescription>
-            Add files to train your AI agent.
+            Add files to train your AI agent. Supported types: .txt, .md, .html, .pdf, .doc, .docx
           </DialogDescription>
         </DialogHeader>
 
@@ -189,12 +225,13 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
               <Upload className="h-6 w-6" />
             </div>
             <p className="font-semibold text-foreground">Drag & drop or click to browse</p>
-            <p className="text-xs">All files · Max 10 files · Up to 100MB</p>
+            <p className="text-xs">Max 10 files · Up to 100MB</p>
           </div>
           <input
             ref={inputRef}
             type="file"
             multiple
+            accept=".txt,.md,.html,.htm,.pdf,.doc,.docx"
             className="hidden"
             onChange={(e) => e.target.files && handleFiles(e.target.files)}
           />
