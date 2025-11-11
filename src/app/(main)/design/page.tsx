@@ -158,13 +158,9 @@ export default function DesignPage() {
                                 <CardTitle>Theme</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <Label>Background</Label>
-                                    <div className="h-8 w-8 rounded-full border bg-background" />
-                                </div>
                                  <div className="flex items-center justify-between">
                                     <Label>Accent</Label>
-                                    <div className="h-8 w-8 rounded-full border" style={{ backgroundColor: '#16a34a' }}/>
+                                    <div className="h-8 w-8 rounded-full border" style={{ backgroundColor: 'hsl(var(--primary))' }}/>
                                 </div>
                             </CardContent>
                         </Card>
