@@ -54,6 +54,13 @@
           "type": "string",
           "format": "date-time",
           "description": "The timestamp when the agent was created."
+        },
+        "allowedDomains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of domains where the agent is allowed to be embedded."
         }
       },
       "required": ["name", "userId", "createdAt"]
