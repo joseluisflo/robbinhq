@@ -85,9 +85,14 @@ export async function POST(request: Request) {
 
     // 2. Extract text
     let extractedText = '';
+    let extractionInfo: { message?: string } = {};
+
     if (fileType === 'application/pdf') {
       const data = await pdf(fileBuffer);
       extractedText = data.text;
+      if (!extractedText.trim()) {
+        extractionInfo.message = 'PDF does not contain extractable text. It might be an image-only file.';
+      }
     } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       const { value } = await mammoth.extractRawText({ buffer: fileBuffer });
       extractedText = value;
@@ -103,7 +108,7 @@ export async function POST(request: Request) {
       extractedText: extractedText.trim(),
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, ...extractionInfo });
   } catch (error) {
     console.error('File processing error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';

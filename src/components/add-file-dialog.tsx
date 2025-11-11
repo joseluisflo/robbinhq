@@ -50,7 +50,7 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
 
   const triggerFileProcessing = async (fileId: string, agentId: string, token: string) => {
     try {
-        await fetch('/api/process-file', {
+        const response = await fetch('/api/process-file', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -58,7 +58,14 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
             },
             body: JSON.stringify({ fileId, agentId }),
         });
-        // This is a fire-and-forget call. The user will be notified of success/failure via a different mechanism if needed.
+        const result = await response.json();
+        if (result.message) {
+            toast({
+                title: 'File processing notice',
+                description: result.message,
+                variant: 'default',
+            });
+        }
     } catch (e) {
         console.error('Failed to trigger file processing:', e);
         // Silently fail for now. The file is uploaded, but text extraction failed.
@@ -145,7 +152,7 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
       let successCount = 0;
       let errorCount = 0;
 
-      for (const file of files) {
+      const uploadPromises = files.map(async (file) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('agentId', activeAgent.id!);
@@ -163,6 +170,7 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
 
           if (response.ok) {
             successCount++;
+            // Don't wait for processing to finish, just trigger it.
             triggerFileProcessing(result.fileId, activeAgent.id!, token);
           } else {
             errorCount++;
@@ -172,7 +180,9 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
           errorCount++;
           console.error(`Exception during upload of ${file.name}:`, e);
         }
-      }
+      });
+      
+      await Promise.all(uploadPromises);
 
       if (errorCount > 0) {
         toast({
