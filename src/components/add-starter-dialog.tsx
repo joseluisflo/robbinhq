@@ -64,7 +64,7 @@ export function AddStarterDialog({ children, onAddStarter }: { children: React.R
             />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="grid grid-cols-2 gap-2 sm:space-x-0">
           <DialogClose asChild>
             <Button type="button" variant="outline">
               Cancel
