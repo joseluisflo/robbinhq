@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, type DragEvent } from 'react';
+import { useState, useRef, useTransition, type DragEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,9 +12,11 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
-import { Upload, File as FileIcon, X } from 'lucide-react';
+import { Upload, File as FileIcon, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useActiveAgent } from '@/app/(main)/layout';
+import { useUser } from '@/firebase';
 
 function formatBytes(bytes: number, decimals = 2) {
   if (!+bytes) return '0 Bytes';
@@ -29,8 +31,12 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, startUploading] = useTransition();
+
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { activeAgent } = useActiveAgent();
+  const { user } = useUser();
 
   const handleFiles = (newFiles: FileList) => {
     const totalFiles = files.length + newFiles.length;
@@ -97,9 +103,53 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
 
 
   const handleAddFiles = () => {
-    console.log('Adding files:', files.map(f => f.name));
-    toast({ title: `${files.length} file(s) added for training.` });
-    setIsOpen(false);
+    if (!files.length || !user || !activeAgent?.id) return;
+    
+    startUploading(async () => {
+      const token = await user.getIdToken();
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('agentId', activeAgent.id!);
+
+        try {
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: formData,
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            successCount++;
+          } else {
+            errorCount++;
+            console.error(`Failed to upload ${file.name}:`, result.error);
+          }
+        } catch (e) {
+          errorCount++;
+          console.error(`Exception during upload of ${file.name}:`, e);
+        }
+      }
+
+      if (errorCount > 0) {
+        toast({
+          title: 'Upload finished with errors',
+          description: `${successCount} file(s) uploaded successfully, ${errorCount} failed.`,
+          variant: errorCount > 0 && successCount > 0 ? 'default' : 'destructive',
+        });
+      } else {
+        toast({ title: 'Upload successful', description: `${successCount} file(s) have been added.` });
+      }
+
+      setIsOpen(false);
+    });
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -177,22 +227,27 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
               size="sm"
               onClick={() => setFiles([])}
               className="order-1 sm:order-none"
+              disabled={isUploading}
             >
               Remove all files
             </Button>
           ) : <div />}
           <div className="flex gap-2">
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" disabled={isUploading}>
                 Close
               </Button>
             </DialogClose>
             <Button
               type="button"
               onClick={handleAddFiles}
-              disabled={files.length === 0}
+              disabled={files.length === 0 || isUploading}
             >
-              Add {files.length > 0 ? files.length : ''} file{files.length === 1 ? '' : 's'}
+              {isUploading ? (
+                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...</>
+              ) : (
+                `Add ${files.length} file${files.length === 1 ? '' : 's'}`
+              )}
             </Button>
           </div>
         </DialogFooter>

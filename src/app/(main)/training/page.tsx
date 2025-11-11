@@ -13,7 +13,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Info, Loader2, PlusCircle, X, Trash2, FileText } from 'lucide-react';
+import { Info, Loader2, PlusCircle, X, Trash2, FileText, File as FileIcon } from 'lucide-react';
 import { AddTextDialog } from '@/components/add-text-dialog';
 import { AddFileDialog } from '@/components/add-file-dialog';
 import { ChatWidgetPreview } from '@/components/chat-widget-preview';
@@ -23,8 +23,20 @@ import { AddStarterDialog } from '@/components/add-starter-dialog';
 import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { updateAgent } from '@/app/actions/agents';
-import type { TextSource } from '@/lib/types';
+import type { TextSource, AgentFile } from '@/lib/types';
 import { deleteAgentText } from '@/app/actions/texts';
+import { deleteAgentFile } from '@/app/actions/files';
+
+
+function formatBytes(bytes: number, decimals = 2) {
+  if (!+bytes) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
+
 
 export default function TrainingPage() {
   const { activeAgent, setActiveAgent } = useActiveAgent();
@@ -53,6 +65,14 @@ export default function TrainingPage() {
   }, [user, activeAgent, firestore]);
 
   const { data: textSources, loading: textsLoading } = useCollection<TextSource>(textsQuery);
+
+  // Firestore query for agent files
+  const filesQuery = useMemo(() => {
+    if (!user || !activeAgent?.id) return null;
+    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'files'));
+  }, [user, activeAgent, firestore]);
+
+  const { data: fileSources, loading: filesLoading } = useCollection<AgentFile>(filesQuery);
 
   useEffect(() => {
     if (activeAgent) {
@@ -116,6 +136,16 @@ export default function TrainingPage() {
       toast({ title: 'Failed to delete text', description: result.error, variant: 'destructive' });
     } else {
       toast({ title: 'Text deleted successfully.' });
+    }
+  }
+
+  const handleDeleteFile = async (fileId: string) => {
+    if (!user || !activeAgent?.id) return;
+    const result = await deleteAgentFile(user.uid, activeAgent.id, fileId);
+    if ('error' in result) {
+      toast({ title: 'Failed to delete file', description: result.error, variant: 'destructive' });
+    } else {
+      toast({ title: 'File deleted successfully.' });
     }
   }
   
@@ -308,20 +338,45 @@ export default function TrainingPage() {
                           </Button>
                         </AddFileDialog>
                       </div>
-                      <Card className="text-center flex-1 flex flex-col justify-center min-h-[400px]">
-                        <CardContent className="p-12">
-                          <p className="font-semibold">No files added yet</p>
-                          <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-                            Upload files to train your AI agent with documents and resources.
-                          </p>
-                          <AddFileDialog>
-                            <Button variant="secondary" className="mt-4">
-                              <PlusCircle className="mr-2 h-4 w-4" />
-                              Upload file
-                            </Button>
-                          </AddFileDialog>
-                        </CardContent>
-                      </Card>
+                      
+                      {filesLoading ? (
+                        <div className="text-center py-12">
+                          <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+                          <p className="mt-2 text-sm text-muted-foreground">Loading files...</p>
+                        </div>
+                      ) : fileSources && fileSources.length > 0 ? (
+                        <div className="space-y-3">
+                          {fileSources.map((file) => (
+                            <Card key={file.id} className="flex items-center justify-between p-4">
+                               <div className="flex items-center gap-3 overflow-hidden">
+                                <FileIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                <div className="flex flex-col overflow-hidden">
+                                  <span className="font-medium truncate" title={file.name}>{file.name}</span>
+                                  <span className="text-xs text-muted-foreground">{formatBytes(file.size)}</span>
+                                </div>
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleDeleteFile(file.id!)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <Card className="text-center flex-1 flex flex-col justify-center min-h-[400px]">
+                          <CardContent className="p-12">
+                            <p className="font-semibold">No files added yet</p>
+                            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+                              Upload files to train your AI agent with documents and resources.
+                            </p>
+                            <AddFileDialog>
+                              <Button variant="secondary" className="mt-4">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Upload file
+                              </Button>
+                            </AddFileDialog>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   </TabsContent>
 
