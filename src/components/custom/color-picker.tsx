@@ -24,7 +24,6 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
-
 interface ColorPickerContextValue {
   hue: number;
   saturation: number;
@@ -59,7 +58,14 @@ export const ColorPicker = ({
   className,
   ...props
 }: ColorPickerProps) => {
-  const initialColor = useMemo(() => Color(value || defaultValue), [value, defaultValue]);
+  const initialColor = useMemo(() => {
+    try {
+      return Color(value || defaultValue);
+    } catch (e) {
+      console.warn("Invalid color value passed to ColorPicker:", value, e);
+      return Color(defaultValue);
+    }
+  }, [value, defaultValue]);
   
   const [hue, setHue] = useState(initialColor.hue() || 0);
   const [saturation, setSaturation] = useState(initialColor.saturationl() || 100);
@@ -71,11 +77,15 @@ export const ColorPicker = ({
   // Update color when controlled value changes
   useEffect(() => {
     if (value) {
-      const color = Color(value);
-      setHue(color.hue());
-      setSaturation(color.saturationl());
-      setLightness(color.lightness());
-      setAlpha(color.alpha() * 100);
+      try {
+        const color = Color(value);
+        setHue(color.hue());
+        setSaturation(color.saturationl());
+        setLightness(color.lightness());
+        setAlpha(color.alpha() * 100);
+      } catch (e) {
+        console.warn("Failed to parse color value in useEffect:", value, e);
+      }
     }
   }, [value]);
 
@@ -84,7 +94,7 @@ export const ColorPicker = ({
     if (onChange) {
       const color = Color.hsl(hue, saturation, lightness).alpha(alpha / 100);
       const rgba = color.rgb().array();
-      onChange([rgba[0], rgba[1], rgba[2], alpha / 100]);
+      onChange([Math.round(rgba[0]), Math.round(rgba[1]), Math.round(rgba[2]), alpha / 100]);
     }
   }, [hue, saturation, lightness, alpha, onChange]);
   

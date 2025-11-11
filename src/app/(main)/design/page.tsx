@@ -174,7 +174,7 @@ export default function DesignPage() {
                             </CardHeader>
                             <CardContent>
                               <ColorPicker
-                                defaultValue={themeColor}
+                                value={themeColor}
                                 onChange={(rgba) => {
                                   const newColor = `rgba(${rgba.join(', ')})`;
                                   setThemeColor(newColor);
