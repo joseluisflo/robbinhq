@@ -90,6 +90,10 @@
           "type": "string",
           "format": "uri",
           "description": "The URL of the agent's logo."
+        },
+        "themeColor": {
+          "type": "string",
+          "description": "The primary accent color for the chat widget."
         }
       },
       "required": ["name", "userId", "createdAt"]

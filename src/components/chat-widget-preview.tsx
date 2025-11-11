@@ -30,6 +30,7 @@ interface ChatWidgetPreviewProps {
     textSources?: TextSource[];
     fileSources?: AgentFile[];
     isDisplayNameEnabled?: boolean;
+    themeColor?: string;
   };
   mode?: 'chat' | 'in-call';
 }
@@ -66,6 +67,7 @@ export function ChatWidgetPreview({
   const temperature = agentData?.temperature;
   const isDisplayNameEnabled = agentData?.isDisplayNameEnabled ?? true;
   const logoUrl = agentData?.logoUrl;
+  const themeColor = agentData?.themeColor || '#16a34a';
 
 
   useEffect(() => {
@@ -234,11 +236,16 @@ export function ChatWidgetPreview({
               {messages.map((message) => (
                 <div key={message.id} className={cn("flex", message.sender === 'user' ? 'justify-end' : 'justify-start')}>
                   <div className={cn("max-w-[75%]", message.sender === 'user' ? 'text-right' : 'text-left')}>
-                    <div className={cn("p-3 rounded-2xl", 
-                      message.sender === 'user' 
-                      ? 'bg-primary text-primary-foreground rounded-br-sm' 
-                      : 'bg-muted rounded-tl-sm'
-                    )}>
+                    <div 
+                        className={cn("p-3 rounded-2xl text-primary-foreground", 
+                            message.sender === 'user' 
+                            ? 'rounded-br-sm' 
+                            : 'bg-muted rounded-tl-sm text-foreground'
+                        )}
+                        style={{ 
+                            backgroundColor: message.sender === 'user' ? themeColor : undefined 
+                        }}
+                    >
                       <p className="text-sm text-left">{message.text}</p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1.5 px-1">
@@ -308,9 +315,10 @@ export function ChatWidgetPreview({
               <Button
                 type="submit"
                 size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-primary-foreground"
                 disabled={!prompt.trim() || isResponding}
                 onClick={handleSendMessage}
+                style={{ backgroundColor: themeColor }}
               >
                 <ArrowUp className="h-4 w-4" />
               </Button>

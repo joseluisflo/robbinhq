@@ -55,6 +55,7 @@ export async function createAgent(userId: string, name: string, description: str
       isWelcomeMessageEnabled: true,
       isDisplayNameEnabled: true,
       logoUrl: '',
+      themeColor: '#16a34a',
     };
 
     await agentRef.set(newAgent);

@@ -40,23 +40,28 @@ export default function DesignPage() {
   const [agentName, setAgentName] = useState('');
   const [isDisplayNameEnabled, setIsDisplayNameEnabled] = useState(true);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [themeColor, setThemeColor] = useState('#16a34a');
+
 
   const [isSaving, startSaving] = useTransition();
 
   const isChanged = 
     agentName !== (activeAgent?.name || '') ||
     isDisplayNameEnabled !== (activeAgent?.isDisplayNameEnabled ?? true) ||
-    logoFile !== null;
+    logoFile !== null ||
+    themeColor !== (activeAgent?.themeColor || '#16a34a');
 
 
   useEffect(() => {
     if (activeAgent) {
       setAgentName(activeAgent.name);
       setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
+      setThemeColor(activeAgent.themeColor || '#16a34a');
       setLogoFile(null); // Reset file on agent change
     } else {
       setAgentName('');
       setIsDisplayNameEnabled(true);
+      setThemeColor('#16a34a');
     }
   }, [activeAgent]);
 
@@ -73,8 +78,6 @@ export default function DesignPage() {
     if (!user || !activeAgent || !isChanged) return;
 
     startSaving(async () => {
-      // The logo upload is handled inside the LogoUploader component via an effect triggered by `isSaving`.
-      // Here, we just save the other fields.
       const dataToUpdate: Partial<Agent> = {};
       if (agentName !== activeAgent.name) {
         dataToUpdate.name = agentName;
@@ -82,17 +85,20 @@ export default function DesignPage() {
       if (isDisplayNameEnabled !== activeAgent.isDisplayNameEnabled) {
         dataToUpdate.isDisplayNameEnabled = isDisplayNameEnabled;
       }
+      if (themeColor !== activeAgent.themeColor) {
+        dataToUpdate.themeColor = themeColor;
+      }
 
-      if (Object.keys(dataToUpdate).length > 0) {
+      if (Object.keys(dataToUpdate).length > 0 || logoFile) {
         const result = await updateAgent(user.uid, activeAgent.id!, dataToUpdate);
         if ('error' in result) {
           toast({ title: 'Failed to save changes', description: result.error, variant: 'destructive' });
         } else {
-          toast({ title: 'Changes saved!' });
+          if (Object.keys(dataToUpdate).length > 0) toast({ title: 'Changes saved!' });
           setActiveAgent({ ...activeAgent, ...dataToUpdate });
         }
       }
-      // If only the logo changed, the toast is handled by the uploader.
+      // The logo upload is handled inside the LogoUploader component and will show its own toast.
       // We reset the file state regardless.
       setLogoFile(null);
     });
@@ -102,18 +108,20 @@ export default function DesignPage() {
     if (activeAgent) {
         setAgentName(activeAgent.name);
         setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
+        setThemeColor(activeAgent.themeColor || '#16a34a');
         setLogoFile(null);
     }
   }
 
 
-  const agentData: Partial<Agent> & { isDisplayNameEnabled?: boolean } = {
+  const agentData: Partial<Agent> = {
     name: agentName,
     logoUrl: activeAgent?.logoUrl, // Pass the current logo url
     isDisplayNameEnabled: isDisplayNameEnabled,
     welcomeMessage: activeAgent?.welcomeMessage,
     isWelcomeMessageEnabled: activeAgent?.isWelcomeMessageEnabled,
     conversationStarters: activeAgent?.conversationStarters,
+    themeColor: themeColor,
   };
 
   return (
@@ -160,7 +168,18 @@ export default function DesignPage() {
                             <CardContent className="space-y-4">
                                  <div className="flex items-center justify-between">
                                     <Label>Accent</Label>
-                                    <div className="h-8 w-8 rounded-full border" style={{ backgroundColor: 'hsl(var(--primary))' }}/>
+                                    <div className="flex items-center gap-2">
+                                        <div 
+                                            className="h-8 w-8 rounded-full border" 
+                                            style={{ backgroundColor: themeColor }}
+                                        />
+                                        <Input 
+                                            type="color" 
+                                            value={themeColor}
+                                            onChange={(e) => setThemeColor(e.target.value)}
+                                            className="w-16 p-1 h-8"
+                                        />
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
