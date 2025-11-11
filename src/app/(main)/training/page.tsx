@@ -18,23 +18,27 @@ import {
   Info,
   Loader2,
   PlusCircle,
+  X,
 } from 'lucide-react';
 import { AddTextDialog } from '@/components/add-text-dialog';
 import { AddFileDialog } from '@/components/add-file-dialog';
 import { ChatWidgetPreview } from '@/components/chat-widget-preview';
 import { useActiveAgent } from '../layout';
 import { cn } from '@/lib/utils';
+import { AddStarterDialog } from '@/components/add-starter-dialog';
 
 export default function TrainingPage() {
   const { activeAgent } = useActiveAgent();
   const [agentName, setAgentName] = useState('');
   const [instructions, setInstructions] = useState('');
+  const [starters, setStarters] = useState<string[]>([]);
   const [isNameInvalid, setIsNameInvalid] = useState(false);
 
   useEffect(() => {
     if (activeAgent) {
       setAgentName(activeAgent.name);
       setInstructions(activeAgent.instructions || '');
+      setStarters(activeAgent.conversationStarters || []);
       setIsNameInvalid(activeAgent.name.length < 3);
     }
   }, [activeAgent]);
@@ -43,6 +47,14 @@ export default function TrainingPage() {
     const newName = e.target.value;
     setAgentName(newName);
     setIsNameInvalid(newName.length < 3);
+  };
+  
+  const handleAddStarter = (starter: string) => {
+    setStarters(prev => [...prev, starter]);
+  };
+
+  const handleRemoveStarter = (indexToRemove: number) => {
+    setStarters(prev => prev.filter((_, index) => index !== indexToRemove));
   };
   
   if (!activeAgent) {
@@ -108,21 +120,40 @@ export default function TrainingPage() {
                           Conversation starters
                           <Info className="h-4 w-4 text-muted-foreground" />
                         </Label>
-                        <Button variant="outline" size="sm">
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Add
-                        </Button>
+                        <AddStarterDialog onAddStarter={handleAddStarter}>
+                          <Button variant="outline" size="sm">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add
+                          </Button>
+                        </AddStarterDialog>
                       </div>
                       <Card className="text-center">
-                        <CardContent className="p-8">
-                          <p className="font-semibold">No conversation starters yet</p>
-                          <p className="text-sm text-muted-foreground mt-2">
-                            Add starter prompts to suggest below the chat input.
-                          </p>
-                          <Button variant="secondary" className="mt-4">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add starter
-                          </Button>
+                        <CardContent className={cn("p-4", starters.length === 0 && "p-8")}>
+                          {starters.length === 0 ? (
+                            <>
+                              <p className="font-semibold">No conversation starters yet</p>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Add starter prompts to suggest below the chat input.
+                              </p>
+                              <AddStarterDialog onAddStarter={handleAddStarter}>
+                                <Button variant="secondary" className="mt-4">
+                                  <PlusCircle className="mr-2 h-4 w-4" />
+                                  Add starter
+                                </Button>
+                              </AddStarterDialog>
+                            </>
+                          ) : (
+                             <ul className="space-y-2">
+                                {starters.map((starter, index) => (
+                                  <li key={index} className="flex items-center justify-between text-sm p-3 border rounded-lg bg-muted/50">
+                                    <span className="truncate pr-4">{starter}</span>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveStarter(index)}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                  </li>
+                                ))}
+                             </ul>
+                          )}
                         </CardContent>
                       </Card>
                     </div>
