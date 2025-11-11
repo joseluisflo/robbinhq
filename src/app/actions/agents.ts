@@ -5,7 +5,7 @@ import { generateAgentInstructions } from '@/ai/flows/agent-instruction-generati
 import { agentChat } from '@/ai/flows/agent-chat';
 import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import type { Agent, AgentFile, TextSource } from '@/lib/types';
+import type { Agent } from '@/lib/types';
 
 
 export async function getTasksSummary(taskResults: string): Promise<string | { error: string }> {
@@ -79,12 +79,22 @@ export async function updateAgent(userId: string, agentId: string, data: Partial
 }
 
 
+interface PlainTextSource {
+  title: string;
+  content: string;
+}
+
+interface PlainFileSource {
+  name: string;
+  extractedText: string;
+}
+
 interface AgentResponseInput {
     message: string;
     instructions?: string;
     temperature?: number;
-    textSources: TextSource[];
-    fileSources: AgentFile[];
+    textSources: PlainTextSource[];
+    fileSources: PlainFileSource[];
 }
 
 export async function getAgentResponse(input: AgentResponseInput): Promise<{ response: string } | { error: string }> {

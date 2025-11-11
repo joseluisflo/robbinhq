@@ -91,9 +91,16 @@ export function ChatWidgetPreview({
     setPrompt('');
 
     startResponding(async () => {
+      // Convert complex objects to plain objects before sending to the server action
+      const plainTextSources = agentData.textSources.map(ts => ({ title: ts.title, content: ts.content }));
+      const plainFileSources = agentData.fileSources.map(fs => ({ name: fs.name, extractedText: fs.extractedText || '' }));
+
       const result = await getAgentResponse({
         message: prompt,
-        ...agentData
+        instructions: agentData.instructions,
+        temperature: agentData.temperature,
+        textSources: plainTextSources,
+        fileSources: plainFileSources,
       });
 
       if ('error' in result) {
