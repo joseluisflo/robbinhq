@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -30,7 +29,15 @@ import { Loader2 } from 'lucide-react';
 import { updateAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
-
+import {
+  ColorPicker,
+  ColorPickerAlpha,
+  ColorPickerEyeDropper,
+  ColorPickerFormat,
+  ColorPickerHue,
+  ColorPickerOutput,
+  ColorPickerSelection,
+} from '@/components/custom/color-picker';
 
 export default function DesignPage() {
   const { activeAgent, setActiveAgent } = useActiveAgent();
@@ -165,22 +172,25 @@ export default function DesignPage() {
                             <CardHeader>
                                 <CardTitle>Theme</CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                                 <div className="flex items-center justify-between">
-                                    <Label>Accent</Label>
-                                    <div className="flex items-center gap-2">
-                                        <div 
-                                            className="h-8 w-8 rounded-full border" 
-                                            style={{ backgroundColor: themeColor }}
-                                        />
-                                        <Input 
-                                            type="color" 
-                                            value={themeColor}
-                                            onChange={(e) => setThemeColor(e.target.value)}
-                                            className="w-16 p-1 h-8"
-                                        />
-                                    </div>
+                            <CardContent>
+                              <ColorPicker
+                                defaultValue={themeColor}
+                                onChange={(rgba) => {
+                                  const newColor = `rgba(${rgba.join(', ')})`;
+                                  setThemeColor(newColor);
+                                }}
+                              >
+                                <ColorPickerSelection className="h-32" />
+                                <div className="mt-4 flex flex-col gap-4">
+                                  <ColorPickerHue />
+                                  <ColorPickerAlpha />
                                 </div>
+                                <div className="mt-4 flex items-center gap-2">
+                                  <ColorPickerEyeDropper />
+                                  <ColorPickerFormat />
+                                  <ColorPickerOutput />
+                                </div>
+                              </ColorPicker>
                             </CardContent>
                         </Card>
 
