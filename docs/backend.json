@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "userProfile": {
@@ -80,6 +81,10 @@
         "isWelcomeMessageEnabled": {
           "type": "boolean",
           "description": "Determines if the welcome message is active."
+        },
+        "isDisplayNameEnabled": {
+            "type": "boolean",
+            "description": "Determines if the display name is shown in the chat widget."
         }
       },
       "required": ["name", "userId", "createdAt"]

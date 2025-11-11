@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, type MouseEvent, useTransition } from 'react';
@@ -28,8 +29,8 @@ interface ChatWidgetPreviewProps {
   agentData?: Partial<Agent> & {
     textSources?: TextSource[];
     fileSources?: AgentFile[];
+    isDisplayNameEnabled?: boolean;
   };
-  agentName?: string;
   mode?: 'chat' | 'in-call';
 }
 
@@ -42,7 +43,6 @@ interface Message {
 
 export function ChatWidgetPreview({
   agentData,
-  agentName: agentNameProp,
   mode = 'chat',
 }: ChatWidgetPreviewProps) {
   const [prompt, setPrompt] = useState('');
@@ -56,7 +56,7 @@ export function ChatWidgetPreview({
   const startX = useRef(0);
   const scrollLeft = useRef(0);
 
-  const agentName = agentData?.name || agentNameProp || 'Agent Preview';
+  const agentName = agentData?.name || 'Agent Preview';
   const welcomeMessage = agentData?.welcomeMessage;
   const isWelcomeMessageEnabled = agentData?.isWelcomeMessageEnabled;
   const conversationStarters = agentData?.conversationStarters || [];
@@ -64,6 +64,8 @@ export function ChatWidgetPreview({
   const fileSources = agentData?.fileSources || [];
   const instructions = agentData?.instructions;
   const temperature = agentData?.temperature;
+  const isDisplayNameEnabled = agentData?.isDisplayNameEnabled ?? true;
+
 
   useEffect(() => {
     // Set initial welcome message when agent data changes
@@ -193,20 +195,22 @@ export function ChatWidgetPreview({
     >
       {/* Chat Header */}
       <div className="p-4 border-b flex items-center justify-between bg-card">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback>{getInitials(agentName)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-semibold text-sm">
-              {agentName}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              The team can also help
-            </p>
+        {isDisplayNameEnabled ? (
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback>{getInitials(agentName)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-semibold text-sm">
+                {agentName}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                The team can also help
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-1">
+        ) : <div />}
+        <div className={cn("flex items-center gap-1", !isDisplayNameEnabled && "w-full justify-end")}>
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <MoreHorizontal className="h-4 w-4" />
           </Button>

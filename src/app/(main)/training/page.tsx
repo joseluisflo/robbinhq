@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -45,7 +46,6 @@ export default function TrainingPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [agentName, setAgentName] = useState('');
   const [instructions, setInstructions] = useState('');
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const [isWelcomeMessageEnabled, setIsWelcomeMessageEnabled] = useState(true);
@@ -75,7 +75,6 @@ export default function TrainingPage() {
   const { data: fileSources, loading: filesLoading } = useCollection<AgentFile>(filesQuery);
 
   const isChanged =
-    activeAgent?.name !== agentName ||
     activeAgent?.instructions !== instructions ||
     activeAgent?.welcomeMessage !== welcomeMessage ||
     activeAgent?.isWelcomeMessageEnabled !== isWelcomeMessageEnabled ||
@@ -88,7 +87,6 @@ export default function TrainingPage() {
 
   useEffect(() => {
     if (activeAgent) {
-      setAgentName(activeAgent.name);
       setInstructions(activeAgent.instructions || '');
       setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
       setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
@@ -100,12 +98,6 @@ export default function TrainingPage() {
       setLimitExceededMessage(activeAgent.rateLimiting?.limitExceededMessage ?? 'Too many messages in a row');
     }
   }, [activeAgent]);
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newName = e.target.value;
-    setAgentName(newName);
-    setIsNameInvalid(newName.length < 3);
-  };
   
   const handleAddStarter = (starter: string) => {
     setStarters(prev => [...prev, starter]);
@@ -117,7 +109,6 @@ export default function TrainingPage() {
 
   const handleDiscardChanges = () => {
     if (activeAgent) {
-      setAgentName(activeAgent.name);
       setInstructions(activeAgent.instructions || '');
       setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
       setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
@@ -134,7 +125,7 @@ export default function TrainingPage() {
 
     startSavingTransition(async () => {
       const updatedData = {
-        name: agentName,
+        name: activeAgent.name,
         instructions: instructions,
         welcomeMessage: welcomeMessage,
         isWelcomeMessageEnabled: isWelcomeMessageEnabled,
@@ -190,7 +181,7 @@ export default function TrainingPage() {
   }
 
   const currentAgentData = {
-    name: agentName,
+    name: activeAgent.name,
     instructions: instructions,
     welcomeMessage: welcomeMessage,
     isWelcomeMessageEnabled: isWelcomeMessageEnabled,
@@ -213,11 +204,10 @@ export default function TrainingPage() {
           <div className="flex flex-col h-full">
             <Tabs defaultValue="instructions" className="flex flex-col flex-1 h-full">
                <div className="px-6 py-3 border-b">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="instructions">Instructions</TabsTrigger>
                   <TabsTrigger value="texts">Texts</TabsTrigger>
                   <TabsTrigger value="files">Files</TabsTrigger>
-                  <TabsTrigger value="security">Security</TabsTrigger>
                 </TabsList>
               </div>
 
@@ -225,19 +215,6 @@ export default function TrainingPage() {
               <div className="flex-1 overflow-y-auto">
                 <div className="p-6 space-y-6">
                   <TabsContent value="instructions" className="space-y-6 mt-0">
-                    <div className="space-y-2">
-                        <Label htmlFor="agent-name">Agent Name</Label>
-                        <Input
-                          id="agent-name"
-                          placeholder="e.g., Customer Support Bot"
-                          value={agentName}
-                          onChange={handleNameChange}
-                          className={cn(isNameInvalid && 'border-destructive')}
-                        />
-                        {isNameInvalid && (
-                            <p className="text-xs text-destructive">Name must be at least 3 characters long.</p>
-                        )}
-                      </div>
                     <div>
                       <Label htmlFor="instructions" className="text-base font-semibold">
                         Instructions
@@ -447,39 +424,41 @@ export default function TrainingPage() {
                   </TabsContent>
 
                   <TabsContent value="security" className="mt-0 space-y-6">
-                    <div>
-                      <h3 className="text-lg font-semibold">Rate limit</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Limit the number of messages sent from one device on the iframe and chat bubble to prevent abuse.
-                      </p>
-                    </div>
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-2 text-sm">
-                            Limit to
-                            <Input 
-                              type="number" 
-                              className="w-20" 
-                              value={maxMessages} 
-                              onChange={(e) => setMaxMessages(parseInt(e.target.value, 10) || 0)}
-                            />
-                            messages every
-                            <Input 
-                              type="number" 
-                              className="w-24" 
-                              value={timeframe}
-                              onChange={(e) => setTimeframe(parseInt(e.target.value, 10) || 0)}
-                            />
-                            seconds.
-                        </div>
-                         <div>
-                            <Label htmlFor="limit-message">Message to show when limit is hit</Label>
-                            <Input
-                                id="limit-message"
-                                className="mt-2"
-                                value={limitExceededMessage}
-                                onChange={(e) => setLimitExceededMessage(e.target.value)}
-                            />
-                        </div>
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-lg font-semibold">Rate limit</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Limit the number of messages sent from one device on the iframe and chat bubble to prevent abuse.
+                        </p>
+                      </div>
+                      <div className="space-y-6">
+                          <div className="flex items-center gap-2 text-sm">
+                              Limit to
+                              <Input 
+                                type="number" 
+                                className="w-20" 
+                                value={maxMessages} 
+                                onChange={(e) => setMaxMessages(parseInt(e.target.value, 10) || 0)}
+                              />
+                              messages every
+                              <Input 
+                                type="number" 
+                                className="w-24" 
+                                value={timeframe}
+                                onChange={(e) => setTimeframe(parseInt(e.target.value, 10) || 0)}
+                              />
+                              seconds.
+                          </div>
+                           <div>
+                              <Label htmlFor="limit-message">Message to show when limit is hit</Label>
+                              <Input
+                                  id="limit-message"
+                                  className="mt-2"
+                                  value={limitExceededMessage}
+                                  onChange={(e) => setLimitExceededMessage(e.target.value)}
+                              />
+                          </div>
+                      </div>
                     </div>
                   </TabsContent>
                 </div>

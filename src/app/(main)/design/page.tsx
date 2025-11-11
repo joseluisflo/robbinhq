@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,11 +23,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useActiveAgent } from '../layout';
+import type { Agent } from '@/lib/types';
 
 
 export default function DesignPage() {
-  const [agentName, setAgentName] = useState('Fitness Assistant');
-  const agentData = { name: agentName };
+  const { activeAgent } = useActiveAgent();
+  
+  const [agentName, setAgentName] = useState('Agent Name');
+  const [isDisplayNameEnabled, setIsDisplayNameEnabled] = useState(true);
+
+  useEffect(() => {
+    if (activeAgent) {
+      setAgentName(activeAgent.name);
+      // A default for isDisplayNameEnabled should be handled if not present
+      setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
+    }
+  }, [activeAgent]);
+
+  const agentData: Partial<Agent> & { isDisplayNameEnabled?: boolean } = {
+    name: agentName,
+    isDisplayNameEnabled: isDisplayNameEnabled,
+    // Add other relevant design properties here as needed
+    welcomeMessage: activeAgent?.welcomeMessage,
+    isWelcomeMessageEnabled: activeAgent?.isWelcomeMessageEnabled,
+    conversationStarters: activeAgent?.conversationStarters,
+  };
 
   return (
     <div className="h-full flex-1 flex flex-col">
@@ -57,7 +78,11 @@ export default function DesignPage() {
                                         <Label htmlFor="display-name-toggle">Display name</Label>
                                         <Input id="display-name" value={agentName} onChange={(e) => setAgentName(e.target.value)} className="mt-2"/>
                                     </div>
-                                    <Switch id="display-name-toggle" defaultChecked />
+                                    <Switch 
+                                      id="display-name-toggle" 
+                                      checked={isDisplayNameEnabled}
+                                      onCheckedChange={setIsDisplayNameEnabled}
+                                    />
                                 </div>
 
                                 <div className="flex items-center justify-between rounded-lg border p-4">

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { summarizeTaskResults } from '@/ai/flows/task-summarization';
@@ -52,6 +53,7 @@ export async function createAgent(userId: string, name: string, description: str
       },
       welcomeMessage: 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!',
       isWelcomeMessageEnabled: true,
+      isDisplayNameEnabled: true,
     };
 
     await agentRef.set(newAgent);

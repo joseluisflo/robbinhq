@@ -1,3 +1,4 @@
+
 export type Task = {
   id: string;
   name: string;
@@ -25,6 +26,7 @@ export type Agent = {
   };
   welcomeMessage?: string;
   isWelcomeMessageEnabled?: boolean;
+  isDisplayNameEnabled?: boolean;
 };
 
 export type Workflow = {
