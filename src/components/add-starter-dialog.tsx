@@ -15,7 +15,21 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export function AddStarterDialog({ children, onAddStarter }: { children: React.ReactNode, onAddStarter: (starter: string) => void }) {
+interface AddStarterDialogProps {
+  children: React.ReactNode;
+  onAddStarter: (starter: string) => void;
+  title?: string;
+  description?: string;
+  placeholder?: string;
+}
+
+export function AddStarterDialog({
+  children,
+  onAddStarter,
+  title = 'Add conversation starter',
+  description = 'Add a prompt to suggest to users at the start of a conversation.',
+  placeholder = 'e.g. How do I get started?',
+}: AddStarterDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [starter, setStarter] = useState('');
 
@@ -40,21 +54,21 @@ export function AddStarterDialog({ children, onAddStarter }: { children: React.R
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add conversation starter</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Add a prompt to suggest to users at the start of a conversation.
+            {description}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="starter-text">
-              Starter Text
+              Rule
             </Label>
             <Input
               id="starter-text"
               value={starter}
               onChange={(e) => setStarter(e.target.value)}
-              placeholder="e.g. How do I get started?"
+              placeholder={placeholder}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -75,7 +89,7 @@ export function AddStarterDialog({ children, onAddStarter }: { children: React.R
             onClick={handleAdd}
             disabled={!starter.trim()}
           >
-            Add Starter
+            Add
           </Button>
         </DialogFooter>
       </DialogContent>

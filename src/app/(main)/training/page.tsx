@@ -47,6 +47,7 @@ export default function TrainingPage() {
   const [agentName, setAgentName] = useState('');
   const [instructions, setInstructions] = useState('');
   const [starters, setStarters] = useState<string[]>([]);
+  const [escalationRules, setEscalationRules] = useState<string[]>([]);
   const [temperature, setTemperature] = useState(0.4);
   const [isNameInvalid, setIsNameInvalid] = useState(false);
 
@@ -56,7 +57,8 @@ export default function TrainingPage() {
     activeAgent?.name !== agentName ||
     activeAgent?.instructions !== instructions ||
     activeAgent?.temperature !== temperature ||
-    JSON.stringify(activeAgent?.conversationStarters) !== JSON.stringify(starters);
+    JSON.stringify(activeAgent?.conversationStarters) !== JSON.stringify(starters) ||
+    JSON.stringify(activeAgent?.escalationRules) !== JSON.stringify(escalationRules);
 
   // Firestore query for agent texts
   const textsQuery = useMemo(() => {
@@ -79,6 +81,7 @@ export default function TrainingPage() {
       setAgentName(activeAgent.name);
       setInstructions(activeAgent.instructions || '');
       setStarters(activeAgent.conversationStarters || []);
+      setEscalationRules(activeAgent.escalationRules || []);
       setTemperature(activeAgent.temperature ?? 0.4);
       setIsNameInvalid(activeAgent.name.length < 3);
     }
@@ -97,12 +100,21 @@ export default function TrainingPage() {
   const handleRemoveStarter = (indexToRemove: number) => {
     setStarters(prev => prev.filter((_, index) => index !== indexToRemove));
   };
+  
+  const handleAddEscalationRule = (rule: string) => {
+    setEscalationRules(prev => [...prev, rule]);
+  };
+
+  const handleRemoveEscalationRule = (indexToRemove: number) => {
+    setEscalationRules(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
 
   const handleDiscardChanges = () => {
     if (activeAgent) {
       setAgentName(activeAgent.name);
       setInstructions(activeAgent.instructions || '');
       setStarters(activeAgent.conversationStarters || []);
+      setEscalationRules(activeAgent.escalationRules || []);
       setTemperature(activeAgent.temperature ?? 0.4);
     }
   }
@@ -115,6 +127,7 @@ export default function TrainingPage() {
         name: agentName,
         instructions: instructions,
         conversationStarters: starters,
+        escalationRules: escalationRules,
         temperature: temperature,
       };
       const result = await updateAgent(user.uid, activeAgent.id!, updatedData);
@@ -172,7 +185,7 @@ export default function TrainingPage() {
                   <TabsTrigger value="instructions">Instructions</TabsTrigger>
                   <TabsTrigger value="texts">Texts</TabsTrigger>
                   <TabsTrigger value="files">Files</TabsTrigger>
-                  <TabsTrigger value="websites">Websites</TabsTrigger>
+                  <TabsTrigger value="escalation">Escalation</TabsTrigger>
                 </TabsList>
               </div>
 
@@ -380,30 +393,47 @@ export default function TrainingPage() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="websites" className="mt-0">
+                  <TabsContent value="escalation" className="mt-0">
                     <div className="flex flex-col">
                       <div className="flex items-center justify-between mb-4">
                         <Label className="text-base font-semibold flex items-center gap-2">
-                          Websites
+                          Escalation Rules
                           <Info className="h-4 w-4 text-muted-foreground" />
                         </Label>
-                        <Button variant="outline" size="sm">
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Add
-                        </Button>
+                        <AddStarterDialog onAddStarter={handleAddEscalationRule} title="Add Escalation Rule" description="Define a rule for when the agent should escalate to a human.">
+                            <Button variant="outline" size="sm">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Add Rule
+                            </Button>
+                        </AddStarterDialog>
                       </div>
-                      <Card className="text-center flex-1 flex flex-col justify-center min-h-[400px]">
-                        <CardContent className="p-12">
-                          <p className="font-semibold">No websites added yet</p>
-                          <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-                            Add website URLs to train your AI agent with web content.
-                          </p>
-                          <Button variant="secondary" className="mt-4">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add website
-                          </Button>
-                        </CardContent>
-                      </Card>
+                      {escalationRules.length === 0 ? (
+                        <Card className="text-center flex-1 flex flex-col justify-center min-h-[400px]">
+                            <CardContent className="p-12">
+                            <p className="font-semibold">No escalation rules yet</p>
+                            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+                                Add rules to tell the agent when to hand off the conversation to a human.
+                            </p>
+                             <AddStarterDialog onAddStarter={handleAddEscalationRule} title="Add Escalation Rule" description="Define a rule for when the agent should escalate to a human.">
+                                <Button variant="secondary" className="mt-4">
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Add Rule
+                                </Button>
+                            </AddStarterDialog>
+                            </CardContent>
+                        </Card>
+                        ) : (
+                            <ul className="space-y-2">
+                                {escalationRules.map((rule, index) => (
+                                <li key={index} className="flex items-center justify-between text-sm p-3 border rounded-lg bg-muted/50 text-left">
+                                    <span className="truncate pr-4">{rule}</span>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveEscalationRule(index)}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                   </TabsContent>
                 </div>

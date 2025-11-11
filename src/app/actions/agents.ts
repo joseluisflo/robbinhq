@@ -33,7 +33,7 @@ export async function createAgent(userId: string, name: string, description: str
     const firestore = firebaseAdmin.firestore();
     const agentRef = firestore.collection('users').doc(userId).collection('agents').doc();
     
-    const newAgent = {
+    const newAgent: Omit<Agent, 'id'> = {
       name,
       description,
       instructions,
@@ -41,6 +41,7 @@ export async function createAgent(userId: string, name: string, description: str
       status: 'idle',
       tasks: [],
       conversationStarters: [],
+      escalationRules: [],
       temperature: 0.4,
       createdAt: FieldValue.serverTimestamp(),
     };
