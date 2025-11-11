@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,22 +15,39 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useActiveAgent } from '@/app/(main)/layout';
+import { useUser } from '@/firebase';
+import { addAgentText } from '@/app/actions/texts';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 export function AddTextDialog({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [isSaving, startSaving] = useTransition();
 
-  const handleAddText = () => {
-    // In a real app, you would handle adding the text here.
-    console.log('Adding text:', { title, content });
-    setIsOpen(false);
+  const { activeAgent } = useActiveAgent();
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const handleAddText = async () => {
+    if (!user || !activeAgent?.id || !title || !content) return;
+    
+    startSaving(async () => {
+        const result = await addAgentText(user.uid, activeAgent.id!, { title, content });
+        if ('error' in result) {
+            toast({ title: 'Failed to add text', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Text added successfully!' });
+            setIsOpen(false);
+        }
+    });
   };
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
-      // Reset state when closing
       setTimeout(() => {
         setTitle('');
         setContent('');
@@ -41,7 +58,7 @@ export function AddTextDialog({ children }: { children: React.ReactNode }) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add text</DialogTitle>
           <DialogDescription>
@@ -68,7 +85,7 @@ export function AddTextDialog({ children }: { children: React.ReactNode }) {
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="min-h-[120px]"
+              className="min-h-[200px]"
               placeholder="Enter your text content here."
             />
           </div>
@@ -82,8 +99,9 @@ export function AddTextDialog({ children }: { children: React.ReactNode }) {
           <Button
             type="button"
             onClick={handleAddText}
-            disabled={!title || !content}
+            disabled={!title || !content || isSaving}
           >
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Add text
           </Button>
         </DialogFooter>

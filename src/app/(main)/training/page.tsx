@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,28 +11,25 @@ import {
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Info,
-  Loader2,
-  PlusCircle,
-  X,
-} from 'lucide-react';
+import { Info, Loader2, PlusCircle, X, Trash2, FileText } from 'lucide-react';
 import { AddTextDialog } from '@/components/add-text-dialog';
 import { AddFileDialog } from '@/components/add-file-dialog';
 import { ChatWidgetPreview } from '@/components/chat-widget-preview';
 import { useActiveAgent } from '../layout';
 import { cn } from '@/lib/utils';
 import { AddStarterDialog } from '@/components/add-starter-dialog';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { updateAgent } from '@/app/actions/agents';
+import type { TextSource } from '@/lib/types';
+import { deleteAgentText } from '@/app/actions/texts';
 
 export default function TrainingPage() {
   const { activeAgent, setActiveAgent } = useActiveAgent();
   const { user } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
 
   const [agentName, setAgentName] = useState('');
@@ -48,6 +45,14 @@ export default function TrainingPage() {
     activeAgent?.instructions !== instructions ||
     activeAgent?.temperature !== temperature ||
     JSON.stringify(activeAgent?.conversationStarters) !== JSON.stringify(starters);
+
+  // Firestore query for agent texts
+  const textsQuery = useMemo(() => {
+    if (!user || !activeAgent?.id) return null;
+    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'texts'));
+  }, [user, activeAgent, firestore]);
+
+  const { data: textSources, loading: textsLoading } = useCollection<TextSource>(textsQuery);
 
   useEffect(() => {
     if (activeAgent) {
@@ -102,6 +107,16 @@ export default function TrainingPage() {
         setActiveAgent({ ...activeAgent, ...updatedData });
       }
     });
+  };
+
+  const handleDeleteText = async (textId: string) => {
+    if (!user || !activeAgent?.id) return;
+    const result = await deleteAgentText(user.uid, activeAgent.id, textId);
+    if ('error' in result) {
+      toast({ title: 'Failed to delete text', description: result.error, variant: 'destructive' });
+    } else {
+      toast({ title: 'Text deleted successfully.' });
+    }
   }
   
   if (!activeAgent) {
@@ -240,20 +255,42 @@ export default function TrainingPage() {
                           </Button>
                         </AddTextDialog>
                       </div>
-                      <Card className="text-center flex-1 flex flex-col justify-center min-h-[400px]">
-                        <CardContent className="p-12">
-                          <p className="font-semibold">No texts added yet</p>
-                          <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-                            Add training texts to provide your AI agent with specific knowledge and information.
-                          </p>
-                           <AddTextDialog>
-                            <Button variant="secondary" className="mt-4">
-                              <PlusCircle className="mr-2 h-4 w-4" />
-                              Add text
-                            </Button>
-                          </AddTextDialog>
-                        </CardContent>
-                      </Card>
+                      
+                      {textsLoading ? (
+                        <div className="text-center py-12">
+                          <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+                          <p className="mt-2 text-sm text-muted-foreground">Loading texts...</p>
+                        </div>
+                      ) : textSources && textSources.length > 0 ? (
+                        <div className="space-y-3">
+                          {textSources.map((text) => (
+                            <Card key={text.id} className="flex items-center justify-between p-4">
+                               <div className="flex items-center gap-3">
+                                <FileText className="h-5 w-5 text-muted-foreground" />
+                                <span className="font-medium truncate">{text.title}</span>
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteText(text.id!)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <Card className="text-center flex-1 flex flex-col justify-center min-h-[400px]">
+                          <CardContent className="p-12">
+                            <p className="font-semibold">No texts added yet</p>
+                            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+                              Add training texts to provide your AI agent with specific knowledge and information.
+                            </p>
+                            <AddTextDialog>
+                              <Button variant="secondary" className="mt-4">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Add text
+                              </Button>
+                            </AddTextDialog>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   </TabsContent>
 
