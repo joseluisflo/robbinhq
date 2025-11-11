@@ -4,6 +4,7 @@ import { summarizeTaskResults } from '@/ai/flows/task-summarization';
 import { generateAgentInstructions } from '@/ai/flows/agent-instruction-generation';
 import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import type { Agent } from '@/lib/types';
 
 export async function getTasksSummary(taskResults: string): Promise<string | { error: string }> {
   try {
@@ -49,5 +50,26 @@ export async function createAgent(userId: string, name: string, description: str
   } catch (e: any) {
     console.error('Failed to create agent:', e);
     return { error: e.message || 'Failed to create agent in database.' };
+  }
+}
+
+export async function updateAgent(userId: string, agentId: string, data: Partial<Agent>): Promise<{ success: boolean } | { error: string }> {
+  if (!userId || !agentId || !data) {
+    return { error: 'User ID, agent ID, and data are required.' };
+  }
+
+  try {
+    const firestore = firebaseAdmin.firestore();
+    const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+    
+    await agentRef.update({
+      ...data,
+      lastModified: FieldValue.serverTimestamp(),
+    });
+
+    return { success: true };
+  } catch (e: any) {
+    console.error('Failed to update agent:', e);
+    return { error: e.message || 'Failed to update agent in database.' };
   }
 }

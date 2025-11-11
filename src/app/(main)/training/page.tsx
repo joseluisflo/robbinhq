@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,13 +26,26 @@ import { ChatWidgetPreview } from '@/components/chat-widget-preview';
 import { useActiveAgent } from '../layout';
 import { cn } from '@/lib/utils';
 import { AddStarterDialog } from '@/components/add-starter-dialog';
+import { useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { updateAgent } from '@/app/actions/agents';
 
 export default function TrainingPage() {
-  const { activeAgent } = useActiveAgent();
+  const { activeAgent, setActiveAgent } = useActiveAgent();
+  const { user } = useUser();
+  const { toast } = useToast();
+
   const [agentName, setAgentName] = useState('');
   const [instructions, setInstructions] = useState('');
   const [starters, setStarters] = useState<string[]>([]);
   const [isNameInvalid, setIsNameInvalid] = useState(false);
+
+  const [isSaving, startSavingTransition] = useTransition();
+
+  const isChanged =
+    activeAgent?.name !== agentName ||
+    activeAgent?.instructions !== instructions ||
+    JSON.stringify(activeAgent?.conversationStarters) !== JSON.stringify(starters);
 
   useEffect(() => {
     if (activeAgent) {
@@ -56,6 +69,35 @@ export default function TrainingPage() {
   const handleRemoveStarter = (indexToRemove: number) => {
     setStarters(prev => prev.filter((_, index) => index !== indexToRemove));
   };
+
+  const handleDiscardChanges = () => {
+    if (activeAgent) {
+      setAgentName(activeAgent.name);
+      setInstructions(activeAgent.instructions || '');
+      setStarters(activeAgent.conversationStarters || []);
+    }
+  }
+
+  const handleSaveChanges = () => {
+    if (!user || !activeAgent?.id || isNameInvalid) return;
+
+    startSavingTransition(async () => {
+      const updatedData = {
+        name: agentName,
+        instructions: instructions,
+        conversationStarters: starters,
+      };
+      const result = await updateAgent(user.uid, activeAgent.id!, updatedData);
+
+      if ('error' in result) {
+        toast({ title: 'Failed to save changes', description: result.error, variant: 'destructive' });
+      } else {
+        toast({ title: 'Changes saved successfully!' });
+        // Optimistically update the active agent in context
+        setActiveAgent({ ...activeAgent, ...updatedData });
+      }
+    });
+  }
   
   if (!activeAgent) {
     return (
@@ -291,8 +333,13 @@ export default function TrainingPage() {
 
               {/* Footer */}
               <div className="flex justify-between items-center gap-3 px-6 py-4 border-t bg-background">
-                <Button variant="ghost">Discard changes</Button>
-                <Button>Save changes</Button>
+                <Button variant="ghost" onClick={handleDiscardChanges} disabled={!isChanged || isSaving}>
+                    Discard changes
+                </Button>
+                <Button onClick={handleSaveChanges} disabled={!isChanged || isNameInvalid || isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save changes
+                </Button>
               </div>
             </Tabs>
           </div>

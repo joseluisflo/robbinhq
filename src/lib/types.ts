@@ -15,6 +15,7 @@ export type Agent = {
   status: 'idle' | 'working' | 'stopped';
   tasks: Task[];
   conversationStarters?: string[];
+  lastModified?: string;
 };
 
 export type Workflow = {
