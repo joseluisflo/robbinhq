@@ -68,7 +68,7 @@ export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPrevie
       {mode === 'chat' && (
         <>
           {/* Chat Messages */}
-          <div className="flex-1 p-6 overflow-y-auto bg-background flex flex-col justify-between">
+          <div className="flex-1 px-6 pt-6 pb-2 overflow-y-auto bg-background flex flex-col justify-between">
             <div>
                 <div className="flex justify-start">
                     <div className="max-w-[75%]">
