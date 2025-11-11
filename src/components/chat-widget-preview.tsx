@@ -25,17 +25,11 @@ import { getAgentResponse } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 
 interface ChatWidgetPreviewProps {
-  agentData: {
-    name: string;
-    instructions?: string;
-    welcomeMessage?: string;
-    isWelcomeMessageEnabled?: boolean;
-    temperature?: number;
-    conversationStarters?: string[];
-    escalationRules?: string[];
-    textSources: TextSource[];
-    fileSources: AgentFile[];
+  agentData?: Partial<Agent> & {
+    textSources?: TextSource[];
+    fileSources?: AgentFile[];
   };
+  agentName?: string;
   mode?: 'chat' | 'in-call';
 }
 
@@ -48,6 +42,7 @@ interface Message {
 
 export function ChatWidgetPreview({
   agentData,
+  agentName: agentNameProp,
   mode = 'chat',
 }: ChatWidgetPreviewProps) {
   const [prompt, setPrompt] = useState('');
@@ -61,21 +56,30 @@ export function ChatWidgetPreview({
   const startX = useRef(0);
   const scrollLeft = useRef(0);
 
+  const agentName = agentData?.name || agentNameProp || 'Agent Preview';
+  const welcomeMessage = agentData?.welcomeMessage;
+  const isWelcomeMessageEnabled = agentData?.isWelcomeMessageEnabled;
+  const conversationStarters = agentData?.conversationStarters || [];
+  const textSources = agentData?.textSources || [];
+  const fileSources = agentData?.fileSources || [];
+  const instructions = agentData?.instructions;
+  const temperature = agentData?.temperature;
+
   useEffect(() => {
     // Set initial welcome message when agent data changes
-    if (agentData.isWelcomeMessageEnabled && agentData.welcomeMessage) {
+    if (isWelcomeMessageEnabled && welcomeMessage) {
       setMessages([
         {
           id: '1',
           sender: 'agent',
-          text: agentData.welcomeMessage,
+          text: welcomeMessage,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
     } else {
       setMessages([]);
     }
-  }, [agentData.welcomeMessage, agentData.isWelcomeMessageEnabled]);
+  }, [welcomeMessage, isWelcomeMessageEnabled]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -103,13 +107,13 @@ export function ChatWidgetPreview({
 
     startResponding(async () => {
       // Convert complex objects to plain objects before sending to the server action
-      const plainTextSources = agentData.textSources.map(ts => ({ title: ts.title, content: ts.content }));
-      const plainFileSources = agentData.fileSources.map(fs => ({ name: fs.name, extractedText: fs.extractedText || '' }));
+      const plainTextSources = textSources.map(ts => ({ title: ts.title, content: ts.content }));
+      const plainFileSources = fileSources.map(fs => ({ name: fs.name, extractedText: fs.extractedText || '' }));
 
       const result = await getAgentResponse({
         message: prompt,
-        instructions: agentData.instructions,
-        temperature: agentData.temperature,
+        instructions: instructions,
+        temperature: temperature,
         textSources: plainTextSources,
         fileSources: plainFileSources,
       });
@@ -191,11 +195,11 @@ export function ChatWidgetPreview({
       <div className="p-4 border-b flex items-center justify-between bg-card">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
-            <AvatarFallback>{getInitials(agentData.name)}</AvatarFallback>
+            <AvatarFallback>{getInitials(agentName)}</AvatarFallback>
           </Avatar>
           <div>
             <p className="font-semibold text-sm">
-              {agentData.name || 'Agent Preview'}
+              {agentName}
             </p>
             <p className="text-xs text-muted-foreground">
               The team can also help
@@ -228,7 +232,7 @@ export function ChatWidgetPreview({
                       <p className="text-sm text-left">{message.text}</p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1.5 px-1">
-                      {message.sender === 'agent' ? agentData.name : 'You'} • {message.timestamp}
+                      {message.sender === 'agent' ? agentName : 'You'} • {message.timestamp}
                     </p>
                   </div>
                 </div>
@@ -245,7 +249,7 @@ export function ChatWidgetPreview({
             </div>
             
             {/* Conversation Starters */}
-            {agentData.conversationStarters && agentData.conversationStarters.length > 0 && (
+            {conversationStarters && conversationStarters.length > 0 && (
               <div className="pb-2 mt-4">
                 <ScrollArea
                   viewportRef={viewportRef}
@@ -257,7 +261,7 @@ export function ChatWidgetPreview({
                   style={{ cursor: 'grab' }}
                 >
                   <div className="flex w-max space-x-2">
-                    {agentData.conversationStarters.map((starter, index) => (
+                    {conversationStarters.map((starter, index) => (
                       <Button
                         key={index}
                         variant="outline"

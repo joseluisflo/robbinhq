@@ -27,6 +27,7 @@ import {
 
 export default function DesignPage() {
   const [agentName, setAgentName] = useState('Fitness Assistant');
+  const agentData = { name: agentName };
 
   return (
     <div className="h-full flex-1 flex flex-col">
@@ -236,12 +237,12 @@ export default function DesignPage() {
             <div className="flex h-full flex-col">
               <TabsContent value="chat" className="flex-1 mt-0">
                 <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-                    <ChatWidgetPreview agentName={agentName} mode="chat" />
+                    <ChatWidgetPreview agentData={agentData} mode="chat" />
                 </div>
               </TabsContent>
               <TabsContent value="in-call" className="flex-1 mt-0">
                  <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-                    <ChatWidgetPreview agentName={agentName} mode="in-call" />
+                    <ChatWidgetPreview agentData={agentData} mode="in-call" />
                  </div>
               </TabsContent>
             </div>
