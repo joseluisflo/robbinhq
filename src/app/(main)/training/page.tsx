@@ -38,6 +38,7 @@ export default function TrainingPage() {
   const [agentName, setAgentName] = useState('');
   const [instructions, setInstructions] = useState('');
   const [starters, setStarters] = useState<string[]>([]);
+  const [temperature, setTemperature] = useState(0.4);
   const [isNameInvalid, setIsNameInvalid] = useState(false);
 
   const [isSaving, startSavingTransition] = useTransition();
@@ -45,6 +46,7 @@ export default function TrainingPage() {
   const isChanged =
     activeAgent?.name !== agentName ||
     activeAgent?.instructions !== instructions ||
+    activeAgent?.temperature !== temperature ||
     JSON.stringify(activeAgent?.conversationStarters) !== JSON.stringify(starters);
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function TrainingPage() {
       setAgentName(activeAgent.name);
       setInstructions(activeAgent.instructions || '');
       setStarters(activeAgent.conversationStarters || []);
+      setTemperature(activeAgent.temperature ?? 0.4);
       setIsNameInvalid(activeAgent.name.length < 3);
     }
   }, [activeAgent]);
@@ -75,6 +78,7 @@ export default function TrainingPage() {
       setAgentName(activeAgent.name);
       setInstructions(activeAgent.instructions || '');
       setStarters(activeAgent.conversationStarters || []);
+      setTemperature(activeAgent.temperature ?? 0.4);
     }
   }
 
@@ -86,6 +90,7 @@ export default function TrainingPage() {
         name: agentName,
         instructions: instructions,
         conversationStarters: starters,
+        temperature: temperature,
       };
       const result = await updateAgent(user.uid, activeAgent.id!, updatedData);
 
@@ -204,11 +209,12 @@ export default function TrainingPage() {
                           Temperature
                           <Info className="h-4 w-4 text-muted-foreground" />
                         </Label>
-                        <span className="text-sm font-medium">0</span>
+                        <span className="text-sm font-medium">{temperature}</span>
                       </div>
                       <Slider
                         id="temperature"
-                        defaultValue={[0]}
+                        value={[temperature]}
+                        onValueChange={(value) => setTemperature(value[0])}
                         max={1}
                         step={0.1}
                         className="mt-2"
