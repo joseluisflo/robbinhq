@@ -10,6 +10,7 @@ export type Agent = {
   id?: string;
   name: string;
   description: string;
+  instructions?: string;
   goals: string[];
   status: 'idle' | 'working' | 'stopped';
   tasks: Task[];
