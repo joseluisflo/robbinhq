@@ -17,11 +17,19 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import SiriOrb from '@/components/smoothui/ui/SiriOrb';
+import { ScrollArea, ScrollBar } from './ui/scroll-area';
 
 interface ChatWidgetPreviewProps {
     agentName: string;
     mode?: 'chat' | 'in-call';
 }
+
+const mockStarters = [
+    "Dame una rutina rápida",
+    "Explícame los beneficios del cardio",
+    "Sugiéreme un desayuno saludable"
+];
+
 
 export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPreviewProps) {
   const [prompt, setPrompt] = useState('');
@@ -60,16 +68,36 @@ export function ChatWidgetPreview({ agentName, mode = 'chat' }: ChatWidgetPrevie
       {mode === 'chat' && (
         <>
           {/* Chat Messages */}
-          <div className="flex-1 p-6 overflow-y-auto bg-background">
-            <div className="flex justify-start">
-              <div className="max-w-[75%]">
-                <div className="p-3 rounded-2xl rounded-tl-sm bg-muted">
-                  <p className="text-sm">
-                    Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!
-                  </p>
+          <div className="flex-1 p-6 overflow-y-auto bg-background flex flex-col justify-between">
+            <div>
+                <div className="flex justify-start">
+                    <div className="max-w-[75%]">
+                        <div className="p-3 rounded-2xl rounded-tl-sm bg-muted">
+                        <p className="text-sm">
+                            Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!
+                        </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1.5 ml-1">Agent • Ahora</p>
+                    </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5 ml-1">Agent • Ahora</p>
-              </div>
+            </div>
+             {/* Conversation Starters */}
+            <div className="pb-2">
+                <ScrollArea className="w-full whitespace-nowrap">
+                    <div className="flex w-max space-x-2 pb-2">
+                        {mockStarters.map((starter, index) => (
+                        <Button
+                            key={index}
+                            variant="outline"
+                            className="rounded-full h-8 text-sm"
+                            onClick={() => setPrompt(starter)}
+                        >
+                            {starter}
+                        </Button>
+                        ))}
+                    </div>
+                    <ScrollBar orientation="horizontal" className="h-2" />
+                </ScrollArea>
             </div>
           </div>
 
