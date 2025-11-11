@@ -28,7 +28,7 @@ import type { Agent } from '@/lib/types';
 
 
 export default function DesignPage() {
-  const { activeAgent } = useActiveAgent();
+  const { activeAgent, setActiveAgent } = useActiveAgent();
   
   const [agentName, setAgentName] = useState('Agent Name');
   const [isDisplayNameEnabled, setIsDisplayNameEnabled] = useState(true);
@@ -41,10 +41,24 @@ export default function DesignPage() {
     }
   }, [activeAgent]);
 
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value;
+    setAgentName(newName);
+    if (activeAgent) {
+      setActiveAgent({ ...activeAgent, name: newName });
+    }
+  };
+
+  const handleSwitchChange = (checked: boolean) => {
+    setIsDisplayNameEnabled(checked);
+    if (activeAgent) {
+      setActiveAgent({ ...activeAgent, isDisplayNameEnabled: checked });
+    }
+  }
+
   const agentData: Partial<Agent> & { isDisplayNameEnabled?: boolean } = {
     name: agentName,
     isDisplayNameEnabled: isDisplayNameEnabled,
-    // Add other relevant design properties here as needed
     welcomeMessage: activeAgent?.welcomeMessage,
     isWelcomeMessageEnabled: activeAgent?.isWelcomeMessageEnabled,
     conversationStarters: activeAgent?.conversationStarters,
@@ -67,41 +81,40 @@ export default function DesignPage() {
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto">
                     <TabsContent value="chat">
-                      <div className="p-6 space-y-6">
+                      <div className="p-6 space-y-8">
+                        <div className="space-y-2">
+                           <div className="flex items-center justify-between">
+                              <Label htmlFor="display-name-toggle">Display name</Label>
+                               <Switch 
+                                id="display-name-toggle" 
+                                checked={isDisplayNameEnabled}
+                                onCheckedChange={handleSwitchChange}
+                              />
+                           </div>
+                           <Input id="display-name" value={agentName} onChange={handleNameChange} />
+                        </div>
                         <Card>
-                            <CardHeader>
-                                <CardTitle>Display</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="flex items-center justify-between rounded-lg border p-4">
-                                    <div>
-                                        <Label htmlFor="display-name-toggle">Display name</Label>
-                                        <Input id="display-name" value={agentName} onChange={(e) => setAgentName(e.target.value)} className="mt-2"/>
-                                    </div>
-                                    <Switch 
-                                      id="display-name-toggle" 
-                                      checked={isDisplayNameEnabled}
-                                      onCheckedChange={setIsDisplayNameEnabled}
-                                    />
-                                </div>
-
-                                <div className="flex items-center justify-between rounded-lg border p-4">
-                                     <div>
-                                        <Label htmlFor="logo-toggle">Logo</Label>
-                                        <div className="w-full h-24 mt-2 bg-muted rounded-md flex items-center justify-center text-sm text-muted-foreground">
-                                            Logo upload area
-                                        </div>
-                                    </div>
-                                    <Switch id="logo-toggle" />
-                                </div>
-                                 <div className="rounded-lg border p-4">
-                                    <Label htmlFor="favicon">Favicon</Label>
-                                    <div className="w-16 h-16 mt-2 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
-                                        32x32
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                          <CardHeader>
+                              <CardTitle>Display</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-6">
+                              <div className="flex items-center justify-between rounded-lg border p-4">
+                                   <div>
+                                      <Label htmlFor="logo-toggle">Logo</Label>
+                                      <div className="w-full h-24 mt-2 bg-muted rounded-md flex items-center justify-center text-sm text-muted-foreground">
+                                          Logo upload area
+                                      </div>
+                                  </div>
+                                  <Switch id="logo-toggle" />
+                              </div>
+                               <div className="rounded-lg border p-4">
+                                  <Label htmlFor="favicon">Favicon</Label>
+                                  <div className="w-16 h-16 mt-2 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
+                                      32x32
+                                  </div>
+                              </div>
+                          </CardContent>
+                      </Card>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Theme</CardTitle>

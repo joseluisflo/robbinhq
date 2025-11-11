@@ -51,7 +51,6 @@ export default function TrainingPage() {
   const [isWelcomeMessageEnabled, setIsWelcomeMessageEnabled] = useState(true);
   const [starters, setStarters] = useState<string[]>([]);
   const [temperature, setTemperature] = useState(0.4);
-  const [isNameInvalid, setIsNameInvalid] = useState(false);
   const [maxMessages, setMaxMessages] = useState(20);
   const [timeframe, setTimeframe] = useState(240);
   const [limitExceededMessage, setLimitExceededMessage] = useState('Too many messages in a row');
@@ -92,7 +91,6 @@ export default function TrainingPage() {
       setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
       setStarters(activeAgent.conversationStarters || []);
       setTemperature(activeAgent.temperature ?? 0.4);
-      setIsNameInvalid(activeAgent.name.length < 3);
       setMaxMessages(activeAgent.rateLimiting?.maxMessages ?? 20);
       setTimeframe(activeAgent.rateLimiting?.timeframe ?? 240);
       setLimitExceededMessage(activeAgent.rateLimiting?.limitExceededMessage ?? 'Too many messages in a row');
@@ -121,7 +119,7 @@ export default function TrainingPage() {
   }
 
   const handleSaveChanges = () => {
-    if (!user || !activeAgent?.id || isNameInvalid) return;
+    if (!user || !activeAgent?.id) return;
 
     startSavingTransition(async () => {
       const updatedData = {
@@ -208,6 +206,7 @@ export default function TrainingPage() {
                   <TabsTrigger value="instructions">Instructions</TabsTrigger>
                   <TabsTrigger value="texts">Texts</TabsTrigger>
                   <TabsTrigger value="files">Files</TabsTrigger>
+                  <TabsTrigger value="security">Security</TabsTrigger>
                 </TabsList>
               </div>
 
@@ -469,7 +468,7 @@ export default function TrainingPage() {
                 <Button variant="ghost" onClick={handleDiscardChanges} disabled={!isChanged || isSaving}>
                     Discard changes
                 </Button>
-                <Button onClick={handleSaveChanges} disabled={!isChanged || isNameInvalid || isSaving}>
+                <Button onClick={handleSaveChanges} disabled={!isChanged || isSaving}>
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save changes
                 </Button>
