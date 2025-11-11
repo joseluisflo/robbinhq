@@ -29,7 +29,7 @@ import { Loader2 } from 'lucide-react';
 import { updateAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
-import { ColorPicker } from '@/components/custom/color-picker';
+import { ColorPicker, ColorPickerAlpha, ColorPickerEyeDropper, ColorPickerFormat, ColorPickerHue, ColorPickerOutput, ColorPickerSelection } from '@/components/custom/color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 
@@ -177,14 +177,29 @@ export default function DesignPage() {
                                     style={{ backgroundColor: themeColor }}
                                   />
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 border-none">
-                                  <ColorPicker
-                                    value={themeColor}
-                                    onChange={(rgba) => {
-                                      const newColor = `rgba(${rgba.join(', ')})`;
-                                      setThemeColor(newColor);
-                                    }}
-                                  />
+                                <PopoverContent className="w-auto p-0" align="end">
+                                    <ColorPicker
+                                        defaultValue={themeColor}
+                                        onChange={(rgba) => {
+                                          const newColor = `rgba(${rgba.join(', ')})`;
+                                          setThemeColor(newColor);
+                                        }}
+                                    >
+                                        <div className="flex flex-col gap-4 p-4">
+                                            <ColorPickerSelection className="h-36" />
+                                            <div className="flex items-center gap-2">
+                                                <ColorPickerEyeDropper />
+                                                <div className="flex w-full flex-col gap-2">
+                                                    <ColorPickerHue />
+                                                    <ColorPickerAlpha />
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between text-sm">
+                                                <ColorPickerOutput />
+                                                <ColorPickerFormat />
+                                            </div>
+                                        </div>
+                                    </ColorPicker>
                                 </PopoverContent>
                               </Popover>
                             </div>
