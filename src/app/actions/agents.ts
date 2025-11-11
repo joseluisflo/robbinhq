@@ -39,6 +39,7 @@ export async function createAgent(userId: string, name: string, description: str
       goals: [],
       status: 'idle',
       tasks: [],
+      conversationStarters: [],
       createdAt: FieldValue.serverTimestamp(),
     };
 

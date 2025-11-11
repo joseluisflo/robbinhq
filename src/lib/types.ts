@@ -14,6 +14,7 @@ export type Agent = {
   goals: string[];
   status: 'idle' | 'working' | 'stopped';
   tasks: Task[];
+  conversationStarters?: string[];
 };
 
 export type Workflow = {
