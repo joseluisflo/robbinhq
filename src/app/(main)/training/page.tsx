@@ -224,24 +224,6 @@ export default function TrainingPage() {
                         <span>Creative</span>
                       </div>
                     </div>
-
-                    <div>
-                      <Label className="text-base font-semibold">Capabilities</Label>
-                      <div className="space-y-3 mt-3">
-                        <div className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <Label htmlFor="web-search" className="text-sm font-medium">Web search</Label>
-                          </div>
-                          <Switch id="web-search" />
-                        </div>
-                        <div className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <Label htmlFor="image-generation" className="text-sm font-medium">Image generation</Label>
-                          </div>
-                          <Switch id="image-generation" />
-                        </div>
-                      </div>
-                    </div>
                   </TabsContent>
 
                   <TabsContent value="texts" className="mt-0 h-full">
