@@ -200,11 +200,11 @@ export default function TrainingPage() {
           <div className="flex flex-col h-full">
             <Tabs defaultValue="instructions" className="flex flex-col flex-1 h-full">
                <div className="px-6 py-3 border-b">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="instructions">Instructions</TabsTrigger>
                   <TabsTrigger value="texts">Texts</TabsTrigger>
                   <TabsTrigger value="files">Files</TabsTrigger>
-                  {/* <TabsTrigger value="security">Security</TabsTrigger> */}
+                  <TabsTrigger value="security">Security</TabsTrigger>
                 </TabsList>
               </div>
 
