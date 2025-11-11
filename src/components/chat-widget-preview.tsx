@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, type MouseEvent } from 'react';
+import { useState, useRef, useEffect, type MouseEvent, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -14,31 +14,111 @@ import {
   X,
   PhoneOff,
   MicOff,
+  Loader2,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import SiriOrb from '@/components/smoothui/ui/SiriOrb';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
+import { cn } from '@/lib/utils';
+import type { Agent, AgentFile, TextSource } from '@/lib/types';
+import { getAgentResponse } from '@/app/actions/agents';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatWidgetPreviewProps {
-  agentName: string;
+  agentData: {
+    name: string;
+    instructions?: string;
+    temperature?: number;
+    conversationStarters?: string[];
+    escalationRules?: string[];
+    textSources: TextSource[];
+    fileSources: AgentFile[];
+  };
   mode?: 'chat' | 'in-call';
-  starters?: string[];
+}
+
+interface Message {
+  id: string;
+  sender: 'user' | 'agent';
+  text: string;
+  timestamp: string;
 }
 
 export function ChatWidgetPreview({
-  agentName,
+  agentData,
   mode = 'chat',
-  starters = [],
 }: ChatWidgetPreviewProps) {
   const [prompt, setPrompt] = useState('');
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      sender: 'agent',
+      text: 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
+  ]);
+  const [isResponding, startResponding] = useTransition();
+
+  const { toast } = useToast();
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
 
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   const getInitials = (name: string) => {
     if (!name) return 'A';
     return name.substring(0, 2).toUpperCase();
+  };
+
+  const handleSendMessage = () => {
+    if (!prompt.trim()) return;
+
+    const newUserMessage: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text: prompt,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages(prev => [...prev, newUserMessage]);
+    setPrompt('');
+
+    startResponding(async () => {
+      const result = await getAgentResponse({
+        message: prompt,
+        ...agentData
+      });
+
+      if ('error' in result) {
+        toast({
+          title: 'Error getting response',
+          description: result.error,
+          variant: 'destructive',
+        });
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          sender: 'agent',
+          text: 'Sorry, I encountered an error.',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      } else {
+        const agentMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          sender: 'agent',
+          text: result.response,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages(prev => [...prev, agentMessage]);
+      }
+    });
   };
 
   const handleWheel = (e: WheelEvent) => {
@@ -93,11 +173,11 @@ export function ChatWidgetPreview({
       <div className="p-4 border-b flex items-center justify-between bg-card">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
-            <AvatarFallback>{getInitials(agentName)}</AvatarFallback>
+            <AvatarFallback>{getInitials(agentData.name)}</AvatarFallback>
           </Avatar>
           <div>
             <p className="font-semibold text-sm">
-              {agentName || 'Agent Preview'}
+              {agentData.name || 'Agent Preview'}
             </p>
             <p className="text-xs text-muted-foreground">
               The team can also help
@@ -117,25 +197,38 @@ export function ChatWidgetPreview({
       {mode === 'chat' && (
         <>
           {/* Chat Messages */}
-          <div className="flex-1 px-4 pt-4 bg-background flex flex-col justify-between">
-            <div>
-              <div className="flex justify-start">
-                <div className="max-w-[75%]">
-                  <div className="p-3 rounded-2xl rounded-tl-sm bg-muted">
-                    <p className="text-sm">
-                      Hola, estás hablando con el agente de vista previa.
-                      ¡Hazme una pregunta para empezar!
+          <div ref={chatContainerRef} className="flex-1 px-4 pt-4 bg-background flex flex-col justify-between overflow-y-auto">
+            <div className="space-y-4">
+              {messages.map((message) => (
+                <div key={message.id} className={cn("flex", message.sender === 'user' ? 'justify-end' : 'justify-start')}>
+                  <div className={cn("max-w-[75%]", message.sender === 'user' ? 'text-right' : 'text-left')}>
+                    <div className={cn("p-3 rounded-2xl", 
+                      message.sender === 'user' 
+                      ? 'bg-primary text-primary-foreground rounded-br-sm' 
+                      : 'bg-muted rounded-tl-sm'
+                    )}>
+                      <p className="text-sm text-left">{message.text}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1.5 px-1">
+                      {message.sender === 'agent' ? agentData.name : 'You'} • {message.timestamp}
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1.5 ml-1">
-                    Agent • Ahora
-                  </p>
                 </div>
-              </div>
+              ))}
+              {isResponding && (
+                <div className="flex justify-start">
+                  <div className="max-w-[75%]">
+                    <div className="p-3 rounded-2xl rounded-tl-sm bg-muted flex items-center">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
+            
             {/* Conversation Starters */}
-            {starters.length > 0 && (
-              <div className="pb-2">
+            {agentData.conversationStarters && agentData.conversationStarters.length > 0 && (
+              <div className="pb-2 mt-4">
                 <ScrollArea
                   viewportRef={viewportRef}
                   className="w-full whitespace-nowrap"
@@ -146,7 +239,7 @@ export function ChatWidgetPreview({
                   style={{ cursor: 'grab' }}
                 >
                   <div className="flex w-max space-x-2">
-                    {starters.map((starter, index) => (
+                    {agentData.conversationStarters.map((starter, index) => (
                       <Button
                         key={index}
                         variant="outline"
@@ -175,15 +268,17 @@ export function ChatWidgetPreview({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    // Handle send
+                    handleSendMessage();
                   }
                 }}
+                disabled={isResponding}
               />
               <Button
                 type="submit"
                 size="icon"
                 className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
-                disabled={!prompt.trim()}
+                disabled={!prompt.trim() || isResponding}
+                onClick={handleSendMessage}
               >
                 <ArrowUp className="h-4 w-4" />
               </Button>

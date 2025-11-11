@@ -2,9 +2,11 @@
 
 import { summarizeTaskResults } from '@/ai/flows/task-summarization';
 import { generateAgentInstructions } from '@/ai/flows/agent-instruction-generation';
+import { agentChat } from '@/ai/flows/agent-chat';
 import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import type { Agent } from '@/lib/types';
+import type { Agent, AgentFile, TextSource } from '@/lib/types';
+
 
 export async function getTasksSummary(taskResults: string): Promise<string | { error: string }> {
   try {
@@ -73,5 +75,33 @@ export async function updateAgent(userId: string, agentId: string, data: Partial
   } catch (e: any) {
     console.error('Failed to update agent:', e);
     return { error: e.message || 'Failed to update agent in database.' };
+  }
+}
+
+
+interface AgentResponseInput {
+    message: string;
+    instructions?: string;
+    temperature?: number;
+    textSources: TextSource[];
+    fileSources: AgentFile[];
+}
+
+export async function getAgentResponse(input: AgentResponseInput): Promise<{ response: string } | { error: string }> {
+  try {
+    const knowledge = [
+        ...input.textSources.map(t => `Title: ${t.title}\nContent: ${t.content}`),
+        ...input.fileSources.map(f => `File: ${f.name}\nContent: ${f.extractedText}`)
+    ].join('\n\n---\n\n');
+
+    const result = await agentChat({
+      message: input.message,
+      instructions: input.instructions || '',
+      knowledge: knowledge,
+    });
+    return { response: result.response };
+  } catch (e: any) {
+    console.error('Failed to get agent response:', e);
+    return { error: e.message || 'Failed to get agent response.' };
   }
 }

@@ -18,6 +18,7 @@ export type Agent = {
   escalationRules?: string[];
   temperature?: number;
   lastModified?: string;
+  createdAt?: any;
 };
 
 export type Workflow = {

@@ -53,13 +53,6 @@ export default function TrainingPage() {
 
   const [isSaving, startSavingTransition] = useTransition();
 
-  const isChanged =
-    activeAgent?.name !== agentName ||
-    activeAgent?.instructions !== instructions ||
-    activeAgent?.temperature !== temperature ||
-    JSON.stringify(activeAgent?.conversationStarters) !== JSON.stringify(starters) ||
-    JSON.stringify(activeAgent?.escalationRules) !== JSON.stringify(escalationRules);
-
   // Firestore query for agent texts
   const textsQuery = useMemo(() => {
     if (!user || !activeAgent?.id) return null;
@@ -75,6 +68,14 @@ export default function TrainingPage() {
   }, [user, activeAgent, firestore]);
 
   const { data: fileSources, loading: filesLoading } = useCollection<AgentFile>(filesQuery);
+
+  const isChanged =
+    activeAgent?.name !== agentName ||
+    activeAgent?.instructions !== instructions ||
+    activeAgent?.temperature !== temperature ||
+    JSON.stringify(activeAgent?.conversationStarters) !== JSON.stringify(starters) ||
+    JSON.stringify(activeAgent?.escalationRules) !== JSON.stringify(escalationRules);
+
 
   useEffect(() => {
     if (activeAgent) {
@@ -172,6 +173,16 @@ export default function TrainingPage() {
       </div>
     );
   }
+
+  const currentAgentData = {
+    name: agentName,
+    instructions: instructions,
+    temperature: temperature,
+    conversationStarters: starters,
+    escalationRules: escalationRules,
+    textSources: textSources || [],
+    fileSources: fileSources || [],
+  };
 
   return (
     <div className="h-full flex-1 flex flex-col">
@@ -458,7 +469,10 @@ export default function TrainingPage() {
         {/* Preview Panel */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-            <ChatWidgetPreview agentName={agentName} starters={starters} mode="chat" />
+            <ChatWidgetPreview 
+              agentData={currentAgentData}
+              mode="chat" 
+            />
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
