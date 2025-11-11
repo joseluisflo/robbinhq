@@ -66,8 +66,11 @@ export async function updateAgent(userId: string, agentId: string, data: Partial
     const firestore = firebaseAdmin.firestore();
     const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
     
+    // Create a new object without the properties that shouldn't be updated from this form.
+    const { allowedDomains, ...updatableData } = data;
+
     await agentRef.update({
-      ...data,
+      ...updatableData,
       lastModified: FieldValue.serverTimestamp(),
     });
 

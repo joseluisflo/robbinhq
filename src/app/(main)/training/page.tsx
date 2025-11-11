@@ -13,7 +13,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Info, Loader2, PlusCircle, X, Trash2, FileText, File as FileIcon } from 'lucide-react';
+import { Info, Loader2, PlusCircle, X, Trash2, FileText, File as FileIcon, Shield } from 'lucide-react';
 import { AddTextDialog } from '@/components/add-text-dialog';
 import { AddFileDialog } from '@/components/add-file-dialog';
 import { ChatWidgetPreview } from '@/components/chat-widget-preview';
@@ -47,7 +47,6 @@ export default function TrainingPage() {
   const [agentName, setAgentName] = useState('');
   const [instructions, setInstructions] = useState('');
   const [starters, setStarters] = useState<string[]>([]);
-  const [allowedDomains, setAllowedDomains] = useState<string[]>([]);
   const [temperature, setTemperature] = useState(0.4);
   const [isNameInvalid, setIsNameInvalid] = useState(false);
 
@@ -73,8 +72,7 @@ export default function TrainingPage() {
     activeAgent?.name !== agentName ||
     activeAgent?.instructions !== instructions ||
     activeAgent?.temperature !== temperature ||
-    JSON.stringify(activeAgent?.conversationStarters) !== JSON.stringify(starters) ||
-    JSON.stringify(activeAgent?.allowedDomains) !== JSON.stringify(allowedDomains);
+    JSON.stringify(activeAgent?.conversationStarters) !== JSON.stringify(starters);
 
 
   useEffect(() => {
@@ -82,7 +80,6 @@ export default function TrainingPage() {
       setAgentName(activeAgent.name);
       setInstructions(activeAgent.instructions || '');
       setStarters(activeAgent.conversationStarters || []);
-      setAllowedDomains(activeAgent.allowedDomains || []);
       setTemperature(activeAgent.temperature ?? 0.4);
       setIsNameInvalid(activeAgent.name.length < 3);
     }
@@ -101,18 +98,12 @@ export default function TrainingPage() {
   const handleRemoveStarter = (indexToRemove: number) => {
     setStarters(prev => prev.filter((_, index) => index !== indexToRemove));
   };
-  
-  const handleDomainsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const domains = e.target.value.split('\n').map(d => d.trim()).filter(Boolean);
-    setAllowedDomains(domains);
-  }
 
   const handleDiscardChanges = () => {
     if (activeAgent) {
       setAgentName(activeAgent.name);
       setInstructions(activeAgent.instructions || '');
       setStarters(activeAgent.conversationStarters || []);
-      setAllowedDomains(activeAgent.allowedDomains || []);
       setTemperature(activeAgent.temperature ?? 0.4);
     }
   }
@@ -125,7 +116,6 @@ export default function TrainingPage() {
         name: agentName,
         instructions: instructions,
         conversationStarters: starters,
-        allowedDomains: allowedDomains,
         temperature: temperature,
       };
       const result = await updateAgent(user.uid, activeAgent.id!, updatedData);
@@ -401,22 +391,17 @@ export default function TrainingPage() {
                   </TabsContent>
 
                   <TabsContent value="security" className="mt-0">
-                    <div className="space-y-2">
-                        <Label htmlFor="allowed-domains" className="text-base font-semibold flex items-center gap-2">
-                            Allowed Domains
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                        </Label>
-                        <Textarea
-                            id="allowed-domains"
-                            placeholder="example.com&#10;*.example.com"
-                            value={allowedDomains.join('\n')}
-                            onChange={handleDomainsChange}
-                            className="min-h-[200px]"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            Enter one domain per line. Use * as a wildcard for subdomains.
+                    <Card className="text-center">
+                      <CardContent className="p-8">
+                        <div className="mx-auto bg-muted rounded-full h-12 w-12 flex items-center justify-center">
+                          <Shield className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="font-semibold mt-4">Security Settings</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Domain restrictions and other security settings are managed in the Deploy section.
                         </p>
-                    </div>
+                      </CardContent>
+                    </Card>
                   </TabsContent>
                 </div>
               </div>
