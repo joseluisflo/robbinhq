@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, type DragEvent, useTransition } from 'react';
@@ -33,7 +34,7 @@ export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProp
   const { activeAgent, setActiveAgent } = useActiveAgent();
   
   useEffect(() => {
-    if (isSaving) { // When parent starts saving, upload the file if there is one
+    if (isSaving && file) { 
         handleUpload();
     }
   }, [isSaving]);
@@ -44,6 +45,9 @@ export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProp
         setPreview(agent.logoUrl || null);
         setFile(null);
         if(inputRef.current) inputRef.current.value = '';
+    } else {
+        setPreview(null);
+        setFile(null);
     }
   }, [agent]);
 
@@ -100,11 +104,11 @@ export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProp
         const result = await response.json();
 
         if (response.ok) {
-           // The API returns the new URL, now update the agent document in Firestore.
            const updateResult = await updateAgent(user.uid, activeAgent.id!, { logoUrl: result.url });
            if ('error' in updateResult) {
                 toast({ title: 'Failed to save logo', description: updateResult.error, variant: 'destructive' });
            } else {
+                toast({ title: 'Logo saved successfully!'});
                 if (setActiveAgent && activeAgent) {
                     setActiveAgent({ ...activeAgent, logoUrl: result.url });
                 }
@@ -134,6 +138,7 @@ export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProp
     
     // Optimistically update UI
     setPreview(null);
+    setFile(null);
     onLogoChange(null);
     if (inputRef.current) inputRef.current.value = '';
 
@@ -160,7 +165,7 @@ export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProp
   const renderPreview = () => (
     <div className="relative group w-24 h-24">
       <Avatar className="w-full h-full rounded-md">
-        <AvatarImage src={preview!} alt="Logo Preview" className="object-cover" />
+        {preview && <AvatarImage src={preview} alt="Logo Preview" className="object-cover" />}
         <AvatarFallback className="rounded-md bg-muted text-muted-foreground text-2xl font-bold">
             {getInitials(agent?.name || '')}
         </AvatarFallback>

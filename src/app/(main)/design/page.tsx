@@ -27,19 +27,24 @@ import { useActiveAgent } from '../layout';
 import type { Agent } from '@/lib/types';
 import { LogoUploader } from '@/components/logo-uploader';
 import { Loader2 } from 'lucide-react';
+import { updateAgent } from '@/app/actions/agents';
+import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
 
 
 export default function DesignPage() {
   const { activeAgent, setActiveAgent } = useActiveAgent();
+  const { user } = useUser();
+  const { toast } = useToast();
   
-  const [agentName, setAgentName] = useState('Agent Name');
+  const [agentName, setAgentName] = useState('');
   const [isDisplayNameEnabled, setIsDisplayNameEnabled] = useState(true);
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const [isSaving, startSaving] = useTransition();
 
   const isChanged = 
-    agentName !== activeAgent?.name ||
+    agentName !== (activeAgent?.name || '') ||
     isDisplayNameEnabled !== (activeAgent?.isDisplayNameEnabled ?? true) ||
     logoFile !== null;
 
@@ -49,6 +54,9 @@ export default function DesignPage() {
       setAgentName(activeAgent.name);
       setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
       setLogoFile(null); // Reset file on agent change
+    } else {
+      setAgentName('');
+      setIsDisplayNameEnabled(true);
     }
   }, [activeAgent]);
 
@@ -62,20 +70,31 @@ export default function DesignPage() {
   }
 
   const handleSaveChanges = () => {
-    // TODO: Implement saving logic including logo upload
+    if (!user || !activeAgent || !isChanged) return;
+
     startSaving(async () => {
-        console.log("Saving changes...", { agentName, isDisplayNameEnabled, logoFile });
-        // Mock saving
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        if (activeAgent) {
-            setActiveAgent({ 
-                ...activeAgent, 
-                name: agentName,
-                isDisplayNameEnabled: isDisplayNameEnabled,
-                // In a real scenario, we'd get a new logoUrl from the upload
-            });
+      // The logo upload is handled inside the LogoUploader component via an effect triggered by `isSaving`.
+      // Here, we just save the other fields.
+      const dataToUpdate: Partial<Agent> = {};
+      if (agentName !== activeAgent.name) {
+        dataToUpdate.name = agentName;
+      }
+      if (isDisplayNameEnabled !== activeAgent.isDisplayNameEnabled) {
+        dataToUpdate.isDisplayNameEnabled = isDisplayNameEnabled;
+      }
+
+      if (Object.keys(dataToUpdate).length > 0) {
+        const result = await updateAgent(user.uid, activeAgent.id!, dataToUpdate);
+        if ('error' in result) {
+          toast({ title: 'Failed to save changes', description: result.error, variant: 'destructive' });
+        } else {
+          toast({ title: 'Changes saved!' });
+          setActiveAgent({ ...activeAgent, ...dataToUpdate });
         }
-        setLogoFile(null); // Reset file state after "saving"
+      }
+      // If only the logo changed, the toast is handled by the uploader.
+      // We reset the file state regardless.
+      setLogoFile(null);
     });
   }
 
@@ -90,6 +109,7 @@ export default function DesignPage() {
 
   const agentData: Partial<Agent> & { isDisplayNameEnabled?: boolean } = {
     name: agentName,
+    logoUrl: activeAgent?.logoUrl, // Pass the current logo url
     isDisplayNameEnabled: isDisplayNameEnabled,
     welcomeMessage: activeAgent?.welcomeMessage,
     isWelcomeMessageEnabled: activeAgent?.isWelcomeMessageEnabled,

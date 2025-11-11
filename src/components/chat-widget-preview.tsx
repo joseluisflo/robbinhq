@@ -17,7 +17,7 @@ import {
   MicOff,
   Loader2,
 } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import SiriOrb from '@/components/smoothui/ui/SiriOrb';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -65,6 +65,7 @@ export function ChatWidgetPreview({
   const instructions = agentData?.instructions;
   const temperature = agentData?.temperature;
   const isDisplayNameEnabled = agentData?.isDisplayNameEnabled ?? true;
+  const logoUrl = agentData?.logoUrl;
 
 
   useEffect(() => {
@@ -91,6 +92,10 @@ export function ChatWidgetPreview({
 
   const getInitials = (name: string) => {
     if (!name) return 'A';
+    const names = name.split(' ');
+    if (names.length > 1) {
+        return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+    }
     return name.substring(0, 2).toUpperCase();
   };
 
@@ -198,6 +203,7 @@ export function ChatWidgetPreview({
         {isDisplayNameEnabled ? (
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
+              {logoUrl && <AvatarImage src={logoUrl} alt={agentName} />}
               <AvatarFallback>{getInitials(agentName)}</AvatarFallback>
             </Avatar>
             <div>
