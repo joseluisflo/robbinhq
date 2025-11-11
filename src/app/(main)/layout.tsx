@@ -47,7 +47,7 @@ export default function AppLayout({
     return query(collection(firestore, 'users', user.uid, 'agents'));
   }, [firestore, user]);
 
-  const { data: agents = [], loading: agentsLoading } = useCollection<Agent>(agentsQuery);
+  const { data: agents, loading: agentsLoading } = useCollection<Agent>(agentsQuery);
 
   const [needsAgent, setNeedsAgent] = useState(false);
 
@@ -58,7 +58,7 @@ export default function AppLayout({
   }, [user, userLoading, router]);
   
   useEffect(() => {
-    if (!agentsLoading && agents.length > 0 && !activeAgent) {
+    if (!agentsLoading && agents && agents.length > 0 && !activeAgent) {
       setActiveAgent(agents[0]);
     }
   }, [agents, agentsLoading, activeAgent]);
@@ -78,9 +78,9 @@ export default function AppLayout({
 
   const noPadding = isTrainingPage || isDesignPage || isWorkflowDetailPage || isChatLogsPage;
 
-  const loading = userLoading || (agents === null && agentsLoading);
+  const loading = userLoading || agentsLoading;
 
-  if (loading) {
+  if (loading && !agents) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -93,7 +93,7 @@ export default function AppLayout({
   }
   
   return (
-    <ActiveAgentContext.Provider value={{ activeAgent, setActiveAgent, agents, agentsLoading }}>
+    <ActiveAgentContext.Provider value={{ activeAgent, setActiveAgent, agents: agents || [], agentsLoading }}>
       <SidebarProvider>
         {needsAgent && (
           <CreateAgentDialog 
