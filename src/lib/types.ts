@@ -32,3 +32,10 @@ export type Lead = {
   phoneNumber: string;
   chat: string;
 };
+
+export type TextSource = {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+};

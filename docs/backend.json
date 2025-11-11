@@ -57,6 +57,27 @@
         }
       },
       "required": ["name", "userId", "createdAt"]
+    },
+    "agentText": {
+      "title": "Agent Text Source",
+      "description": "A text-based knowledge source for an agent.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The title of the text source."
+        },
+        "content": {
+          "type": "string",
+          "description": "The full content of the text source."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the text source was created."
+        }
+      },
+      "required": ["title", "content", "createdAt"]
     }
   },
   "auth": {
@@ -74,6 +95,12 @@
         "$ref": "#/entities/agent"
       },
       "description": "Stores the agents created by a specific user."
+    },
+    "/users/{userId}/agents/{agentId}/texts/{textId}": {
+      "schema": {
+        "$ref": "#/entities/agentText"
+      },
+      "description": "Stores text-based knowledge sources for a specific agent."
     }
   }
 }
