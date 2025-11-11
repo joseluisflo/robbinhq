@@ -36,7 +36,6 @@ export default function DesignPage() {
   useEffect(() => {
     if (activeAgent) {
       setAgentName(activeAgent.name);
-      // A default for isDisplayNameEnabled should be handled if not present
       setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
     }
   }, [activeAgent]);
@@ -93,28 +92,16 @@ export default function DesignPage() {
                            </div>
                            <Input id="display-name" value={agentName} onChange={handleNameChange} />
                         </div>
-                        <Card>
-                          <CardHeader>
-                              <CardTitle>Display</CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-6">
-                              <div className="flex items-center justify-between rounded-lg border p-4">
-                                   <div>
-                                      <Label htmlFor="logo-toggle">Logo</Label>
-                                      <div className="w-full h-24 mt-2 bg-muted rounded-md flex items-center justify-center text-sm text-muted-foreground">
-                                          Logo upload area
-                                      </div>
-                                  </div>
-                                  <Switch id="logo-toggle" />
-                              </div>
-                               <div className="rounded-lg border p-4">
-                                  <Label htmlFor="favicon">Favicon</Label>
-                                  <div className="w-16 h-16 mt-2 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
-                                      32x32
-                                  </div>
-                              </div>
-                          </CardContent>
-                      </Card>
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="logo-toggle">Logo</Label>
+                                <Switch id="logo-toggle" />
+                            </div>
+                            <div className="w-full h-24 mt-2 bg-muted rounded-md flex items-center justify-center text-sm text-muted-foreground">
+                                Logo upload area
+                            </div>
+                        </div>
+
                         <Card>
                             <CardHeader>
                                 <CardTitle>Theme</CardTitle>
