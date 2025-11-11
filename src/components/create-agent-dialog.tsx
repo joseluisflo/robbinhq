@@ -25,12 +25,10 @@ import { useUser } from '@/firebase';
 export function CreateAgentDialog({
   children,
   open: controlledOpen,
-  onOpenChange: setControlledOpen,
   onAgentCreated,
 }: {
   children?: React.ReactNode;
   open?: boolean;
-  onOpenChange?: (open: boolean) => void;
   onAgentCreated?: () => void;
 }) {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -44,7 +42,11 @@ export function CreateAgentDialog({
   const { toast } = useToast();
 
   const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
-  const setIsOpen = setControlledOpen !== undefined ? setControlledOpen : setInternalOpen;
+  const setIsOpen = controlledOpen !== undefined ? (open: boolean) => {
+    // This component should not be closable by clicking outside when controlled
+    if (controlledOpen && !open) return;
+    setInternalOpen(open);
+  } : setInternalOpen;
 
   const dialogImage = PlaceHolderImages.find((img) => img.id === 'dialog-create-agent');
 
@@ -55,9 +57,9 @@ export function CreateAgentDialog({
   };
 
   const handleCreateAgent = () => {
-    if (!user || !name) return;
+    if (!user || !name || !description) return;
     startCreationTransition(async () => {
-      const result = await createAgent(user.uid, name, description, []);
+      const result = await createAgent(user.uid, name, description);
       if ('error' in result) {
         toast({ title: 'Failed to create agent', description: result.error, variant: 'destructive' });
       } else {
@@ -71,6 +73,10 @@ export function CreateAgentDialog({
   };
 
   const handleOpenChange = (open: boolean) => {
+    // Prevent closing via Escape key if it's the mandatory dialog
+    if (controlledOpen && !open) {
+      return;
+    }
     setIsOpen(open);
     if (!open) {
       setTimeout(() => {
@@ -86,10 +92,12 @@ export function CreateAgentDialog({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className="gap-0 p-0 sm:max-w-md" onInteractOutside={(e) => {
-        // Prevent closing if it's a controlled mandatory dialog
-        if (controlledOpen) e.preventDefault();
-      }}>
+      <DialogContent 
+        className="gap-0 p-0 sm:max-w-md" 
+        onInteractOutside={(e) => {
+          if (controlledOpen) e.preventDefault();
+        }}
+      >
         {dialogImage && (
           <div className="p-2">
             <Image
@@ -127,8 +135,8 @@ export function CreateAgentDialog({
           </div>
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div className="flex justify-center space-x-1.5 max-sm:order-1">
-              <div className={cn("size-1.5 rounded-full bg-primary", step === 1 ? "bg-primary" : "opacity-20")} />
-              <div className={cn("size-1.5 rounded-full bg-primary", step === 2 ? "bg-primary" : "opacity-20")} />
+              <div className={cn("size-1.5 rounded-full", step === 1 ? "bg-primary" : "bg-primary/20")} />
+              <div className={cn("size-1.5 rounded-full", step === 2 ? "bg-primary" : "bg-primary/20")} />
             </div>
             <DialogFooter>
               {step < 2 ? (

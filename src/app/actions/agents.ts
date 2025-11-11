@@ -1,19 +1,9 @@
 'use server';
 
-import { suggestAgentGoals } from '@/ai/flows/agent-goal-suggestion';
 import { summarizeTaskResults } from '@/ai/flows/task-summarization';
+import { generateAgentInstructions } from '@/ai/flows/agent-instruction-generation';
 import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
-
-export async function getGoalSuggestions(prompt: string): Promise<string[] | { error: string }> {
-  try {
-    const result = await suggestAgentGoals({ prompt });
-    return result.goals;
-  } catch (e) {
-    console.error(e);
-    return { error: 'Failed to get goal suggestions.' };
-  }
-}
 
 export async function getTasksSummary(taskResults: string): Promise<string | { error: string }> {
   try {
@@ -25,19 +15,30 @@ export async function getTasksSummary(taskResults: string): Promise<string | { e
   }
 }
 
-export async function createAgent(userId: string, name: string, description: string, goals: string[]): Promise<{ id: string } | { error: string }> {
-  if (!userId || !name) {
-    return { error: 'User ID and agent name are required.' };
+export async function createAgent(userId: string, name: string, description: string): Promise<{ id: string } | { error: string }> {
+  if (!userId || !name || !description) {
+    return { error: 'User ID, agent name, and description are required.' };
   }
 
   try {
+    let instructions = '';
+    try {
+      const instructionResult = await generateAgentInstructions({ description });
+      instructions = instructionResult.instructions;
+    } catch (e) {
+        console.error('Failed to generate agent instructions, saving agent without them.', e);
+    }
+    
     const firestore = firebaseAdmin.firestore();
     const agentRef = firestore.collection('users').doc(userId).collection('agents').doc();
     
     const newAgent = {
       name,
       description,
-      goals,
+      instructions,
+      goals: [],
+      status: 'idle',
+      tasks: [],
       createdAt: FieldValue.serverTimestamp(),
     };
 
