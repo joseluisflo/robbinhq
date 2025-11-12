@@ -198,7 +198,7 @@ export function ChatWidgetPreview({
   };
 
   return (
-    <div className="flex items-end">
+    <div className="relative" style={{ width: '456px', height: '650px' }}>
       <div
         className="flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden"
         style={{ width: '400px', height: '650px' }}
@@ -391,12 +391,11 @@ export function ChatWidgetPreview({
       </div>
        <Button
         size="icon"
-        className="rounded-full h-14 w-14 ml-4"
+        className="absolute bottom-0 right-0 rounded-full h-14 w-14"
       >
         <Plus className="h-6 w-6" />
       </Button>
     </div>
   );
 }
-
     
