@@ -32,7 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 
 export default function DesignPage() {
@@ -56,7 +56,7 @@ export default function DesignPage() {
     logoFile !== null ||
     themeColor !== (activeAgent?.themeColor || '#16a34a') ||
     welcomeMessage !== (activeAgent?.welcomeMessage || '') ||
-    isWelcomeMessageEnabled !== (activeAgent?.isWelcomeMessageEnabled ?? true);
+    isWelcomeMessageEnabled !== (active.agent?.isWelcomeMessageEnabled ?? true);
 
 
   useEffect(() => {
@@ -376,3 +376,5 @@ export default function DesignPage() {
     </div>
   );
 }
+
+    
