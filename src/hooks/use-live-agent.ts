@@ -50,22 +50,37 @@ export function useLiveAgent() {
   const { toast } = useToast();
 
   const cleanup = useCallback(() => {
-    workletNodeRef.current?.port.close();
-    workletNodeRef.current?.disconnect();
-    workletNodeRef.current = null;
-    streamRef.current?.getTracks().forEach(track => track.stop());
-    streamRef.current = null;
-    inputAudioContextRef.current?.close().catch(console.error);
-    inputAudioContextRef.current = null;
+    console.log("Running cleanup...");
+    playingSourcesRef.current.forEach(source => source.stop());
+    playingSourcesRef.current.clear();
+    
+    if (workletNodeRef.current) {
+        workletNodeRef.current.port.close();
+        workletNodeRef.current.disconnect();
+        workletNodeRef.current = null;
+    }
+    if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+    }
+    if (inputAudioContextRef.current && inputAudioContextRef.current.state !== 'closed') {
+        inputAudioContextRef.current.close().catch(console.error);
+        inputAudioContextRef.current = null;
+    }
+    
+    sessionRef.current = null;
+    setConnectionState('idle');
+    setCurrentInput('');
+    setCurrentOutput('');
+    setIsThinking(false);
+    currentInputRef.current = '';
+    currentOutputRef.current = '';
   }, []);
 
   const toggleCall = useCallback(async (agent: Agent & { textSources?: TextSource[], fileSources?: AgentFile[] }) => {
     if (connectionState === 'connected') {
       setConnectionState('closing');
-      sessionRef.current?.close();
-      cleanup();
-      setConnectionState('idle');
-      setTranscripts(prev => [...prev, { id: Date.now(), speaker: 'system', text: 'Call ended.' }]);
+      sessionRef.current?.close(); // This will trigger the onclose callback which runs cleanup.
       return;
     }
 
@@ -87,7 +102,7 @@ export function useLiveAgent() {
       }
       const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY as string });
 
-      if (!outputAudioContextRef.current) {
+      if (!outputAudioContextRef.current || outputAudioContextRef.current.state === 'closed') {
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
         outputAudioContextRef.current = new AudioContext({ sampleRate: 24000, latencyHint: 'interactive' });
       }
@@ -129,7 +144,7 @@ export function useLiveAgent() {
             setConnectionState('connected');
             setTranscripts(prev => [...prev, { id: Date.now(), speaker: 'system', text: 'Connection established.' }]);
 
-            if (!inputAudioContextRef.current) {
+            if (!inputAudioContextRef.current || inputAudioContextRef.current.state === 'closed') {
               const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
               inputAudioContextRef.current = new AudioContext({ sampleRate: 16000, latencyHint: 'interactive' });
             }
@@ -152,9 +167,11 @@ export function useLiveAgent() {
             workletNodeRef.current = new AudioWorkletNode(inputAudioContextRef.current, 'audio-recorder-processor');
 
             workletNodeRef.current.port.onmessage = (event) => {
-              const inputData = event.data;
-              const pcmBlob = createBlob(inputData);
-              sessionPromise.then(session => session.sendRealtimeInput({ media: pcmBlob }));
+              if (sessionRef.current) {
+                const inputData = event.data;
+                const pcmBlob = createBlob(inputData);
+                sessionRef.current.sendRealtimeInput({ media: pcmBlob });
+              }
             };
 
             source.connect(workletNodeRef.current);
@@ -230,8 +247,8 @@ export function useLiveAgent() {
             cleanup();
           },
           onclose: () => {
-            setConnectionState('idle');
             cleanup();
+            setTranscripts(prev => [...prev, { id: Date.now(), speaker: 'system', text: 'Call ended.' }]);
           },
         },
       });
