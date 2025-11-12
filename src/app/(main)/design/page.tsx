@@ -23,7 +23,7 @@ import {
 import { useActiveAgent } from '../layout';
 import type { Agent } from '@/lib/types';
 import { LogoUploader } from '@/components/logo-uploader';
-import { Info, Loader2, Plus } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
 import { updateAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
@@ -355,12 +355,7 @@ export default function DesignPage() {
             <div className="flex h-full flex-col">
               <TabsContent value="chat" className="flex-1 mt-0">
                 <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-                  <div className="flex flex-col items-center gap-4">
-                    <ChatWidgetPreview agentData={agentData} mode="chat" />
-                     <Button size="icon" className="rounded-full h-14 w-14">
-                        <Plus className="h-6 w-6" />
-                    </Button>
-                  </div>
+                  <ChatWidgetPreview agentData={agentData} mode="chat" />
                 </div>
               </TabsContent>
               <TabsContent value="in-call" className="flex-1 mt-0">
