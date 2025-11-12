@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
+import { ai } from '@/ai/genkit';
 
 export async function GET() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -12,7 +12,6 @@ export async function GET() {
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
     const clientToken = await ai.live.generateClientToken();
     return NextResponse.json({ token: clientToken });
   } catch (error: any) {
