@@ -1,6 +1,7 @@
 'use client';
 import Color from 'color';
 import { PipetteIcon } from 'lucide-react';
+import * as SliderPrimitive from '@radix-ui/react-slider';
 import {
   type ComponentProps,
   createContext,
@@ -13,7 +14,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import * as SliderPrimitive from '@radix-ui/react-slider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,7 +24,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-
 interface ColorPickerContextValue {
   hue: number;
   saturation: number;
@@ -214,7 +213,6 @@ export const ColorPickerHue = ({
         {...props}
     >
         <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full" style={{ background: 'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)' }}>
-            <SliderPrimitive.Range className="absolute h-full bg-primary" />
         </SliderPrimitive.Track>
         <SliderPrimitive.Thumb className="block h-4 w-4 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
     </SliderPrimitive.Root>
@@ -242,7 +240,6 @@ export const ColorPickerAlpha = ({
             url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cg fill='%23ccc' fill-opacity='1'%3E%3Cpath fill-rule='evenodd' d='M0 0h4v4H0V0zm4 4h4v4H4V4z'/%3E%3C/g%3E%3C/svg%3E")
           `
         }}>
-            <SliderPrimitive.Range className="absolute h-full bg-primary" />
         </SliderPrimitive.Track>
         <SliderPrimitive.Thumb className="block h-4 w-4 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
     </SliderPrimitive.Root>
