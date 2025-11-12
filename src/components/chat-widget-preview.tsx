@@ -270,10 +270,10 @@ export function ChatWidgetPreview({
                         </p>
                         {message.sender === 'agent' && isFeedbackEnabled && (
                             <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground">
+                                <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
                                     <ThumbsUp className="h-3 w-3" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground">
+                                <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
                                     <ThumbsDown className="h-3 w-3" />
                                 </Button>
                             </div>
