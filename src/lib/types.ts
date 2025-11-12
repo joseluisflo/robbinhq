@@ -35,6 +35,9 @@ export type Agent = {
   chatInputPlaceholder?: string;
   isFeedbackEnabled?: boolean;
   isBrandingEnabled?: boolean;
+  // For passing to live agent
+  textSources?: TextSource[];
+  fileSources?: AgentFile[];
 };
 
 export type Workflow = {
