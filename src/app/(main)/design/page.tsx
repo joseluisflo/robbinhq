@@ -32,6 +32,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { ColorPicker, ColorPickerAlpha, ColorPickerEyeDropper, ColorPickerFormat, ColorPickerHue, ColorPickerSelection } from '@/components/custom/color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 
 
 export default function DesignPage() {
@@ -163,45 +164,42 @@ export default function DesignPage() {
                             <LogoUploader agent={activeAgent} onLogoChange={setLogoFile} isSaving={isSaving} />
                         </div>
 
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Theme</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex items-center justify-between">
-                              <Label>Accent</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    className="h-8 w-8 rounded-full p-0 border"
-                                    style={{ backgroundColor: themeColor }}
-                                  />
-                                </PopoverTrigger>
-                                <PopoverContent className="w-64 p-0" align="end">
-                                    <ColorPicker
-                                        value={themeColor}
-                                        onChange={(newColor) => {
-                                          setThemeColor(newColor);
-                                        }}
-                                    >
-                                        <div className="flex flex-col gap-4 p-4">
-                                            <ColorPickerSelection className="h-36" />
-                                            <div className="flex items-center gap-2">
-                                                <ColorPickerEyeDropper />
-                                                <div className="flex w-full flex-col gap-2">
-                                                    <ColorPickerHue />
-                                                    <ColorPickerAlpha />
-                                                </div>
-                                            </div>
-                                            <ColorPickerFormat />
-                                        </div>
-                                    </ColorPicker>
-                                </PopoverContent>
-                              </Popover>
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Label>Accent</Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 w-8 rounded-full p-0 border"
+                                  style={{ backgroundColor: themeColor }}
+                                />
+                              </PopoverTrigger>
+                              <PopoverContent className="w-64 p-0" align="end">
+                                  <ColorPicker
+                                      value={themeColor}
+                                      onChange={(newColor) => {
+                                        setThemeColor(newColor);
+                                      }}
+                                  >
+                                      <div className="flex flex-col gap-4 p-4">
+                                          <ColorPickerSelection className="h-36" />
+                                          <div className="flex items-center gap-2">
+                                              <ColorPickerEyeDropper />
+                                              <div className="flex w-full flex-col gap-2">
+                                                  <ColorPickerHue />
+                                                  <ColorPickerAlpha />
+                                              </div>
+                                          </div>
+                                          <ColorPickerFormat />
+                                      </div>
+                                  </ColorPicker>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                           <Separator />
+                        </div>
+
 
                          <Card>
                             <CardHeader>
