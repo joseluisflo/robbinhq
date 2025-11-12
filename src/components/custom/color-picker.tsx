@@ -16,26 +16,18 @@ import {
 } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+
 interface ColorPickerContextValue {
   hue: number;
   saturation: number;
   lightness: number;
   alpha: number;
-  mode: string;
   value: string;
   setHue: (hue: number) => void;
   setSaturation: (saturation: number) => void;
   setLightness: (lightness: number) => void;
   setAlpha: (alpha: number) => void;
-  setMode: (mode: string) => void;
 }
 const ColorPickerContext = createContext<ColorPickerContextValue | undefined>(
   undefined
@@ -73,7 +65,6 @@ export const ColorPicker = ({
   const [saturation, setSaturation] = useState(initialColor.saturationl() || 100);
   const [lightness, setLightness] = useState(initialColor.lightness() || 50);
   const [alpha, setAlpha] = useState(initialColor.alpha() * 100);
-  const [mode, setMode] = useState('hex');
 
   useEffect(() => {
     if (valueProp !== undefined) {
@@ -106,13 +97,11 @@ export const ColorPicker = ({
         saturation,
         lightness,
         alpha,
-        mode,
         value: String(value),
         setHue,
         setSaturation,
         setLightness,
         setAlpha,
-        setMode,
       }}
     >
       <div
@@ -212,7 +201,7 @@ export const ColorPickerHue = ({
         value={[hue]}
         {...props}
     >
-        <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full" style={{ background: 'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)' }}>
+        <SliderPrimitive.Track className="relative h-2 w-full grow rounded-full" style={{ background: 'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)' }}>
         </SliderPrimitive.Track>
         <SliderPrimitive.Thumb className="block h-4 w-4 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
     </SliderPrimitive.Root>
@@ -234,7 +223,7 @@ export const ColorPickerAlpha = ({
         value={[alpha]}
         {...props}
     >
-        <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full" style={{
+        <SliderPrimitive.Track className="relative h-2 w-full grow rounded-full" style={{
           background: `
             linear-gradient(to right, transparent, ${color}),
             url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cg fill='%23ccc' fill-opacity='1'%3E%3Cpath fill-rule='evenodd' d='M0 0h4v4H0V0zm4 4h4v4H4V4z'/%3E%3C/g%3E%3C/svg%3E")
@@ -281,28 +270,7 @@ export const ColorPickerEyeDropper = ({
     </Button>
   );
 };
-export type ColorPickerOutputProps = ComponentProps<typeof SelectTrigger>;
-const formats = ['hex', 'rgb', 'css', 'hsl'];
-export const ColorPickerOutput = ({
-  className,
-  ...props
-}: ColorPickerOutputProps) => {
-  const { mode, setMode } = useColorPicker();
-  return (
-    <Select onValueChange={setMode} value={mode}>
-      <SelectTrigger className="h-8 w-20 shrink-0 text-xs" {...props}>
-        <SelectValue placeholder="Mode" />
-      </SelectTrigger>
-      <SelectContent>
-        {formats.map((format) => (
-          <SelectItem className="text-xs" key={format} value={format}>
-            {format.toUpperCase()}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-};
+
 type PercentageInputProps = ComponentProps<typeof Input>;
 const PercentageInput = ({ className, ...props }: PercentageInputProps) => {
   return (
@@ -327,101 +295,24 @@ export const ColorPickerFormat = ({
   className,
   ...props
 }: ColorPickerFormatProps) => {
-  const { hue, saturation, lightness, alpha, mode } = useColorPicker();
+  const { hue, saturation, lightness, alpha } = useColorPicker();
   const color = Color.hsl(hue, saturation, lightness).alpha(alpha / 100);
-  if (mode === 'hex') {
-    const hex = color.hex();
-    return (
-      <div
-        className={cn(
-          '-space-x-px relative flex w-full items-center rounded-md shadow-sm',
-          className
-        )}
-        {...props}
-      >
-        <Input
-          className="h-8 rounded-r-none bg-secondary px-2 text-xs shadow-none"
-          readOnly
-          type="text"
-          value={hex}
-        />
-        <PercentageInput value={Math.round(alpha)} />
-      </div>
-    );
-  }
-  if (mode === 'rgb') {
-    const rgb = color
-      .rgb()
-      .array()
-      .map((value) => Math.round(value));
-    return (
-      <div
-        className={cn(
-          '-space-x-px flex items-center rounded-md shadow-sm',
-          className
-        )}
-        {...props}
-      >
-        {rgb.map((value, index) => (
-          <Input
-            className={cn(
-              'h-8 rounded-r-none bg-secondary px-2 text-xs shadow-none',
-              index && 'rounded-l-none',
-              className
-            )}
-            key={index}
-            readOnly
-            type="text"
-            value={value}
-          />
-        ))}
-        <PercentageInput value={Math.round(alpha)} />
-      </div>
-    );
-  }
-  if (mode === 'css') {
-    const rgbaString = color.rgb().string();
-    return (
-      <div className={cn('w-full rounded-md shadow-sm', className)} {...props}>
-        <Input
-          className="h-8 w-full bg-secondary px-2 text-xs shadow-none"
-          readOnly
-          type="text"
-          value={rgbaString}
-          {...props}
-        />
-      </div>
-    );
-  }
-  if (mode === 'hsl') {
-    const hsl = color
-      .hsl()
-      .array()
-      .map((value) => Math.round(value));
-    return (
-      <div
-        className={cn(
-          '-space-x-px flex items-center rounded-md shadow-sm',
-          className
-        )}
-        {...props}
-      >
-        {hsl.map((value, index) => (
-          <Input
-            className={cn(
-              'h-8 rounded-r-none bg-secondary px-2 text-xs shadow-none',
-              index && 'rounded-l-none',
-              className
-            )}
-            key={index}
-            readOnly
-            type="text"
-            value={value}
-          />
-        ))}
-        <PercentageInput value={Math.round(alpha)} />
-      </div>
-    );
-  }
-  return null;
+  const hex = color.hex();
+  return (
+    <div
+      className={cn(
+        '-space-x-px relative flex w-full items-center rounded-md shadow-sm',
+        className
+      )}
+      {...props}
+    >
+      <Input
+        className="h-8 rounded-r-none bg-secondary px-2 text-xs shadow-none"
+        readOnly
+        type="text"
+        value={hex}
+      />
+      <PercentageInput value={Math.round(alpha)} />
+    </div>
+  );
 };

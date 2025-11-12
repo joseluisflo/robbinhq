@@ -30,7 +30,7 @@ import { Loader2 } from 'lucide-react';
 import { updateAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
-import { ColorPicker, ColorPickerAlpha, ColorPickerEyeDropper, ColorPickerFormat, ColorPickerHue, ColorPickerOutput, ColorPickerSelection } from '@/components/custom/color-picker';
+import { ColorPicker, ColorPickerAlpha, ColorPickerEyeDropper, ColorPickerFormat, ColorPickerHue, ColorPickerSelection } from '@/components/custom/color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 
@@ -178,11 +178,11 @@ export default function DesignPage() {
                                     style={{ backgroundColor: themeColor }}
                                   />
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="end">
+                                <PopoverContent className="w-64 p-0" align="end">
                                     <ColorPicker
-                                        defaultValue={themeColor}
-                                        onChange={(color) => {
-                                          setThemeColor(color);
+                                        value={themeColor}
+                                        onChange={(newColor) => {
+                                          setThemeColor(newColor);
                                         }}
                                     >
                                         <div className="flex flex-col gap-4 p-4">
@@ -194,10 +194,7 @@ export default function DesignPage() {
                                                     <ColorPickerAlpha />
                                                 </div>
                                             </div>
-                                            <div className="flex items-center justify-between text-sm">
-                                                <ColorPickerOutput />
-                                                <ColorPickerFormat />
-                                            </div>
+                                            <ColorPickerFormat />
                                         </div>
                                     </ColorPicker>
                                 </PopoverContent>
