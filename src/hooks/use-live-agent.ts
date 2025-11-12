@@ -29,7 +29,7 @@ class AudioRecorderProcessor extends AudioWorkletProcessor {
 registerProcessor('audio-recorder-processor', AudioRecorderProcessor);
 `;
 
-export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Message[]>>) {
+export function useLiveAgent(onCallEnd: (callHistory: Message[]) => void) {
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [liveTranscripts, setLiveTranscripts] = useState<Message[]>([]);
   const [currentInput, setCurrentInput] = useState('');
@@ -77,12 +77,12 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
     currentOutputRef.current = '';
     
     if (transcriptHistoryRef.current.length > 0) {
-      setMessages(prev => [...prev, ...transcriptHistoryRef.current]);
+      onCallEnd(transcriptHistoryRef.current);
     }
     transcriptHistoryRef.current = [];
     setLiveTranscripts([]);
 
-  }, [setMessages]);
+  }, [onCallEnd]);
 
   const toggleCall = useCallback(async (agent: Agent & { textSources?: TextSource[], fileSources?: AgentFile[] }) => {
     if (connectionState === 'connected') {
@@ -143,7 +143,7 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
           inputAudioTranscription: {},
           outputAudioTranscription: {},
           speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } },
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: agent.agentVoice || 'Zephyr' } },
           },
           systemInstruction,
         },
@@ -152,9 +152,16 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
             setConnectionState('connected');
             setLiveTranscripts(prev => [...prev, { id: Date.now().toString(), sender: 'system', text: 'Connection established.', timestamp: new Date().toISOString() }]);
 
-            if (!inputAudioContextRef.current || inputAudioContextRef.current.state === 'closed') {
-              const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-              inputAudioContextRef.current = new AudioContext({ sampleRate: 16000, latencyHint: 'interactive' });
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+            inputAudioContextRef.current = new AudioContext({ sampleRate: 16000, latencyHint: 'interactive' });
+            
+            await inputAudioContextRef.current.resume();
+
+            if (!inputAudioContextRef.current) {
+                console.error("AudioContext could not be created or resumed.");
+                toast({ title: 'Audio Error', description: 'Could not initialize audio context.', variant: 'destructive' });
+                cleanup();
+                return;
             }
 
             try {
@@ -266,9 +273,7 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
       setConnectionState('error');
       cleanup();
     }
-  }, [connectionState, cleanup, toast, setMessages]);
+  }, [connectionState, cleanup, toast, onCallEnd]);
 
   return { connectionState, toggleCall, liveTranscripts, isThinking, currentInput, currentOutput };
 }
-
-    
