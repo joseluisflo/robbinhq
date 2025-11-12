@@ -6,3 +6,4 @@ export * from './RocketIcon';
 export * from './ChatSimpleIcon';
 export * from './UserGroupIcon';
 export * from './IA01Icon';
+export * from './Chat02Icon';

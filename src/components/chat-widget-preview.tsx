@@ -16,8 +16,8 @@ import {
   PhoneOff,
   MicOff,
   Loader2,
-  Plus,
 } from 'lucide-react';
+import { Chat02Icon } from '@/components/lo-icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import SiriOrb from '@/components/smoothui/ui/SiriOrb';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
@@ -393,10 +393,9 @@ export function ChatWidgetPreview({
         size="icon"
         className="rounded-full h-14 w-14 mt-4"
       >
-        <Plus className="h-6 w-6" />
+        <Chat02Icon className="h-6 w-6" />
       </Button>
     </div>
   );
 }
     
-
