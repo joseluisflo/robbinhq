@@ -13,6 +13,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import * as SliderPrimitive from '@radix-ui/react-slider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,7 +24,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Slider } from '@/components/ui/slider';
 
 interface ColorPickerContextValue {
   hue: number;
@@ -198,27 +198,29 @@ export const ColorPickerSelection = memo(
   }
 );
 ColorPickerSelection.displayName = 'ColorPickerSelection';
-export type ColorPickerHueProps = ComponentProps<typeof Slider>;
+export type ColorPickerHueProps = ComponentProps<typeof SliderPrimitive.Root>;
 export const ColorPickerHue = ({
   className,
   ...props
 }: ColorPickerHueProps) => {
   const { hue, setHue } = useColorPicker();
   return (
-    <div className="relative h-4 w-full">
-      <Slider
+    <SliderPrimitive.Root
         className={cn('relative flex h-full w-full touch-none items-center', className)}
         max={360}
         onValueChange={([hue]) => setHue(hue)}
         step={1}
         value={[hue]}
         {...props}
-      />
-       <div className="pointer-events-none absolute inset-0 rounded-full" style={{ background: 'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)' }}/>
-    </div>
+    >
+        <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full" style={{ background: 'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)' }}>
+            <SliderPrimitive.Range className="absolute h-full bg-primary" />
+        </SliderPrimitive.Track>
+        <SliderPrimitive.Thumb className="block h-4 w-4 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
+    </SliderPrimitive.Root>
   );
 };
-export type ColorPickerAlphaProps = ComponentProps<typeof Slider>;
+export type ColorPickerAlphaProps = ComponentProps<typeof SliderPrimitive.Root>;
 export const ColorPickerAlpha = ({
   className,
   ...props
@@ -226,25 +228,24 @@ export const ColorPickerAlpha = ({
   const { hue, saturation, lightness, alpha, setAlpha } = useColorPicker();
   const color = `hsl(${hue} ${saturation}% ${lightness}%)`;
   return (
-    <div className="relative h-4 w-full">
-      <Slider
+    <SliderPrimitive.Root
         className={cn('relative flex h-full w-full touch-none items-center', className)}
         max={100}
         onValueChange={([alpha]) => setAlpha(alpha)}
         step={1}
         value={[alpha]}
         {...props}
-      />
-      <div 
-        className="pointer-events-none absolute inset-0 rounded-full" 
-        style={{
+    >
+        <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full" style={{
           background: `
             linear-gradient(to right, transparent, ${color}),
             url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cg fill='%23ccc' fill-opacity='1'%3E%3Cpath fill-rule='evenodd' d='M0 0h4v4H0V0zm4 4h4v4H4V4z'/%3E%3C/g%3E%3C/svg%3E")
           `
-        }}
-      />
-    </div>
+        }}>
+            <SliderPrimitive.Range className="absolute h-full bg-primary" />
+        </SliderPrimitive.Track>
+        <SliderPrimitive.Thumb className="block h-4 w-4 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
+    </SliderPrimitive.Root>
   );
 };
 export type ColorPickerEyeDropperProps = ComponentProps<typeof Button>;
