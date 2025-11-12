@@ -57,6 +57,7 @@ export async function createAgent(userId: string, name: string, description: str
       logoUrl: '',
       themeColor: '#16a34a',
       chatButtonColor: '#16a34a',
+      chatBubbleAlignment: 'right',
       chatInputPlaceholder: 'Ask anything',
     };
 

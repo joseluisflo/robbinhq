@@ -30,6 +30,7 @@ export type Agent = {
   logoUrl?: string;
   themeColor?: string;
   chatButtonColor?: string;
+  chatBubbleAlignment?: 'left' | 'right';
   chatInputPlaceholder?: string;
 };
 

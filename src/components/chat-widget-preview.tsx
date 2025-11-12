@@ -33,6 +33,7 @@ interface ChatWidgetPreviewProps {
     isDisplayNameEnabled?: boolean;
     themeColor?: string;
     chatButtonColor?: string;
+    chatBubbleAlignment?: 'left' | 'right';
   };
   mode?: 'chat' | 'in-call';
 }
@@ -71,6 +72,7 @@ export function ChatWidgetPreview({
   const logoUrl = agentData?.logoUrl;
   const themeColor = agentData?.themeColor || '#16a34a';
   const chatButtonColor = agentData?.chatButtonColor || themeColor;
+  const chatBubbleAlignment = agentData?.chatBubbleAlignment || 'right';
   const chatInputPlaceholder = agentData?.chatInputPlaceholder || 'Ask anything';
 
 
@@ -200,7 +202,12 @@ export function ChatWidgetPreview({
   };
 
   return (
-    <div className="flex flex-col items-end">
+    <div
+      className={cn(
+        'flex flex-col',
+        chatBubbleAlignment === 'right' ? 'items-end' : 'items-start'
+      )}
+    >
       <div
         className="flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden"
         style={{ width: '400px', height: '650px' }}

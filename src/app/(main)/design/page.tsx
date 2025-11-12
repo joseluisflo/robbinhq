@@ -33,6 +33,7 @@ import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
 export default function DesignPage() {
@@ -45,6 +46,7 @@ export default function DesignPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [themeColor, setThemeColor] = useState('#16a34a');
   const [chatButtonColor, setChatButtonColor] = useState('#16a34a');
+  const [chatBubbleAlignment, setChatBubbleAlignment] = useState<'left' | 'right'>('right');
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const [isWelcomeMessageEnabled, setIsWelcomeMessageEnabled] = useState(true);
   const [chatPlaceholder, setChatPlaceholder] = useState('');
@@ -58,6 +60,7 @@ export default function DesignPage() {
     logoFile !== null ||
     themeColor !== (activeAgent?.themeColor || '#16a34a') ||
     chatButtonColor !== (activeAgent?.chatButtonColor || '#16a34a') ||
+    chatBubbleAlignment !== (activeAgent?.chatBubbleAlignment || 'right') ||
     welcomeMessage !== (activeAgent?.welcomeMessage || '') ||
     isWelcomeMessageEnabled !== (activeAgent?.isWelcomeMessageEnabled ?? true) ||
     chatPlaceholder !== (activeAgent?.chatInputPlaceholder || '');
@@ -69,6 +72,7 @@ export default function DesignPage() {
       setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
       setThemeColor(activeAgent.themeColor || '#16a34a');
       setChatButtonColor(activeAgent.chatButtonColor || activeAgent.themeColor || '#16a34a');
+      setChatBubbleAlignment(activeAgent.chatBubbleAlignment || 'right');
       setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
       setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
       setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
@@ -78,6 +82,7 @@ export default function DesignPage() {
       setIsDisplayNameEnabled(true);
       setThemeColor('#16a34a');
       setChatButtonColor('#16a34a');
+      setChatBubbleAlignment('right');
       setWelcomeMessage('Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
       setIsWelcomeMessageEnabled(true);
       setChatPlaceholder('Ask anything');
@@ -110,6 +115,9 @@ export default function DesignPage() {
       if (chatButtonColor !== activeAgent.chatButtonColor) {
         dataToUpdate.chatButtonColor = chatButtonColor;
       }
+      if (chatBubbleAlignment !== activeAgent.chatBubbleAlignment) {
+        dataToUpdate.chatBubbleAlignment = chatBubbleAlignment;
+      }
       if (welcomeMessage !== activeAgent.welcomeMessage) {
         dataToUpdate.welcomeMessage = welcomeMessage;
       }
@@ -141,6 +149,7 @@ export default function DesignPage() {
         setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
         setThemeColor(activeAgent.themeColor || '#16a34a');
         setChatButtonColor(activeAgent.chatButtonColor || activeAgent.themeColor || '#16a34a');
+        setChatBubbleAlignment(activeAgent.chatBubbleAlignment || 'right');
         setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
         setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
         setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
@@ -158,6 +167,7 @@ export default function DesignPage() {
     conversationStarters: activeAgent?.conversationStarters,
     themeColor: themeColor,
     chatButtonColor: chatButtonColor,
+    chatBubbleAlignment: chatBubbleAlignment,
     chatInputPlaceholder: chatPlaceholder,
   };
 
@@ -241,6 +251,26 @@ export default function DesignPage() {
                             </Popover>
                           </div>
                         </div>
+
+                        <div className="space-y-2">
+                           <Label>Align chat bubble button</Label>
+                           <RadioGroup 
+                                defaultValue="right"
+                                value={chatBubbleAlignment}
+                                onValueChange={(value: 'left' | 'right') => setChatBubbleAlignment(value)}
+                                className="flex gap-4"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="left" id="align-left" />
+                                    <Label htmlFor="align-left" className="font-normal">Left align</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="right" id="align-right" />
+                                    <Label htmlFor="align-right" className="font-normal">Right align</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+
 
                         <div>
                           <div className="flex items-center justify-between mb-2">
