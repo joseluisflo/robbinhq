@@ -355,7 +355,7 @@ export default function DesignPage() {
             <div className="flex h-full flex-col">
               <TabsContent value="chat" className="flex-1 mt-0">
                 <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-                  <ChatWidgetPreview agentData={agentData} mode="chat" />
+                    <ChatWidgetPreview agentData={agentData} mode="chat" />
                 </div>
               </TabsContent>
               <TabsContent value="in-call" className="flex-1 mt-0">
