@@ -73,7 +73,7 @@ export default function DesignPage() {
       setThemeColor(activeAgent.themeColor || '#16a34a');
       setChatButtonColor(activeAgent.chatButtonColor || activeAgent.themeColor || '#16a34a');
       setChatBubbleAlignment(activeAgent.chatBubbleAlignment || 'right');
-      setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
+      setWelcomeMessage(activeAgent.welcomeMessage || 'Hello! You are talking to the preview agent. Ask me a question to get started!');
       setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
       setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
       setLogoFile(null); // Reset file on agent change
@@ -83,7 +83,7 @@ export default function DesignPage() {
       setThemeColor('#16a34a');
       setChatButtonColor('#16a34a');
       setChatBubbleAlignment('right');
-      setWelcomeMessage('Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
+      setWelcomeMessage('Hello! You are talking to the preview agent. Ask me a question to get started!');
       setIsWelcomeMessageEnabled(true);
       setChatPlaceholder('Ask anything');
     }
@@ -150,7 +150,7 @@ export default function DesignPage() {
         setThemeColor(activeAgent.themeColor || '#16a34a');
         setChatButtonColor(activeAgent.chatButtonColor || activeAgent.themeColor || '#16a34a');
         setChatBubbleAlignment(activeAgent.chatBubbleAlignment || 'right');
-        setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
+        setWelcomeMessage(activeAgent.welcomeMessage || 'Hello! You are talking to the preview agent. Ask me a question to get started!');
         setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
         setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
         setLogoFile(null);
