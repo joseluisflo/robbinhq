@@ -56,7 +56,7 @@ export default function DesignPage() {
     logoFile !== null ||
     themeColor !== (activeAgent?.themeColor || '#16a34a') ||
     welcomeMessage !== (activeAgent?.welcomeMessage || '') ||
-    isWelcomeMessageEnabled !== (active.agent?.isWelcomeMessageEnabled ?? true);
+    isWelcomeMessageEnabled !== (activeAgent?.isWelcomeMessageEnabled ?? true);
 
 
   useEffect(() => {
@@ -376,5 +376,7 @@ export default function DesignPage() {
     </div>
   );
 }
+
+    
 
     
