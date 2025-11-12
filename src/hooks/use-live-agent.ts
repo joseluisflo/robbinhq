@@ -7,7 +7,6 @@ import type { Agent, Message, ConnectionState, TextSource, AgentFile } from '@/l
 import { decode, decodeAudioData, createBlob } from '@/lib/audioUtils';
 import { useToast } from './use-toast';
 
-
 // The LiveSession type is not officially exported, so we define a minimal
 // interface based on its usage to satisfy TypeScript.
 interface LiveSession {
@@ -78,8 +77,7 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
     currentOutputRef.current = '';
     
     if (transcriptHistoryRef.current.length > 0) {
-      // Replace the current messages with the transcript from the call.
-      setMessages(transcriptHistoryRef.current);
+      setMessages(prev => [...prev, ...transcriptHistoryRef.current]);
     }
     transcriptHistoryRef.current = [];
     setLiveTranscripts([]);
@@ -105,7 +103,6 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
     currentInputRef.current = '';
     currentOutputRef.current = '';
     transcriptHistoryRef.current = [];
-    setMessages([]);
 
     try {
       if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
@@ -273,3 +270,5 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
 
   return { connectionState, toggleCall, liveTranscripts, isThinking, currentInput, currentOutput };
 }
+
+    

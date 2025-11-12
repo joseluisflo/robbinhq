@@ -26,6 +26,8 @@ import type { Agent, AgentFile, TextSource, Message } from '@/lib/types';
 import { getAgentResponse } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useLiveAgent } from '@/hooks/use-live-agent';
+import { useLocalStorage } from '@/hooks/use-local-storage';
+
 
 interface ChatWidgetPreviewProps {
   agentData?: Partial<Agent> & {
@@ -46,8 +48,9 @@ export function ChatWidgetPreview({
   agentData,
   mode = 'chat',
 }: ChatWidgetPreviewProps) {
+  const storageKey = `chat-preview-history-${agentData?.id}`;
+  const [messages, setMessages] = useLocalStorage<Message[]>(storageKey, []);
   const [prompt, setPrompt] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
   const [isResponding, startResponding] = useTransition();
 
   const { toast } = useToast();
@@ -86,22 +89,18 @@ export function ChatWidgetPreview({
   const isCallActive = connectionState !== 'idle' && connectionState !== 'error';
 
   useEffect(() => {
-    // Set initial welcome message when agent data changes and not in a call
-    if (isWelcomeMessageEnabled && welcomeMessage) {
+    // Set initial welcome message only if history is empty for this agent
+    if (isWelcomeMessageEnabled && welcomeMessage && messages.length === 0) {
       const welcomeMsg: Message = {
         id: 'welcome-1',
         sender: 'agent',
         text: welcomeMessage,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-      // Prevent adding duplicate welcome messages
-      if (messages.length === 0 || messages[0].id !== 'welcome-1') {
-        setMessages([welcomeMsg]);
-      }
-    } else {
-      setMessages([]);
+      setMessages([welcomeMsg]);
     }
-  }, [welcomeMessage, isWelcomeMessageEnabled, agentData?.id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentData?.id, isWelcomeMessageEnabled, welcomeMessage]);
 
 
   useEffect(() => {
@@ -219,11 +218,7 @@ export function ChatWidgetPreview({
     }
   };
 
-  const renderMessages = isCallActive
-  ? liveTranscripts.map(t => ({...t, id: String(t.id), timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}))
-  : messages;
-  
-
+  const displayedMessages = isCallActive ? liveTranscripts : messages;
   const showThinking = isCallActive && isThinking;
   const showCurrentInput = isCallActive ? currentInput : '';
   const showCurrentOutput = isCallActive ? currentOutput : '';
@@ -273,7 +268,7 @@ export function ChatWidgetPreview({
             {/* Chat Messages */}
             <div ref={chatContainerRef} className="flex-1 px-4 pt-4 bg-background flex flex-col justify-between overflow-y-auto">
               <div className="space-y-4">
-                 {renderMessages.map((message) => (
+                 {displayedMessages.map((message) => (
                     <div key={message.id} className={cn("flex", message.sender === 'user' ? 'justify-end' : 'justify-start')}>
                         <div className={cn("max-w-[75%]", message.sender === 'user' ? 'text-right' : 'text-left')}>
                             <div
@@ -469,3 +464,5 @@ export function ChatWidgetPreview({
     </div>
   );
 }
+
+    
