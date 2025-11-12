@@ -89,6 +89,7 @@ export function ChatWidgetPreview({
   const isFeedbackEnabled = agentData?.isFeedbackEnabled ?? true;
   const isBrandingEnabled = agentData?.isBrandingEnabled ?? true;
 
+  const isCallActive = connectionState !== 'idle' && connectionState !== 'error';
 
   useEffect(() => {
     // Set initial welcome message when agent data changes and not in a call
@@ -221,10 +222,13 @@ export function ChatWidgetPreview({
     }
   };
 
-  const renderMessages = mode === 'chat' ? messages : liveTranscripts.map(t => ({...t, sender: t.speaker, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}));
-  const showThinking = mode === 'in-call' ? isThinking : false;
-  const showCurrentInput = mode === 'in-call' ? currentInput : '';
-  const showCurrentOutput = mode === 'in-call' ? currentOutput : '';
+  const renderMessages = isCallActive
+    ? liveTranscripts.map(t => ({...t, id: String(t.id), text: t.text, sender: t.speaker === 'ai' ? 'agent' : t.speaker, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}))
+    : messages;
+
+  const showThinking = isCallActive && isThinking;
+  const showCurrentInput = isCallActive ? currentInput : '';
+  const showCurrentOutput = isCallActive ? currentOutput : '';
 
 
   return (
@@ -304,7 +308,7 @@ export function ChatWidgetPreview({
                         </div>
                     </div>
                 ))}
-                {isResponding && (
+                {isResponding && !isCallActive && (
                   <div className="flex justify-start">
                     <div className="max-w-[75%]">
                       <div className="p-3 rounded-2xl rounded-tl-sm bg-muted flex items-center">
@@ -314,16 +318,17 @@ export function ChatWidgetPreview({
                   </div>
                 )}
                  {showCurrentInput && (
-                    <div className="flex items-end gap-2 justify-end">
-                        <div className="max-w-[80%] p-3 rounded-2xl bg-green-600/50 rounded-br-none">
-                            <p className="text-sm text-gray-300 italic">{showCurrentInput}</p>
+                    <div className="flex justify-end">
+                        <div className="max-w-[75%]">
+                            <div className="p-3 rounded-2xl rounded-br-sm bg-primary text-primary-foreground" style={{ backgroundColor: themeColor }}>
+                                <p className="text-sm text-left italic">{showCurrentInput}</p>
+                            </div>
                         </div>
                     </div>
                  )}
                  {showThinking && (
-                    <div className="flex items-end gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-500 flex-shrink-0"></div>
-                        <div className="max-w-[80%] p-3 rounded-2xl bg-gray-700 rounded-bl-none">
+                    <div className="flex justify-start">
+                        <div className="p-3 rounded-2xl rounded-tl-sm bg-muted flex items-center">
                             <div className="flex items-center justify-center space-x-1.5 h-[20px]">
                                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
                                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
@@ -333,17 +338,18 @@ export function ChatWidgetPreview({
                     </div>
                  )}
                  {showCurrentOutput && (
-                    <div className="flex items-end gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-500/50 flex-shrink-0"></div>
-                        <div className="max-w-[80%] p-3 rounded-2xl bg-gray-700/50 rounded-bl-none">
-                            <p className="text-sm text-gray-300 italic">{showCurrentOutput}</p>
+                    <div className="flex justify-start">
+                        <div className="max-w-[75%]">
+                            <div className="p-3 rounded-2xl rounded-tl-sm bg-muted text-foreground">
+                                <p className="text-sm text-left italic">{showCurrentOutput}</p>
+                            </div>
                         </div>
                     </div>
                  )}
               </div>
               
               {/* Conversation Starters */}
-              {conversationStarters && conversationStarters.length > 0 && (
+              {conversationStarters && conversationStarters.length > 0 && !isCallActive && (
                 <div className="pb-2 mt-4">
                   <ScrollArea
                     viewportRef={viewportRef}
@@ -376,7 +382,7 @@ export function ChatWidgetPreview({
             <div className="p-4 border-t bg-card">
               <div className="relative">
                 <Textarea
-                  placeholder={chatInputPlaceholder}
+                  placeholder={isCallActive ? 'Call in progress...' : chatInputPlaceholder}
                   className="w-full resize-none pr-12 min-h-[52px] max-h-32 rounded-xl"
                   rows={1}
                   value={prompt}
@@ -387,13 +393,13 @@ export function ChatWidgetPreview({
                       handleSendMessage();
                     }
                   }}
-                  disabled={isResponding}
+                  disabled={isResponding || isCallActive}
                 />
                 <Button
                   type="submit"
                   size="icon"
                   className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-primary-foreground"
-                  disabled={!prompt.trim() || isResponding}
+                  disabled={!prompt.trim() || isResponding || isCallActive}
                   onClick={handleSendMessage}
                   style={{ backgroundColor: themeColor }}
                 >
@@ -406,6 +412,7 @@ export function ChatWidgetPreview({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground"
+                    disabled={isCallActive}
                   >
                     <Paperclip className="h-4 w-4" />
                   </Button>
