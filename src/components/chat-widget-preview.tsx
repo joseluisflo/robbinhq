@@ -393,9 +393,11 @@ export function ChatWidgetPreview({
         size="icon"
         className="rounded-full h-14 w-14 mt-4"
       >
-        <Chat02Icon className="h-6 w-6" />
+        <Chat02Icon variant="filled" className="h-8 w-8" />
       </Button>
     </div>
   );
 }
+    
+
     
