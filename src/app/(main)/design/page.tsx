@@ -368,14 +368,14 @@ export default function DesignPage() {
                     </TabsContent>
                     <TabsContent value="in-call">
                        <div className="p-6 space-y-6">
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>Voice Configuration</CardTitle>
-                              <CardDescription>
-                                Customize the agent's voice and how it behaves during calls.
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
+                          <div className="space-y-6">
+                            <div>
+                               <h3 className="text-lg font-semibold">Voice Configuration</h3>
+                               <p className="text-sm text-muted-foreground">
+                                 Customize the agent's voice and how it behaves during calls.
+                               </p>
+                            </div>
+                            <div className="space-y-6 pl-2">
                               <div className="space-y-2">
                                 <Label htmlFor="agent-voice">Agent Voice</Label>
                                 <Select defaultValue="alloy">
@@ -393,8 +393,8 @@ export default function DesignPage() {
                                 </Select>
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="welcome-message">Welcome Message</Label>
-                                <Input id="welcome-message" placeholder="e.g., Hello, how can I help you today?" />
+                                <Label htmlFor="welcome-message-in-call">Welcome Message</Label>
+                                <Input id="welcome-message-in-call" placeholder="e.g., Hello, how can I help you today?" />
                               </div>
                               <div className="flex items-center justify-between rounded-lg border p-4">
                                 <div>
@@ -403,8 +403,8 @@ export default function DesignPage() {
                                 </div>
                                 <Switch id="barge-in-toggle" defaultChecked />
                               </div>
-                            </CardContent>
-                          </Card>
+                             </div>
+                          </div>
                          <Card>
                            <CardHeader>
                              <CardTitle>Orb Customization</CardTitle>
