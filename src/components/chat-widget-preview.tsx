@@ -221,7 +221,7 @@ export function ChatWidgetPreview({
     }
   };
 
-  const renderMessages = mode === 'chat' ? messages : liveTranscripts;
+  const renderMessages = mode === 'chat' ? messages : liveTranscripts.map(t => ({...t, sender: t.speaker, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}));
   const showThinking = mode === 'in-call' ? isThinking : false;
   const showCurrentInput = mode === 'in-call' ? currentInput : '';
   const showCurrentOutput = mode === 'in-call' ? currentOutput : '';
@@ -272,25 +272,25 @@ export function ChatWidgetPreview({
             <div ref={chatContainerRef} className="flex-1 px-4 pt-4 bg-background flex flex-col justify-between overflow-y-auto">
               <div className="space-y-4">
                  {renderMessages.map((message) => (
-                    <div key={message.id} className={cn("flex", message.speaker === 'user' ? 'justify-end' : 'justify-start')}>
-                        <div className={cn("max-w-[75%]", message.speaker === 'user' ? 'text-right' : 'text-left')}>
+                    <div key={message.id} className={cn("flex", message.sender === 'user' ? 'justify-end' : 'justify-start')}>
+                        <div className={cn("max-w-[75%]", message.sender === 'user' ? 'text-right' : 'text-left')}>
                             <div
-                                className={cn("p-3 rounded-2xl text-primary-foreground",
-                                    message.speaker === 'user'
-                                    ? 'rounded-br-sm'
+                                className={cn("p-3 rounded-2xl",
+                                    message.sender === 'user'
+                                    ? 'rounded-br-sm bg-primary text-primary-foreground'
                                     : 'bg-muted rounded-tl-sm text-foreground'
                                 )}
                                 style={{
-                                    backgroundColor: message.speaker === 'user' ? themeColor : undefined
+                                    backgroundColor: message.sender === 'user' ? themeColor : undefined
                                 }}
                             >
                                 <p className="text-sm text-left">{message.text}</p>
                             </div>
                              <div className="flex items-center gap-2 mt-1.5 px-1">
                                 <p className="text-xs text-muted-foreground">
-                                    {message.speaker === 'ai' ? agentName : 'You'}
+                                    {message.sender === 'agent' ? agentName : 'You'}
                                 </p>
-                                {message.speaker === 'ai' && isFeedbackEnabled && (
+                                {message.sender === 'agent' && isFeedbackEnabled && (
                                     <div className="flex items-center gap-1">
                                         <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
                                             <ThumbsUp className="h-3 w-3" />
@@ -464,5 +464,3 @@ export function ChatWidgetPreview({
     </div>
   );
 }
-
-    
