@@ -1,4 +1,5 @@
 
+
 export type Task = {
   id: string;
   name: string;
@@ -68,4 +69,12 @@ export type AgentFile = {
   extractedText?: string;
 };
 
+export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'closing' | 'error';
+
+export type Transcript = {
+  id: number;
+  speaker: 'user' | 'ai' | 'system';
+  text: string;
+  final?: boolean;
+};
     
