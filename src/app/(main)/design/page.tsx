@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -180,9 +181,8 @@ export default function DesignPage() {
                                 <PopoverContent className="w-auto p-0" align="end">
                                     <ColorPicker
                                         defaultValue={themeColor}
-                                        onChange={(rgba) => {
-                                          const newColor = `rgba(${rgba.join(', ')})`;
-                                          setThemeColor(newColor);
+                                        onChange={(color) => {
+                                          setThemeColor(color);
                                         }}
                                     >
                                         <div className="flex flex-col gap-4 p-4">
