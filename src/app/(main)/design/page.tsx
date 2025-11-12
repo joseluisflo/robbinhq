@@ -188,7 +188,7 @@ export default function DesignPage() {
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto">
                     <TabsContent value="chat">
-                      <div className="p-6 space-y-8">
+                      <div className="p-6 space-y-6">
                         <div className="space-y-2">
                            <div className="flex items-center justify-between">
                               <Label htmlFor="display-name-toggle">Display name</Label>
@@ -208,70 +208,8 @@ export default function DesignPage() {
                             <LogoUploader agent={activeAgent} onLogoChange={setLogoFile} isSaving={isSaving} />
                         </div>
 
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <Label>Accent</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className="h-8 w-8 rounded-full p-0 border"
-                                  style={{ backgroundColor: themeColor }}
-                                />
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="end">
-                                  <ColorPicker
-                                      value={themeColor}
-                                      onChange={(newColor: string) => {
-                                        setThemeColor(newColor);
-                                      }}
-                                  />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                           <Separator />
-                           <div className="flex items-center justify-between">
-                            <Label>Chat Bubble Button</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className="h-8 w-8 rounded-full p-0 border"
-                                  style={{ backgroundColor: chatButtonColor }}
-                                />
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="end">
-                                  <ColorPicker
-                                      value={chatButtonColor}
-                                      onChange={(newColor: string) => {
-                                        setChatButtonColor(newColor);
-                                      }}
-                                  />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                           <Label>Align chat bubble button</Label>
-                           <RadioGroup 
-                                defaultValue="right"
-                                value={chatBubbleAlignment}
-                                onValueChange={(value: 'left' | 'right') => setChatBubbleAlignment(value)}
-                                className="flex gap-4"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="left" id="align-left" />
-                                    <Label htmlFor="align-left" className="font-normal">Left align</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="right" id="align-right" />
-                                    <Label htmlFor="align-right" className="font-normal">Right align</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-
-
+                        <Separator />
+                        
                         <div>
                           <div className="flex items-center justify-between mb-2">
                             <Label htmlFor="welcome-message">
@@ -299,6 +237,72 @@ export default function DesignPage() {
                             value={chatPlaceholder}
                             onChange={(e) => setChatPlaceholder(e.target.value)}
                            />
+                        </div>
+
+                        <Separator />
+
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Label>Accent</Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 w-8 rounded-full p-0 border"
+                                  style={{ backgroundColor: themeColor }}
+                                />
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="end">
+                                  <ColorPicker
+                                      value={themeColor}
+                                      onChange={(newColor: string) => {
+                                        setThemeColor(newColor);
+                                      }}
+                                  />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                           <div className="flex items-center justify-between">
+                            <Label>Chat Bubble Button</Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 w-8 rounded-full p-0 border"
+                                  style={{ backgroundColor: chatButtonColor }}
+                                />
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="end">
+                                  <ColorPicker
+                                      value={chatButtonColor}
+                                      onChange={(newColor: string) => {
+                                        setChatButtonColor(newColor);
+                                      }}
+                                  />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        </div>
+
+                        <Separator />
+                        
+                        <div className="space-y-2">
+                           <Label>Align chat bubble button</Label>
+                           <RadioGroup 
+                                defaultValue="right"
+                                value={chatBubbleAlignment}
+                                onValueChange={(value: 'left' | 'right') => setChatBubbleAlignment(value)}
+                                className="flex gap-4"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="left" id="align-left" />
+                                    <Label htmlFor="align-left" className="font-normal">Left align</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="right" id="align-right" />
+                                    <Label htmlFor="align-right" className="font-normal">Right align</Label>
+                                </div>
+                            </RadioGroup>
                         </div>
                       </div>
                     </TabsContent>
