@@ -3,9 +3,6 @@
 
 import { useState, useEffect, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -26,13 +23,16 @@ import {
 import { useActiveAgent } from '../layout';
 import type { Agent } from '@/lib/types';
 import { LogoUploader } from '@/components/logo-uploader';
-import { Loader2 } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
 import { updateAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { ColorPicker, ColorPickerAlpha, ColorPickerEyeDropper, ColorPickerFormat, ColorPickerHue, ColorPickerSelection } from '@/components/custom/color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 
 export default function DesignPage() {
@@ -44,6 +44,8 @@ export default function DesignPage() {
   const [isDisplayNameEnabled, setIsDisplayNameEnabled] = useState(true);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [themeColor, setThemeColor] = useState('#16a34a');
+  const [welcomeMessage, setWelcomeMessage] = useState('');
+  const [isWelcomeMessageEnabled, setIsWelcomeMessageEnabled] = useState(true);
 
 
   const [isSaving, startSaving] = useTransition();
@@ -52,7 +54,9 @@ export default function DesignPage() {
     agentName !== (activeAgent?.name || '') ||
     isDisplayNameEnabled !== (activeAgent?.isDisplayNameEnabled ?? true) ||
     logoFile !== null ||
-    themeColor !== (activeAgent?.themeColor || '#16a34a');
+    themeColor !== (activeAgent?.themeColor || '#16a34a') ||
+    welcomeMessage !== (activeAgent?.welcomeMessage || '') ||
+    isWelcomeMessageEnabled !== (activeAgent?.isWelcomeMessageEnabled ?? true);
 
 
   useEffect(() => {
@@ -60,11 +64,15 @@ export default function DesignPage() {
       setAgentName(activeAgent.name);
       setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
       setThemeColor(activeAgent.themeColor || '#16a34a');
+      setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
+      setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
       setLogoFile(null); // Reset file on agent change
     } else {
       setAgentName('');
       setIsDisplayNameEnabled(true);
       setThemeColor('#16a34a');
+      setWelcomeMessage('Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
+      setIsWelcomeMessageEnabled(true);
     }
   }, [activeAgent]);
 
@@ -91,6 +99,12 @@ export default function DesignPage() {
       if (themeColor !== activeAgent.themeColor) {
         dataToUpdate.themeColor = themeColor;
       }
+      if (welcomeMessage !== activeAgent.welcomeMessage) {
+        dataToUpdate.welcomeMessage = welcomeMessage;
+      }
+      if (isWelcomeMessageEnabled !== activeAgent.isWelcomeMessageEnabled) {
+        dataToUpdate.isWelcomeMessageEnabled = isWelcomeMessageEnabled;
+      }
 
       if (Object.keys(dataToUpdate).length > 0 || logoFile) {
         const result = await updateAgent(user.uid, activeAgent.id!, dataToUpdate);
@@ -112,6 +126,8 @@ export default function DesignPage() {
         setAgentName(activeAgent.name);
         setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
         setThemeColor(activeAgent.themeColor || '#16a34a');
+        setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
+        setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
         setLogoFile(null);
     }
   }
@@ -121,8 +137,8 @@ export default function DesignPage() {
     name: agentName,
     logoUrl: activeAgent?.logoUrl, // Pass the current logo url
     isDisplayNameEnabled: isDisplayNameEnabled,
-    welcomeMessage: activeAgent?.welcomeMessage,
-    isWelcomeMessageEnabled: activeAgent?.isWelcomeMessageEnabled,
+    welcomeMessage: welcomeMessage,
+    isWelcomeMessageEnabled: isWelcomeMessageEnabled,
     conversationStarters: activeAgent?.conversationStarters,
     themeColor: themeColor,
   };
@@ -200,29 +216,26 @@ export default function DesignPage() {
                            <Separator />
                         </div>
 
-
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Initial Message</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="flex items-center justify-between rounded-lg border p-4">
-                                    <div>
-                                        <Label htmlFor="heading-toggle">Heading</Label>
-                                        <Input id="heading" defaultValue="How can I help?" className="mt-2"/>
-                                    </div>
-                                    <Switch id="heading-toggle" defaultChecked/>
-                                </div>
-
-                                <div className="flex items-center justify-between rounded-lg border p-4">
-                                     <div>
-                                        <Label htmlFor="description-toggle">Description</Label>
-                                        <Textarea id="description" defaultValue="Start by asking a question or customizing how your agent responds." className="mt-2"/>
-                                    </div>
-                                    <Switch id="description-toggle" defaultChecked/>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <Label htmlFor="welcome-message">
+                              Welcome Message
+                            </Label>
+                            <Switch
+                              checked={isWelcomeMessageEnabled}
+                              onCheckedChange={setIsWelcomeMessageEnabled}
+                            />
+                          </div>
+                          <Textarea
+                            id="welcome-message"
+                            placeholder="Set a welcome message for your agent..."
+                            value={welcomeMessage}
+                            onChange={(e) => setWelcomeMessage(e.target.value)}
+                            className="mt-2 min-h-[100px]"
+                            disabled={!isWelcomeMessageEnabled}
+                          />
+                        </div>
+                        
                          <Card>
                             <CardHeader>
                                 <CardTitle>Chat Input</CardTitle>
