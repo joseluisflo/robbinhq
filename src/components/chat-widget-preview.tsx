@@ -37,6 +37,7 @@ interface ChatWidgetPreviewProps {
     chatButtonColor?: string;
     chatBubbleAlignment?: 'left' | 'right';
     isFeedbackEnabled?: boolean;
+    isBrandingEnabled?: boolean;
   };
   mode?: 'chat' | 'in-call';
 }
@@ -78,6 +79,7 @@ export function ChatWidgetPreview({
   const chatBubbleAlignment = agentData?.chatBubbleAlignment || 'right';
   const chatInputPlaceholder = agentData?.chatInputPlaceholder || 'Ask anything';
   const isFeedbackEnabled = agentData?.isFeedbackEnabled ?? true;
+  const isBrandingEnabled = agentData?.isBrandingEnabled ?? true;
 
 
   useEffect(() => {
@@ -382,9 +384,11 @@ export function ChatWidgetPreview({
                     <Mic className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Bot className="h-3 w-3" /> Powered by AgentVerse
-                </p>
+                {isBrandingEnabled && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <Bot className="h-3 w-3" /> Powered by AgentVerse
+                    </p>
+                )}
               </div>
             </div>
           </>
@@ -424,3 +428,5 @@ export function ChatWidgetPreview({
     </div>
   );
 }
+
+    

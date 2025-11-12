@@ -34,6 +34,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 export default function DesignPage() {
@@ -51,6 +52,7 @@ export default function DesignPage() {
   const [isWelcomeMessageEnabled, setIsWelcomeMessageEnabled] = useState(true);
   const [chatPlaceholder, setChatPlaceholder] = useState('');
   const [isFeedbackEnabled, setIsFeedbackEnabled] = useState(true);
+  const [isBrandingEnabled, setIsBrandingEnabled] = useState(true);
 
 
   const [isSaving, startSaving] = useTransition();
@@ -65,7 +67,8 @@ export default function DesignPage() {
     welcomeMessage !== (activeAgent?.welcomeMessage || '') ||
     isWelcomeMessageEnabled !== (activeAgent?.isWelcomeMessageEnabled ?? true) ||
     chatPlaceholder !== (activeAgent?.chatInputPlaceholder || '') ||
-    isFeedbackEnabled !== (activeAgent?.isFeedbackEnabled ?? true);
+    isFeedbackEnabled !== (activeAgent?.isFeedbackEnabled ?? true) ||
+    isBrandingEnabled !== (activeAgent?.isBrandingEnabled ?? true);
 
 
   useEffect(() => {
@@ -79,6 +82,7 @@ export default function DesignPage() {
       setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
       setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
       setIsFeedbackEnabled(activeAgent.isFeedbackEnabled ?? true);
+      setIsBrandingEnabled(activeAgent.isBrandingEnabled ?? true);
       setLogoFile(null); // Reset file on agent change
     } else {
       setAgentName('');
@@ -90,6 +94,7 @@ export default function DesignPage() {
       setIsWelcomeMessageEnabled(true);
       setChatPlaceholder('Ask anything');
       setIsFeedbackEnabled(true);
+      setIsBrandingEnabled(true);
     }
   }, [activeAgent]);
 
@@ -134,6 +139,9 @@ export default function DesignPage() {
       if (isFeedbackEnabled !== activeAgent.isFeedbackEnabled) {
         dataToUpdate.isFeedbackEnabled = isFeedbackEnabled;
       }
+      if (isBrandingEnabled !== activeAgent.isBrandingEnabled) {
+        dataToUpdate.isBrandingEnabled = isBrandingEnabled;
+      }
 
 
       if (Object.keys(dataToUpdate).length > 0 || logoFile) {
@@ -162,6 +170,7 @@ export default function DesignPage() {
         setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
         setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
         setIsFeedbackEnabled(activeAgent.isFeedbackEnabled ?? true);
+        setIsBrandingEnabled(activeAgent.isBrandingEnabled ?? true);
         setLogoFile(null);
     }
   }
@@ -179,10 +188,12 @@ export default function DesignPage() {
     chatBubbleAlignment: chatBubbleAlignment,
     chatInputPlaceholder: chatPlaceholder,
     isFeedbackEnabled: isFeedbackEnabled,
+    isBrandingEnabled: isBrandingEnabled,
   };
 
   return (
     <div className="h-full flex-1 flex flex-col">
+       <TooltipProvider>
        <Tabs defaultValue="chat" className="flex flex-col flex-1 h-full">
         <ResizablePanelGroup direction="horizontal" className="flex-1">
           {/* Configuration Panel */}
@@ -296,39 +307,61 @@ export default function DesignPage() {
 
                         <Separator />
                         
-                        <div className="space-y-2">
-                           <Label>Align chat bubble button</Label>
-                           <RadioGroup 
-                                defaultValue="right"
-                                value={chatBubbleAlignment}
-                                onValueChange={(value: 'left' | 'right') => setChatBubbleAlignment(value)}
-                                className="flex gap-4"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="left" id="align-left" />
-                                    <Label htmlFor="align-left" className="font-normal">Left align</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="right" id="align-right" />
-                                    <Label htmlFor="align-right" className="font-normal">Right align</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <Label htmlFor="feedback-toggle" className="font-medium flex items-center gap-2">
-                              Collect user feedback
-                              <Info className="h-4 w-4 text-muted-foreground" />
-                            </Label>
-                            <p className="text-sm text-muted-foreground">
-                              Collect user feedback by displaying a thumbs up or down button on agent messages.
-                            </p>
-                          </div>
-                          <Switch 
-                            id="feedback-toggle" 
-                            checked={isFeedbackEnabled}
-                            onCheckedChange={setIsFeedbackEnabled}
-                          />
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                               <Label>Align chat bubble button</Label>
+                               <RadioGroup 
+                                    defaultValue="right"
+                                    value={chatBubbleAlignment}
+                                    onValueChange={(value: 'left' | 'right') => setChatBubbleAlignment(value)}
+                                    className="flex gap-4"
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="left" id="align-left" />
+                                        <Label htmlFor="align-left" className="font-normal">Left align</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="right" id="align-right" />
+                                        <Label htmlFor="align-right" className="font-normal">Right align</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="feedback-toggle" className="font-medium flex items-center gap-2">
+                                Collect user feedback
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Collect user feedback by displaying a thumbs up or down button on agent messages.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                              </Label>
+                              <Switch 
+                                id="feedback-toggle" 
+                                checked={isFeedbackEnabled}
+                                onCheckedChange={setIsFeedbackEnabled}
+                              />
+                            </div>
+                             <div className="flex items-center justify-between">
+                              <Label htmlFor="branding-toggle" className="font-medium flex items-center gap-2">
+                                Remove AgentVerse branding
+                                 <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Remove the "Powered by AgentVerse" branding from the chat widget.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                              </Label>
+                              <Switch 
+                                id="branding-toggle" 
+                                checked={!isBrandingEnabled}
+                                onCheckedChange={(checked) => setIsBrandingEnabled(!checked)}
+                              />
+                            </div>
                         </div>
                       </div>
                     </TabsContent>
@@ -456,6 +489,9 @@ export default function DesignPage() {
           </ResizablePanel>
         </ResizablePanelGroup>
       </Tabs>
+      </TooltipProvider>
     </div>
   );
 }
+
+    

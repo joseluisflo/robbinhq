@@ -33,6 +33,7 @@ export type Agent = {
   chatBubbleAlignment?: 'left' | 'right';
   chatInputPlaceholder?: string;
   isFeedbackEnabled?: boolean;
+  isBrandingEnabled?: boolean;
 };
 
 export type Workflow = {
@@ -66,3 +67,5 @@ export type AgentFile = {
   createdAt: any;
   extractedText?: string;
 };
+
+    

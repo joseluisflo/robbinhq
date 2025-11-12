@@ -60,6 +60,7 @@ export async function createAgent(userId: string, name: string, description: str
       chatBubbleAlignment: 'right',
       chatInputPlaceholder: 'Ask anything',
       isFeedbackEnabled: true,
+      isBrandingEnabled: true,
     };
 
     await agentRef.set(newAgent);
@@ -135,3 +136,5 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<{ res
     return { error: e.message || 'Failed to get agent response.' };
   }
 }
+
+    
