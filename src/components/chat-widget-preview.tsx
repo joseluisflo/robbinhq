@@ -22,9 +22,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import SiriOrb from '@/components/smoothui/ui/SiriOrb';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
-import type { Agent, AgentFile, TextSource } from '@/lib/types';
+import type { Agent, AgentFile, TextSource, Transcript } from '@/lib/types';
 import { getAgentResponse } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
+import { useLiveAgent } from '@/hooks/use-live-agent';
 
 interface ChatWidgetPreviewProps {
   agentData?: Partial<Agent> & {
@@ -61,6 +62,15 @@ export function ChatWidgetPreview({
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+  
+  const { 
+    connectionState, 
+    toggleCall, 
+    transcripts: liveTranscripts, 
+    isThinking, 
+    currentInput, 
+    currentOutput 
+  } = useLiveAgent();
 
   const agentName = agentData?.name || 'Agent Preview';
   const welcomeMessage = agentData?.welcomeMessage;
@@ -81,8 +91,8 @@ export function ChatWidgetPreview({
 
 
   useEffect(() => {
-    // Set initial welcome message when agent data changes
-    if (isWelcomeMessageEnabled && welcomeMessage) {
+    // Set initial welcome message when agent data changes and not in a call
+    if (mode === 'chat' && isWelcomeMessageEnabled && welcomeMessage) {
       setMessages([
         {
           id: '1',
@@ -94,13 +104,13 @@ export function ChatWidgetPreview({
     } else {
       setMessages([]);
     }
-  }, [welcomeMessage, isWelcomeMessageEnabled, agentData?.id]);
+  }, [welcomeMessage, isWelcomeMessageEnabled, agentData?.id, mode]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, liveTranscripts, currentInput, currentOutput, isThinking]);
 
   const getInitials = (name: string) => {
     if (!name) return 'A';
@@ -204,6 +214,18 @@ export function ChatWidgetPreview({
     const walk = (x - startX.current) * 2; //scroll-fast
     viewportRef.current.scrollLeft = scrollLeft.current - walk;
   };
+  
+  const handleToggleCall = () => {
+    if (agentData) {
+      toggleCall(agentData as Agent);
+    }
+  };
+
+  const renderMessages = mode === 'chat' ? messages : liveTranscripts;
+  const showThinking = mode === 'in-call' ? isThinking : false;
+  const showCurrentInput = mode === 'in-call' ? currentInput : '';
+  const showCurrentOutput = mode === 'in-call' ? currentOutput : '';
+
 
   return (
     <div
@@ -249,38 +271,38 @@ export function ChatWidgetPreview({
             {/* Chat Messages */}
             <div ref={chatContainerRef} className="flex-1 px-4 pt-4 bg-background flex flex-col justify-between overflow-y-auto">
               <div className="space-y-4">
-                {messages.map((message) => (
-                  <div key={message.id} className={cn("flex", message.sender === 'user' ? 'justify-end' : 'justify-start')}>
-                    <div className={cn("max-w-[75%]", message.sender === 'user' ? 'text-right' : 'text-left')}>
-                      <div 
-                          className={cn("p-3 rounded-2xl text-primary-foreground", 
-                              message.sender === 'user' 
-                              ? 'rounded-br-sm' 
-                              : 'bg-muted rounded-tl-sm text-foreground'
-                          )}
-                          style={{ 
-                              backgroundColor: message.sender === 'user' ? themeColor : undefined 
-                          }}
-                      >
-                        <p className="text-sm text-left">{message.text}</p>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1.5 px-1">
-                        <p className="text-xs text-muted-foreground">
-                            {message.sender === 'agent' ? agentName : 'You'} • {message.timestamp}
-                        </p>
-                        {message.sender === 'agent' && isFeedbackEnabled && (
-                            <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
-                                    <ThumbsUp className="h-3 w-3" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
-                                    <ThumbsDown className="h-3 w-3" />
-                                </Button>
+                 {renderMessages.map((message) => (
+                    <div key={message.id} className={cn("flex", message.speaker === 'user' ? 'justify-end' : 'justify-start')}>
+                        <div className={cn("max-w-[75%]", message.speaker === 'user' ? 'text-right' : 'text-left')}>
+                            <div
+                                className={cn("p-3 rounded-2xl text-primary-foreground",
+                                    message.speaker === 'user'
+                                    ? 'rounded-br-sm'
+                                    : 'bg-muted rounded-tl-sm text-foreground'
+                                )}
+                                style={{
+                                    backgroundColor: message.speaker === 'user' ? themeColor : undefined
+                                }}
+                            >
+                                <p className="text-sm text-left">{message.text}</p>
                             </div>
-                        )}
-                      </div>
+                             <div className="flex items-center gap-2 mt-1.5 px-1">
+                                <p className="text-xs text-muted-foreground">
+                                    {message.speaker === 'ai' ? agentName : 'You'}
+                                </p>
+                                {message.speaker === 'ai' && isFeedbackEnabled && (
+                                    <div className="flex items-center gap-1">
+                                        <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
+                                            <ThumbsUp className="h-3 w-3" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
+                                            <ThumbsDown className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                  </div>
                 ))}
                 {isResponding && (
                   <div className="flex justify-start">
@@ -291,6 +313,33 @@ export function ChatWidgetPreview({
                     </div>
                   </div>
                 )}
+                 {showCurrentInput && (
+                    <div className="flex items-end gap-2 justify-end">
+                        <div className="max-w-[80%] p-3 rounded-2xl bg-green-600/50 rounded-br-none">
+                            <p className="text-sm text-gray-300 italic">{showCurrentInput}</p>
+                        </div>
+                    </div>
+                 )}
+                 {showThinking && (
+                    <div className="flex items-end gap-2">
+                        <div className="w-8 h-8 rounded-full bg-blue-500 flex-shrink-0"></div>
+                        <div className="max-w-[80%] p-3 rounded-2xl bg-gray-700 rounded-bl-none">
+                            <div className="flex items-center justify-center space-x-1.5 h-[20px]">
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                            </div>
+                        </div>
+                    </div>
+                 )}
+                 {showCurrentOutput && (
+                    <div className="flex items-end gap-2">
+                        <div className="w-8 h-8 rounded-full bg-blue-500/50 flex-shrink-0"></div>
+                        <div className="max-w-[80%] p-3 rounded-2xl bg-gray-700/50 rounded-bl-none">
+                            <p className="text-sm text-gray-300 italic">{showCurrentOutput}</p>
+                        </div>
+                    </div>
+                 )}
               </div>
               
               {/* Conversation Starters */}
@@ -364,6 +413,7 @@ export function ChatWidgetPreview({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground"
+                    onClick={handleToggleCall}
                   >
                     <Phone className="h-4 w-4" />
                   </Button>
@@ -392,11 +442,13 @@ export function ChatWidgetPreview({
                 <MicOff className="h-6 w-6" />
               </Button>
               <Button
-                variant="destructive"
+                variant={connectionState === 'connected' ? 'destructive' : 'default'}
                 size="icon"
                 className="h-12 w-12 rounded-full"
+                onClick={handleToggleCall}
+                disabled={connectionState === 'connecting' || connectionState === 'closing'}
               >
-                <PhoneOff className="h-6 w-6" />
+                {connectionState === 'connected' ? <PhoneOff className="h-6 w-6" /> : <Phone className="h-6 w-6" />}
               </Button>
             </div>
           </>
@@ -412,3 +464,5 @@ export function ChatWidgetPreview({
     </div>
   );
 }
+
+    

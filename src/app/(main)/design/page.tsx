@@ -23,7 +23,7 @@ import {
 import { useActiveAgent } from '../layout';
 import type { Agent, AgentFile, TextSource } from '@/lib/types';
 import { LogoUploader } from '@/components/logo-uploader';
-import { Info, Loader2 } from 'lucide-react';
+import { Info, Loader2, Phone, PhoneOff } from 'lucide-react';
 import { updateAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
@@ -35,6 +35,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useLiveAgent } from '@/hooks/use-live-agent';
 
 
 export default function DesignPage() {
@@ -42,6 +43,7 @@ export default function DesignPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { connectionState, toggleCall } = useLiveAgent();
   
   const [agentName, setAgentName] = useState('');
   const [isDisplayNameEnabled, setIsDisplayNameEnabled] = useState(true);
@@ -210,6 +212,12 @@ export default function DesignPage() {
     temperature: activeAgent?.temperature,
     textSources: textSources || [],
     fileSources: fileSources || [],
+  };
+
+   const handleToggleCall = () => {
+    if (activeAgent) {
+      toggleCall(agentData as Agent);
+    }
   };
 
   return (
@@ -515,3 +523,5 @@ export default function DesignPage() {
     </div>
   );
 }
+
+    
