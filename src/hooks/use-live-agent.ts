@@ -81,10 +81,10 @@ export function useLiveAgent() {
     currentOutputRef.current = '';
 
     try {
-      if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-        throw new Error("NEXT_PUBLIC_GEMINI_API_KEY is not set.");
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error("GEMINI_API_KEY is not set.");
       }
-      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY as string });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
       if (!outputAudioContextRef.current) {
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
