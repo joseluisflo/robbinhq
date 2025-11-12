@@ -29,6 +29,7 @@ export type Agent = {
   isDisplayNameEnabled?: boolean;
   logoUrl?: string;
   themeColor?: string;
+  chatInputPlaceholder?: string;
 };
 
 export type Workflow = {

@@ -68,6 +68,7 @@ export function ChatWidgetPreview({
   const isDisplayNameEnabled = agentData?.isDisplayNameEnabled ?? true;
   const logoUrl = agentData?.logoUrl;
   const themeColor = agentData?.themeColor || '#16a34a';
+  const chatInputPlaceholder = agentData?.chatInputPlaceholder || 'Ask anything';
 
 
   useEffect(() => {
@@ -299,7 +300,7 @@ export function ChatWidgetPreview({
           <div className="p-4 border-t bg-card">
             <div className="relative">
               <Textarea
-                placeholder="Haz una pregunta..."
+                placeholder={chatInputPlaceholder}
                 className="w-full resize-none pr-12 min-h-[52px] max-h-32 rounded-xl"
                 rows={1}
                 value={prompt}

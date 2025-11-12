@@ -27,7 +27,7 @@ import { Info, Loader2 } from 'lucide-react';
 import { updateAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
-import { ColorPicker, ColorPickerAlpha, ColorPickerEyeDropper, ColorPickerFormat, ColorPickerHue, ColorPickerSelection } from '@/components/custom/color-picker';
+import { ColorPicker } from '@/components/custom/color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
@@ -46,6 +46,7 @@ export default function DesignPage() {
   const [themeColor, setThemeColor] = useState('#16a34a');
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const [isWelcomeMessageEnabled, setIsWelcomeMessageEnabled] = useState(true);
+  const [chatPlaceholder, setChatPlaceholder] = useState('');
 
 
   const [isSaving, startSaving] = useTransition();
@@ -56,7 +57,8 @@ export default function DesignPage() {
     logoFile !== null ||
     themeColor !== (activeAgent?.themeColor || '#16a34a') ||
     welcomeMessage !== (activeAgent?.welcomeMessage || '') ||
-    isWelcomeMessageEnabled !== (activeAgent?.isWelcomeMessageEnabled ?? true);
+    isWelcomeMessageEnabled !== (activeAgent?.isWelcomeMessageEnabled ?? true) ||
+    chatPlaceholder !== (activeAgent?.chatInputPlaceholder || '');
 
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export default function DesignPage() {
       setThemeColor(activeAgent.themeColor || '#16a34a');
       setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
       setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
+      setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
       setLogoFile(null); // Reset file on agent change
     } else {
       setAgentName('');
@@ -73,6 +76,7 @@ export default function DesignPage() {
       setThemeColor('#16a34a');
       setWelcomeMessage('Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
       setIsWelcomeMessageEnabled(true);
+      setChatPlaceholder('Ask anything');
     }
   }, [activeAgent]);
 
@@ -105,6 +109,9 @@ export default function DesignPage() {
       if (isWelcomeMessageEnabled !== activeAgent.isWelcomeMessageEnabled) {
         dataToUpdate.isWelcomeMessageEnabled = isWelcomeMessageEnabled;
       }
+      if (chatPlaceholder !== activeAgent.chatInputPlaceholder) {
+        dataToUpdate.chatInputPlaceholder = chatPlaceholder;
+      }
 
       if (Object.keys(dataToUpdate).length > 0 || logoFile) {
         const result = await updateAgent(user.uid, activeAgent.id!, dataToUpdate);
@@ -128,6 +135,7 @@ export default function DesignPage() {
         setThemeColor(activeAgent.themeColor || '#16a34a');
         setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
         setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
+        setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
         setLogoFile(null);
     }
   }
@@ -141,6 +149,7 @@ export default function DesignPage() {
     isWelcomeMessageEnabled: isWelcomeMessageEnabled,
     conversationStarters: activeAgent?.conversationStarters,
     themeColor: themeColor,
+    chatInputPlaceholder: chatPlaceholder,
   };
 
   return (
@@ -191,25 +200,13 @@ export default function DesignPage() {
                                   style={{ backgroundColor: themeColor }}
                                 />
                               </PopoverTrigger>
-                              <PopoverContent className="w-64 p-0" align="end">
+                              <PopoverContent className="w-auto p-0" align="end">
                                   <ColorPicker
                                       value={themeColor}
-                                      onChange={(newColor) => {
+                                      onChange={(newColor: string) => {
                                         setThemeColor(newColor);
                                       }}
-                                  >
-                                      <div className="flex flex-col gap-4 p-4">
-                                          <ColorPickerSelection className="h-36" />
-                                          <div className="flex items-center gap-2">
-                                              <ColorPickerEyeDropper />
-                                              <div className="flex w-full flex-col gap-2">
-                                                  <ColorPickerHue />
-                                                  <ColorPickerAlpha />
-                                              </div>
-                                          </div>
-                                          <ColorPickerFormat />
-                                      </div>
-                                  </ColorPicker>
+                                  />
                               </PopoverContent>
                             </Popover>
                           </div>
@@ -236,17 +233,14 @@ export default function DesignPage() {
                           />
                         </div>
                         
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Chat Input</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="space-y-2">
-                                     <Label htmlFor="placeholder">Placeholder</Label>
-                                     <Input id="placeholder" defaultValue="Ask anything" />
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <div className="space-y-2">
+                           <Label htmlFor="placeholder">Chat Input Placeholder</Label>
+                           <Input 
+                            id="placeholder" 
+                            value={chatPlaceholder}
+                            onChange={(e) => setChatPlaceholder(e.target.value)}
+                           />
+                        </div>
                       </div>
                     </TabsContent>
                     <TabsContent value="in-call">
