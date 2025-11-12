@@ -391,9 +391,9 @@ export function ChatWidgetPreview({
       </div>
        <Button
         size="icon"
-        className="rounded-full h-14 w-14 mt-4"
+        className="rounded-full h-14 w-14 mt-4 [&_svg]:size-8"
       >
-        <Chat02Icon variant="filled" className="h-8 w-8" />
+        <Chat02Icon variant="filled" />
       </Button>
     </div>
   );
