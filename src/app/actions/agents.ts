@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { summarizeTaskResults } from '@/ai/flows/task-summarization';
@@ -61,6 +62,7 @@ export async function createAgent(userId: string, name: string, description: str
       chatInputPlaceholder: 'Ask anything',
       isFeedbackEnabled: true,
       isBrandingEnabled: true,
+      agentVoice: 'Zephyr',
     };
 
     await agentRef.set(newAgent);

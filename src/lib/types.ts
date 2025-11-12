@@ -35,6 +35,7 @@ export type Agent = {
   chatInputPlaceholder?: string;
   isFeedbackEnabled?: boolean;
   isBrandingEnabled?: boolean;
+  agentVoice?: string;
   // For passing to live agent
   textSources?: TextSource[];
   fileSources?: AgentFile[];

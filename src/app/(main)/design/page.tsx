@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -56,6 +57,7 @@ export default function DesignPage() {
   const [chatPlaceholder, setChatPlaceholder] = useState('');
   const [isFeedbackEnabled, setIsFeedbackEnabled] = useState(true);
   const [isBrandingEnabled, setIsBrandingEnabled] = useState(true);
+  const [agentVoice, setAgentVoice] = useState('Zephyr');
 
 
   const [isSaving, startSaving] = useTransition();
@@ -87,7 +89,8 @@ export default function DesignPage() {
     isWelcomeMessageEnabled !== (activeAgent?.isWelcomeMessageEnabled ?? true) ||
     chatPlaceholder !== (activeAgent?.chatInputPlaceholder || '') ||
     isFeedbackEnabled !== (activeAgent?.isFeedbackEnabled ?? true) ||
-    isBrandingEnabled !== (activeAgent?.isBrandingEnabled ?? true);
+    isBrandingEnabled !== (activeAgent?.isBrandingEnabled ?? true) ||
+    agentVoice !== (activeAgent?.agentVoice || 'Zephyr');
 
 
   useEffect(() => {
@@ -102,6 +105,7 @@ export default function DesignPage() {
       setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
       setIsFeedbackEnabled(activeAgent.isFeedbackEnabled ?? true);
       setIsBrandingEnabled(activeAgent.isBrandingEnabled ?? true);
+      setAgentVoice(activeAgent.agentVoice || 'Zephyr');
       setLogoFile(null); // Reset file on agent change
     } else {
       setAgentName('');
@@ -114,6 +118,7 @@ export default function DesignPage() {
       setChatPlaceholder('Ask anything');
       setIsFeedbackEnabled(true);
       setIsBrandingEnabled(true);
+      setAgentVoice('Zephyr');
     }
   }, [activeAgent]);
 
@@ -161,6 +166,9 @@ export default function DesignPage() {
       if (isBrandingEnabled !== activeAgent.isBrandingEnabled) {
         dataToUpdate.isBrandingEnabled = isBrandingEnabled;
       }
+      if (agentVoice !== activeAgent.agentVoice) {
+        dataToUpdate.agentVoice = agentVoice;
+      }
 
 
       if (Object.keys(dataToUpdate).length > 0 || logoFile) {
@@ -190,6 +198,7 @@ export default function DesignPage() {
         setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
         setIsFeedbackEnabled(activeAgent.isFeedbackEnabled ?? true);
         setIsBrandingEnabled(activeAgent.isBrandingEnabled ?? true);
+        setAgentVoice(activeAgent.agentVoice || 'Zephyr');
         setLogoFile(null);
     }
   }
@@ -210,6 +219,7 @@ export default function DesignPage() {
     isBrandingEnabled: isBrandingEnabled,
     instructions: activeAgent?.instructions,
     temperature: activeAgent?.temperature,
+    agentVoice: agentVoice,
     textSources: textSources || [],
     fileSources: fileSources || [],
   };
@@ -407,17 +417,16 @@ export default function DesignPage() {
                             <div className="space-y-6 pl-2">
                               <div className="space-y-2">
                                 <Label htmlFor="agent-voice">Agent Voice</Label>
-                                <Select defaultValue="alloy">
+                                <Select value={agentVoice} onValueChange={(value) => setAgentVoice(value)}>
                                   <SelectTrigger id="agent-voice">
                                     <SelectValue placeholder="Select a voice" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="alloy">Alloy (Male)</SelectItem>
-                                    <SelectItem value="echo">Echo (Male)</SelectItem>
-                                    <SelectItem value="fable">Fable (Male)</SelectItem>
-                                    <SelectItem value="onyx">Onyx (Male)</SelectItem>
-                                    <SelectItem value="nova">Nova (Female)</SelectItem>
-                                    <SelectItem value="shimmer">Shimmer (Female)</SelectItem>
+                                    <SelectItem value="Zephyr">Zephyr</SelectItem>
+                                    <SelectItem value="Puck">Puck</SelectItem>
+                                    <SelectItem value="Charon">Charon</SelectItem>
+                                    <SelectItem value="Kore">Kore</SelectItem>
+                                    <SelectItem value="Fenrir">Fenrir</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>

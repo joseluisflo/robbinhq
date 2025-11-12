@@ -94,6 +94,10 @@
         "themeColor": {
           "type": "string",
           "description": "The primary accent color for the chat widget."
+        },
+        "agentVoice": {
+          "type": "string",
+          "description": "The pre-built voice for the agent during calls."
         }
       },
       "required": ["name", "userId", "createdAt"]
