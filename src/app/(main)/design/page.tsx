@@ -44,6 +44,7 @@ export default function DesignPage() {
   const [isDisplayNameEnabled, setIsDisplayNameEnabled] = useState(true);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [themeColor, setThemeColor] = useState('#16a34a');
+  const [chatButtonColor, setChatButtonColor] = useState('#16a34a');
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const [isWelcomeMessageEnabled, setIsWelcomeMessageEnabled] = useState(true);
   const [chatPlaceholder, setChatPlaceholder] = useState('');
@@ -56,6 +57,7 @@ export default function DesignPage() {
     isDisplayNameEnabled !== (activeAgent?.isDisplayNameEnabled ?? true) ||
     logoFile !== null ||
     themeColor !== (activeAgent?.themeColor || '#16a34a') ||
+    chatButtonColor !== (activeAgent?.chatButtonColor || '#16a34a') ||
     welcomeMessage !== (activeAgent?.welcomeMessage || '') ||
     isWelcomeMessageEnabled !== (activeAgent?.isWelcomeMessageEnabled ?? true) ||
     chatPlaceholder !== (activeAgent?.chatInputPlaceholder || '');
@@ -66,6 +68,7 @@ export default function DesignPage() {
       setAgentName(activeAgent.name);
       setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
       setThemeColor(activeAgent.themeColor || '#16a34a');
+      setChatButtonColor(activeAgent.chatButtonColor || activeAgent.themeColor || '#16a34a');
       setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
       setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
       setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
@@ -74,6 +77,7 @@ export default function DesignPage() {
       setAgentName('');
       setIsDisplayNameEnabled(true);
       setThemeColor('#16a34a');
+      setChatButtonColor('#16a34a');
       setWelcomeMessage('Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
       setIsWelcomeMessageEnabled(true);
       setChatPlaceholder('Ask anything');
@@ -102,6 +106,9 @@ export default function DesignPage() {
       }
       if (themeColor !== activeAgent.themeColor) {
         dataToUpdate.themeColor = themeColor;
+      }
+      if (chatButtonColor !== activeAgent.chatButtonColor) {
+        dataToUpdate.chatButtonColor = chatButtonColor;
       }
       if (welcomeMessage !== activeAgent.welcomeMessage) {
         dataToUpdate.welcomeMessage = welcomeMessage;
@@ -133,6 +140,7 @@ export default function DesignPage() {
         setAgentName(activeAgent.name);
         setIsDisplayNameEnabled(activeAgent.isDisplayNameEnabled ?? true);
         setThemeColor(activeAgent.themeColor || '#16a34a');
+        setChatButtonColor(activeAgent.chatButtonColor || activeAgent.themeColor || '#16a34a');
         setWelcomeMessage(activeAgent.welcomeMessage || 'Hola, estás hablando con el agente de vista previa. ¡Hazme una pregunta para empezar!');
         setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
         setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
@@ -149,6 +157,7 @@ export default function DesignPage() {
     isWelcomeMessageEnabled: isWelcomeMessageEnabled,
     conversationStarters: activeAgent?.conversationStarters,
     themeColor: themeColor,
+    chatButtonColor: chatButtonColor,
     chatInputPlaceholder: chatPlaceholder,
   };
 
@@ -211,6 +220,26 @@ export default function DesignPage() {
                             </Popover>
                           </div>
                            <Separator />
+                           <div className="flex items-center justify-between">
+                            <Label>Chat Bubble Button</Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 w-8 rounded-full p-0 border"
+                                  style={{ backgroundColor: chatButtonColor }}
+                                />
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="end">
+                                  <ColorPicker
+                                      value={chatButtonColor}
+                                      onChange={(newColor: string) => {
+                                        setChatButtonColor(newColor);
+                                      }}
+                                  />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
                         </div>
 
                         <div>
@@ -370,7 +399,3 @@ export default function DesignPage() {
     </div>
   );
 }
-
-    
-
-    

@@ -32,6 +32,7 @@ interface ChatWidgetPreviewProps {
     fileSources?: AgentFile[];
     isDisplayNameEnabled?: boolean;
     themeColor?: string;
+    chatButtonColor?: string;
   };
   mode?: 'chat' | 'in-call';
 }
@@ -69,6 +70,7 @@ export function ChatWidgetPreview({
   const isDisplayNameEnabled = agentData?.isDisplayNameEnabled ?? true;
   const logoUrl = agentData?.logoUrl;
   const themeColor = agentData?.themeColor || '#16a34a';
+  const chatButtonColor = agentData?.chatButtonColor || themeColor;
   const chatInputPlaceholder = agentData?.chatInputPlaceholder || 'Ask anything';
 
 
@@ -392,12 +394,10 @@ export function ChatWidgetPreview({
        <Button
         size="icon"
         className="rounded-full h-14 w-14 mt-4 [&_svg]:size-8"
+        style={{ backgroundColor: chatButtonColor }}
       >
         <Chat02Icon variant="filled" />
       </Button>
     </div>
   );
 }
-    
-
-    
