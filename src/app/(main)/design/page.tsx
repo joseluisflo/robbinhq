@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   ResizableHandle,
@@ -21,12 +21,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useActiveAgent } from '../layout';
-import type { Agent } from '@/lib/types';
+import type { Agent, AgentFile, TextSource } from '@/lib/types';
 import { LogoUploader } from '@/components/logo-uploader';
 import { Info, Loader2 } from 'lucide-react';
 import { updateAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
 import { ColorPicker } from '@/components/custom/color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
@@ -40,6 +40,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 export default function DesignPage() {
   const { activeAgent, setActiveAgent } = useActiveAgent();
   const { user } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
   
   const [agentName, setAgentName] = useState('');
@@ -56,6 +57,22 @@ export default function DesignPage() {
 
 
   const [isSaving, startSaving] = useTransition();
+
+  // Firestore query for agent texts
+  const textsQuery = useMemo(() => {
+    if (!user || !activeAgent?.id) return null;
+    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'texts'));
+  }, [user, activeAgent, firestore]);
+
+  const { data: textSources } = useCollection<TextSource>(textsQuery);
+
+  // Firestore query for agent files
+  const filesQuery = useMemo(() => {
+    if (!user || !activeAgent?.id) return null;
+    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'files'));
+  }, [user, activeAgent, firestore]);
+
+  const { data: fileSources } = useCollection<AgentFile>(filesQuery);
 
   const isChanged = 
     agentName !== (activeAgent?.name || '') ||
@@ -176,7 +193,7 @@ export default function DesignPage() {
   }
 
 
-  const agentData: Partial<Agent> = {
+  const agentData: Partial<Agent> & { textSources: TextSource[], fileSources: AgentFile[] } = {
     name: agentName,
     logoUrl: activeAgent?.logoUrl, // Pass the current logo url
     isDisplayNameEnabled: isDisplayNameEnabled,
@@ -189,6 +206,10 @@ export default function DesignPage() {
     chatInputPlaceholder: chatPlaceholder,
     isFeedbackEnabled: isFeedbackEnabled,
     isBrandingEnabled: isBrandingEnabled,
+    instructions: activeAgent?.instructions,
+    temperature: activeAgent?.temperature,
+    textSources: textSources || [],
+    fileSources: fileSources || [],
   };
 
   return (

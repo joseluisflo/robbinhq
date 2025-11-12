@@ -94,7 +94,7 @@ export function ChatWidgetPreview({
     } else {
       setMessages([]);
     }
-  }, [welcomeMessage, isWelcomeMessageEnabled]);
+  }, [welcomeMessage, isWelcomeMessageEnabled, agentData?.id]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -412,5 +412,3 @@ export function ChatWidgetPreview({
     </div>
   );
 }
-
-    
