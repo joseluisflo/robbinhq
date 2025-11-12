@@ -7,9 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowUp,
   Paperclip,
-  Mic,
-  Smile,
-  ImageIcon,
+  Phone,
   Bot,
   MoreHorizontal,
   X,
@@ -367,21 +365,7 @@ export function ChatWidgetPreview({
                     size="icon"
                     className="h-8 w-8 text-muted-foreground"
                   >
-                    <Smile className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground"
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground"
-                  >
-                    <Mic className="h-4 w-4" />
+                    <Phone className="h-4 w-4" />
                   </Button>
                 </div>
                 {isBrandingEnabled && (
