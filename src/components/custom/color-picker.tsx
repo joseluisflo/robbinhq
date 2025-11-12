@@ -31,12 +31,12 @@ interface ColorPickerContextValue {
   lightness: number;
   alpha: number;
   mode: string;
+  value: string;
   setHue: (hue: number) => void;
   setSaturation: (saturation: number) => void;
   setLightness: (lightness: number) => void;
   setAlpha: (alpha: number) => void;
   setMode: (mode: string) => void;
-  value: string;
 }
 const ColorPickerContext = createContext<ColorPickerContextValue | undefined>(
   undefined
