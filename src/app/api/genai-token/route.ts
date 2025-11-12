@@ -1,23 +1,28 @@
 import { NextResponse } from 'next/server';
-import { ai } from '@/ai/genkit';
+import { GoogleAuth } from 'google-auth-library';
 
 export async function GET() {
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: 'GEMINI_API_KEY is not set on the server.' },
-      { status: 500 }
-    );
-  }
-
   try {
-    const clientToken = await ai.live.generateClientToken();
-    return NextResponse.json({ token: clientToken });
+    const auth = new GoogleAuth({
+      scopes: 'https://www.googleapis.com/auth/cloud-platform',
+    });
+    const client = await auth.getClient();
+    const accessToken = (await client.getAccessToken()).token;
+
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: 'Failed to retrieve access token.' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({ token: accessToken });
+
   } catch (error: any) {
-    console.error('Failed to generate GenAI client token:', error);
+    console.error('Failed to generate Google Cloud access token:', error);
+    // This could be due to missing GOOGLE_APPLICATION_CREDENTIALS in the server environment
     return NextResponse.json(
-      { error: 'Failed to generate client token.', details: error.message },
+      { error: 'Failed to generate access token.', details: error.message },
       { status: 500 }
     );
   }
