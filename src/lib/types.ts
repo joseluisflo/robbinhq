@@ -32,6 +32,7 @@ export type Agent = {
   chatButtonColor?: string;
   chatBubbleAlignment?: 'left' | 'right';
   chatInputPlaceholder?: string;
+  isFeedbackEnabled?: boolean;
 };
 
 export type Workflow = {

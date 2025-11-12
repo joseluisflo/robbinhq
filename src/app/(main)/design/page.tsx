@@ -50,6 +50,7 @@ export default function DesignPage() {
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const [isWelcomeMessageEnabled, setIsWelcomeMessageEnabled] = useState(true);
   const [chatPlaceholder, setChatPlaceholder] = useState('');
+  const [isFeedbackEnabled, setIsFeedbackEnabled] = useState(true);
 
 
   const [isSaving, startSaving] = useTransition();
@@ -63,7 +64,8 @@ export default function DesignPage() {
     chatBubbleAlignment !== (activeAgent?.chatBubbleAlignment || 'right') ||
     welcomeMessage !== (activeAgent?.welcomeMessage || '') ||
     isWelcomeMessageEnabled !== (activeAgent?.isWelcomeMessageEnabled ?? true) ||
-    chatPlaceholder !== (activeAgent?.chatInputPlaceholder || '');
+    chatPlaceholder !== (activeAgent?.chatInputPlaceholder || '') ||
+    isFeedbackEnabled !== (activeAgent?.isFeedbackEnabled ?? true);
 
 
   useEffect(() => {
@@ -76,6 +78,7 @@ export default function DesignPage() {
       setWelcomeMessage(activeAgent.welcomeMessage || 'Hello! You are talking to the preview agent. Ask me a question to get started!');
       setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
       setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
+      setIsFeedbackEnabled(activeAgent.isFeedbackEnabled ?? true);
       setLogoFile(null); // Reset file on agent change
     } else {
       setAgentName('');
@@ -86,6 +89,7 @@ export default function DesignPage() {
       setWelcomeMessage('Hello! You are talking to the preview agent. Ask me a question to get started!');
       setIsWelcomeMessageEnabled(true);
       setChatPlaceholder('Ask anything');
+      setIsFeedbackEnabled(true);
     }
   }, [activeAgent]);
 
@@ -127,6 +131,10 @@ export default function DesignPage() {
       if (chatPlaceholder !== activeAgent.chatInputPlaceholder) {
         dataToUpdate.chatInputPlaceholder = chatPlaceholder;
       }
+      if (isFeedbackEnabled !== activeAgent.isFeedbackEnabled) {
+        dataToUpdate.isFeedbackEnabled = isFeedbackEnabled;
+      }
+
 
       if (Object.keys(dataToUpdate).length > 0 || logoFile) {
         const result = await updateAgent(user.uid, activeAgent.id!, dataToUpdate);
@@ -153,6 +161,7 @@ export default function DesignPage() {
         setWelcomeMessage(activeAgent.welcomeMessage || 'Hello! You are talking to the preview agent. Ask me a question to get started!');
         setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
         setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
+        setIsFeedbackEnabled(activeAgent.isFeedbackEnabled ?? true);
         setLogoFile(null);
     }
   }
@@ -169,6 +178,7 @@ export default function DesignPage() {
     chatButtonColor: chatButtonColor,
     chatBubbleAlignment: chatBubbleAlignment,
     chatInputPlaceholder: chatPlaceholder,
+    isFeedbackEnabled: isFeedbackEnabled,
   };
 
   return (
@@ -303,6 +313,22 @@ export default function DesignPage() {
                                     <Label htmlFor="align-right" className="font-normal">Right align</Label>
                                 </div>
                             </RadioGroup>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label htmlFor="feedback-toggle" className="font-medium flex items-center gap-2">
+                              Collect user feedback
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Collect user feedback by displaying a thumbs up or down button on agent messages.
+                            </p>
+                          </div>
+                          <Switch 
+                            id="feedback-toggle" 
+                            checked={isFeedbackEnabled}
+                            onCheckedChange={setIsFeedbackEnabled}
+                          />
                         </div>
                       </div>
                     </TabsContent>

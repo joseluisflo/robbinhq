@@ -59,6 +59,7 @@ export async function createAgent(userId: string, name: string, description: str
       chatButtonColor: '#16a34a',
       chatBubbleAlignment: 'right',
       chatInputPlaceholder: 'Ask anything',
+      isFeedbackEnabled: true,
     };
 
     await agentRef.set(newAgent);

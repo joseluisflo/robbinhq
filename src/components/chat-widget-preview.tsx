@@ -16,6 +16,8 @@ import {
   PhoneOff,
   MicOff,
   Loader2,
+  ThumbsUp,
+  ThumbsDown,
 } from 'lucide-react';
 import { Chat02Icon } from '@/components/lo-icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -34,6 +36,7 @@ interface ChatWidgetPreviewProps {
     themeColor?: string;
     chatButtonColor?: string;
     chatBubbleAlignment?: 'left' | 'right';
+    isFeedbackEnabled?: boolean;
   };
   mode?: 'chat' | 'in-call';
 }
@@ -74,6 +77,7 @@ export function ChatWidgetPreview({
   const chatButtonColor = agentData?.chatButtonColor || themeColor;
   const chatBubbleAlignment = agentData?.chatBubbleAlignment || 'right';
   const chatInputPlaceholder = agentData?.chatInputPlaceholder || 'Ask anything';
+  const isFeedbackEnabled = agentData?.isFeedbackEnabled ?? true;
 
 
   useEffect(() => {
@@ -260,9 +264,21 @@ export function ChatWidgetPreview({
                       >
                         <p className="text-sm text-left">{message.text}</p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1.5 px-1">
-                        {message.sender === 'agent' ? agentName : 'You'} • {message.timestamp}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1.5 px-1">
+                        <p className="text-xs text-muted-foreground">
+                            {message.sender === 'agent' ? agentName : 'You'} • {message.timestamp}
+                        </p>
+                        {message.sender === 'agent' && isFeedbackEnabled && (
+                            <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground">
+                                    <ThumbsUp className="h-3 w-3" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground">
+                                    <ThumbsDown className="h-3 w-3" />
+                                </Button>
+                            </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
