@@ -29,16 +29,6 @@ class AudioRecorderProcessor extends AudioWorkletProcessor {
 registerProcessor('audio-recorder-processor', AudioRecorderProcessor);
 `;
 
-async function getAccessToken(): Promise<string> {
-    const response = await fetch('/api/genai-token');
-    if (!response.ok) {
-        const errorBody = await response.json();
-        throw new Error(errorBody.error || 'Failed to fetch access token.');
-    }
-    const { token } = await response.json();
-    return token;
-}
-
 
 export function useLiveAgent() {
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
@@ -92,8 +82,10 @@ export function useLiveAgent() {
     currentOutputRef.current = '';
 
     try {
-      const accessToken = await getAccessToken();
-      const ai = new GoogleGenAI({ accessToken });
+      if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+        throw new Error("NEXT_PUBLIC_GEMINI_API_KEY is not set.");
+      }
+      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY as string });
 
       if (!outputAudioContextRef.current) {
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
