@@ -1,0 +1,198 @@
+
+{
+  "entities": {
+    "userProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's public profile information.",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the user's profile picture."
+        }
+      },
+      "required": ["displayName", "email"]
+    },
+    "agent": {
+      "title": "Agent",
+      "description": "Represents an AI agent workspace.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the agent."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the agent's purpose."
+        },
+        "goals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of goals for the agent."
+        },
+        "temperature": {
+          "type": "number",
+          "description": "Controls the creativity of the agent's responses. 0 is deterministic, 1 is highly creative."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this agent."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the agent was created."
+        },
+        "rateLimiting": {
+          "type": "object",
+          "description": "Configuration for rate limiting user interactions.",
+          "properties": {
+            "maxMessages": {
+              "type": "number",
+              "description": "The maximum number of messages a user can send within the timeframe."
+            },
+            "timeframe": {
+              "type": "number",
+              "description": "The duration of the time window in seconds."
+            },
+            "limitExceededMessage": {
+              "type": "string",
+              "description": "The message to display when the rate limit is exceeded."
+            }
+          }
+        },
+        "welcomeMessage": {
+          "type": "string",
+          "description": "The initial message the agent displays to the user."
+        },
+        "inCallWelcomeMessage": {
+          "type": "string",
+          "description": "The initial spoken message the agent uses at the start of a call."
+        },
+        "isWelcomeMessageEnabled": {
+          "type": "boolean",
+          "description": "Determines if the welcome message is active."
+        },
+        "isDisplayNameEnabled": {
+            "type": "boolean",
+            "description": "Determines if the display name is shown in the chat widget."
+        },
+        "logoUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL of the agent's logo."
+        },
+        "themeColor": {
+          "type": "string",
+          "description": "The primary accent color for the chat widget."
+        },
+        "agentVoice": {
+          "type": "string",
+          "description": "The pre-built voice for the agent during calls."
+        }
+      },
+      "required": ["name", "userId", "createdAt"]
+    },
+    "agentText": {
+      "title": "Agent Text Source",
+      "description": "A text-based knowledge source for an agent.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The title of the text source."
+        },
+        "content": {
+          "type": "string",
+          "description": "The full content of the text source."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the text source was created."
+        }
+      },
+      "required": ["title", "content", "createdAt"]
+    },
+    "agentFile": {
+      "title": "Agent File Source",
+      "description": "A file-based knowledge source for an agent.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the file."
+        },
+        "type": {
+          "type": "string",
+          "description": "The MIME type of the file."
+        },
+        "size": {
+          "type": "number",
+          "description": "The size of the file in bytes."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "The public URL to access the file."
+        },
+        "storagePath": {
+          "type": "string",
+          "description": "The path to the file in the storage bucket."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the file was uploaded."
+        },
+        "extractedText": {
+          "type": "string",
+          "description": "The extracted text content of the file."
+        }
+      },
+      "required": ["name", "type", "size", "url", "storagePath", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": ["email", "google.com"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/userProfile"
+      },
+      "description": "Stores public profile information for each user."
+    },
+    "/users/{userId}/agents/{agentId}": {
+      "schema": {
+        "$ref": "#/entities/agent"
+      },
+      "description": "Stores the agents created by a specific user."
+    },
+    "/users/{userId}/agents/{agentId}/texts/{textId}": {
+      "schema": {
+        "$ref": "#/entities/agentText"
+      },
+      "description": "Stores text-based knowledge sources for a specific agent."
+    },
+    "/users/{userId}/agents/{agentId}/files/{fileId}": {
+      "schema": {
+        "$ref": "#/entities/agentFile"
+      },
+      "description": "Stores file-based knowledge sources for a specific agent."
+    }
+  }
+}

@@ -53,6 +53,7 @@ export default function DesignPage() {
   const [chatButtonColor, setChatButtonColor] = useState('#16a34a');
   const [chatBubbleAlignment, setChatBubbleAlignment] = useState<'left' | 'right'>('right');
   const [welcomeMessage, setWelcomeMessage] = useState('');
+  const [inCallWelcomeMessage, setInCallWelcomeMessage] = useState('');
   const [isWelcomeMessageEnabled, setIsWelcomeMessageEnabled] = useState(true);
   const [chatPlaceholder, setChatPlaceholder] = useState('');
   const [isFeedbackEnabled, setIsFeedbackEnabled] = useState(true);
@@ -86,6 +87,7 @@ export default function DesignPage() {
     chatButtonColor !== (activeAgent?.chatButtonColor || '#16a34a') ||
     chatBubbleAlignment !== (activeAgent?.chatBubbleAlignment || 'right') ||
     welcomeMessage !== (activeAgent?.welcomeMessage || '') ||
+    inCallWelcomeMessage !== (activeAgent?.inCallWelcomeMessage || '') ||
     isWelcomeMessageEnabled !== (activeAgent?.isWelcomeMessageEnabled ?? true) ||
     chatPlaceholder !== (activeAgent?.chatInputPlaceholder || '') ||
     isFeedbackEnabled !== (activeAgent?.isFeedbackEnabled ?? true) ||
@@ -101,6 +103,7 @@ export default function DesignPage() {
       setChatButtonColor(activeAgent.chatButtonColor || activeAgent.themeColor || '#16a34a');
       setChatBubbleAlignment(activeAgent.chatBubbleAlignment || 'right');
       setWelcomeMessage(activeAgent.welcomeMessage || 'Hello! You are talking to the preview agent. Ask me a question to get started!');
+      setInCallWelcomeMessage(activeAgent.inCallWelcomeMessage || 'Hello, how can I help you today?');
       setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
       setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
       setIsFeedbackEnabled(activeAgent.isFeedbackEnabled ?? true);
@@ -114,6 +117,7 @@ export default function DesignPage() {
       setChatButtonColor('#16a34a');
       setChatBubbleAlignment('right');
       setWelcomeMessage('Hello! You are talking to the preview agent. Ask me a question to get started!');
+      setInCallWelcomeMessage('Hello, how can I help you today?');
       setIsWelcomeMessageEnabled(true);
       setChatPlaceholder('Ask anything');
       setIsFeedbackEnabled(true);
@@ -153,6 +157,9 @@ export default function DesignPage() {
       }
       if (welcomeMessage !== activeAgent.welcomeMessage) {
         dataToUpdate.welcomeMessage = welcomeMessage;
+      }
+       if (inCallWelcomeMessage !== activeAgent.inCallWelcomeMessage) {
+        dataToUpdate.inCallWelcomeMessage = inCallWelcomeMessage;
       }
       if (isWelcomeMessageEnabled !== activeAgent.isWelcomeMessageEnabled) {
         dataToUpdate.isWelcomeMessageEnabled = isWelcomeMessageEnabled;
@@ -194,6 +201,7 @@ export default function DesignPage() {
         setChatButtonColor(activeAgent.chatButtonColor || activeAgent.themeColor || '#16a34a');
         setChatBubbleAlignment(activeAgent.chatBubbleAlignment || 'right');
         setWelcomeMessage(activeAgent.welcomeMessage || 'Hello! You are talking to the preview agent. Ask me a question to get started!');
+        setInCallWelcomeMessage(activeAgent.inCallWelcomeMessage || 'Hello, how can I help you today?');
         setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
         setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
         setIsFeedbackEnabled(activeAgent.isFeedbackEnabled ?? true);
@@ -209,6 +217,7 @@ export default function DesignPage() {
     logoUrl: activeAgent?.logoUrl, // Pass the current logo url
     isDisplayNameEnabled: isDisplayNameEnabled,
     welcomeMessage: welcomeMessage,
+    inCallWelcomeMessage: inCallWelcomeMessage,
     isWelcomeMessageEnabled: isWelcomeMessageEnabled,
     conversationStarters: activeAgent?.conversationStarters,
     themeColor: themeColor,
@@ -432,7 +441,12 @@ export default function DesignPage() {
                               </div>
                               <div className="space-y-2">
                                 <Label htmlFor="welcome-message-in-call">Welcome Message</Label>
-                                <Input id="welcome-message-in-call" placeholder="e.g., Hello, how can I help you today?" />
+                                <Input 
+                                  id="welcome-message-in-call" 
+                                  placeholder="e.g., Hello, how can I help you today?" 
+                                  value={inCallWelcomeMessage}
+                                  onChange={(e) => setInCallWelcomeMessage(e.target.value)}
+                                />
                               </div>
                               <div className="flex items-center justify-between rounded-lg border p-4">
                                 <div>

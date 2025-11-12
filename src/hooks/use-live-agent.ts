@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -29,7 +30,7 @@ class AudioRecorderProcessor extends AudioWorkletProcessor {
 registerProcessor('audio-recorder-processor', AudioRecorderProcessor);
 `;
 
-export function useLiveAgent(onCallEnd: (callHistory: Message[]) => void) {
+export function useLiveAgent() {
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [liveTranscripts, setLiveTranscripts] = useState<Message[]>([]);
   const [currentInput, setCurrentInput] = useState('');
@@ -45,7 +46,6 @@ export function useLiveAgent(onCallEnd: (callHistory: Message[]) => void) {
   const nextStartTimeRef = useRef<number>(0);
   const currentInputRef = useRef('');
   const currentOutputRef = useRef('');
-  const transcriptHistoryRef = useRef<Message[]>([]);
 
   const { toast } = useToast();
 
@@ -75,14 +75,8 @@ export function useLiveAgent(onCallEnd: (callHistory: Message[]) => void) {
     setIsThinking(false);
     currentInputRef.current = '';
     currentOutputRef.current = '';
-    
-    if (transcriptHistoryRef.current.length > 0) {
-      onCallEnd(transcriptHistoryRef.current);
-    }
-    transcriptHistoryRef.current = [];
     setLiveTranscripts([]);
-
-  }, [onCallEnd]);
+  }, []);
 
   const toggleCall = useCallback(async (agent: Agent & { textSources?: TextSource[], fileSources?: AgentFile[] }) => {
     if (connectionState === 'connected') {
@@ -102,7 +96,6 @@ export function useLiveAgent(onCallEnd: (callHistory: Message[]) => void) {
     setIsThinking(false);
     currentInputRef.current = '';
     currentOutputRef.current = '';
-    transcriptHistoryRef.current = [];
 
     try {
       if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
@@ -123,7 +116,8 @@ export function useLiveAgent(onCallEnd: (callHistory: Message[]) => void) {
 
       const systemInstruction = `
         You are a voice AI. Your goal is to be as responsive as possible. Keep answers extremely concise and to the point. Prioritize speed.
-        
+        ${agent.inCallWelcomeMessage ? `Your first response must be: "${agent.inCallWelcomeMessage}"` : ''}
+
         Your instructions and persona are defined below.
 
         ### Instructions & Persona
@@ -207,17 +201,18 @@ export function useLiveAgent(onCallEnd: (callHistory: Message[]) => void) {
             if (message.serverContent?.turnComplete) {
               const finalInput = currentInputRef.current.trim();
               const finalOutput = currentOutputRef.current.trim();
-              const newTranscripts: Message[] = [];
-
-              if (finalInput) {
-                  newTranscripts.push({ id: Date.now().toString(), sender: 'user', text: finalInput, timestamp: new Date().toISOString() });
-              }
-              if (finalOutput) {
-                  newTranscripts.push({ id: (Date.now() + 1).toString(), sender: 'agent', text: finalOutput, timestamp: new Date().toISOString() });
-              }
-              if (newTranscripts.length > 0) {
-                 setLiveTranscripts(prev => [...prev, ...newTranscripts]);
-                 transcriptHistoryRef.current.push(...newTranscripts);
+              
+              if (finalInput || finalOutput) {
+                 setLiveTranscripts(prev => {
+                    const newTranscripts: Message[] = [];
+                    if (finalInput) {
+                        newTranscripts.push({ id: Date.now().toString(), sender: 'user', text: finalInput, timestamp: new Date().toISOString() });
+                    }
+                    if (finalOutput) {
+                        newTranscripts.push({ id: (Date.now() + 1).toString(), sender: 'agent', text: finalOutput, timestamp: new Date().toISOString() });
+                    }
+                    return [...prev, ...newTranscripts];
+                });
               }
 
               if (finalInput && !finalOutput) {
@@ -273,7 +268,7 @@ export function useLiveAgent(onCallEnd: (callHistory: Message[]) => void) {
       setConnectionState('error');
       cleanup();
     }
-  }, [connectionState, cleanup, toast, onCallEnd]);
+  }, [connectionState, cleanup, toast]);
 
   return { connectionState, toggleCall, liveTranscripts, isThinking, currentInput, currentOutput };
 }

@@ -26,6 +26,7 @@ export type Agent = {
     limitExceededMessage: string;
   };
   welcomeMessage?: string;
+  inCallWelcomeMessage?: string;
   isWelcomeMessageEnabled?: boolean;
   isDisplayNameEnabled?: boolean;
   logoUrl?: string;
