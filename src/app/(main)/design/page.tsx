@@ -326,6 +326,7 @@ export default function DesignPage() {
                                     </div>
                                 </RadioGroup>
                             </div>
+                            <Separator />
                             <div className="flex items-center justify-between">
                               <Label htmlFor="feedback-toggle" className="font-medium flex items-center gap-2">
                                 Collect user feedback
@@ -493,5 +494,3 @@ export default function DesignPage() {
     </div>
   );
 }
-
-    
