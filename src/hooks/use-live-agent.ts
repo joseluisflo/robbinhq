@@ -30,17 +30,6 @@ class AudioRecorderProcessor extends AudioWorkletProcessor {
 registerProcessor('audio-recorder-processor', AudioRecorderProcessor);
 `;
 
-async function getAccessToken() {
-    const response = await fetch('/api/genai-token');
-    if (!response.ok) {
-        const errorBody = await response.json();
-        throw new Error(errorBody.error || 'Failed to fetch access token.');
-    }
-    const { token } = await response.json();
-    return token;
-}
-
-
 export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Message[]>>) {
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [liveTranscripts, setLiveTranscripts] = useState<Message[]>([]);
@@ -89,7 +78,8 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
     currentOutputRef.current = '';
     
     if (transcriptHistoryRef.current.length > 0) {
-        setMessages(prev => [...prev, ...transcriptHistoryRef.current]);
+      // Replace the current messages with the transcript from the call.
+      setMessages(transcriptHistoryRef.current);
     }
     transcriptHistoryRef.current = [];
     setLiveTranscripts([]);
@@ -108,13 +98,14 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
     }
 
     setConnectionState('connecting');
-    setLiveTranscripts([{ id: Date.now().toString(), sender: 'system', text: 'Starting call...', timestamp: new Date().toISOString() }]);
+    setLiveTranscripts([]);
     setCurrentInput('');
     setCurrentOutput('');
     setIsThinking(false);
     currentInputRef.current = '';
     currentOutputRef.current = '';
     transcriptHistoryRef.current = [];
+    setMessages([]);
 
     try {
       if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
