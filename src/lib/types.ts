@@ -74,10 +74,10 @@ export type AgentFile = {
 
 export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'closing' | 'error';
 
-export type Transcript = {
-  id: number;
-  speaker: 'user' | 'ai' | 'system';
+export type Message = {
+  id: string;
+  sender: 'user' | 'agent' | 'system';
   text: string;
-  final?: boolean;
+  timestamp: string;
 };
     

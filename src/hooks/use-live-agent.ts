@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from "@google/genai";
-import type { Agent, Transcript, ConnectionState, TextSource, AgentFile } from '@/lib/types';
+import type { Agent, Message, ConnectionState, TextSource, AgentFile } from '@/lib/types';
 import { decode, decodeAudioData, createBlob } from '@/lib/audioUtils';
 import { useToast } from './use-toast';
 
@@ -29,10 +30,20 @@ class AudioRecorderProcessor extends AudioWorkletProcessor {
 registerProcessor('audio-recorder-processor', AudioRecorderProcessor);
 `;
 
+async function getAccessToken() {
+    const response = await fetch('/api/genai-token');
+    if (!response.ok) {
+        const errorBody = await response.json();
+        throw new Error(errorBody.error || 'Failed to fetch access token.');
+    }
+    const { token } = await response.json();
+    return token;
+}
 
-export function useLiveAgent() {
+
+export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Message[]>>) {
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
-  const [transcripts, setTranscripts] = useState<Transcript[]>([]);
+  const [liveTranscripts, setLiveTranscripts] = useState<Message[]>([]);
   const [currentInput, setCurrentInput] = useState('');
   const [currentOutput, setCurrentOutput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
@@ -46,6 +57,7 @@ export function useLiveAgent() {
   const nextStartTimeRef = useRef<number>(0);
   const currentInputRef = useRef('');
   const currentOutputRef = useRef('');
+  const transcriptHistoryRef = useRef<Message[]>([]);
 
   const { toast } = useToast();
 
@@ -75,12 +87,19 @@ export function useLiveAgent() {
     setIsThinking(false);
     currentInputRef.current = '';
     currentOutputRef.current = '';
-  }, []);
+    
+    if (transcriptHistoryRef.current.length > 0) {
+        setMessages(prev => [...prev, ...transcriptHistoryRef.current]);
+    }
+    transcriptHistoryRef.current = [];
+    setLiveTranscripts([]);
+
+  }, [setMessages]);
 
   const toggleCall = useCallback(async (agent: Agent & { textSources?: TextSource[], fileSources?: AgentFile[] }) => {
     if (connectionState === 'connected') {
       setConnectionState('closing');
-      sessionRef.current?.close(); // This will trigger the onclose callback which runs cleanup.
+      sessionRef.current?.close(); 
       return;
     }
 
@@ -89,12 +108,13 @@ export function useLiveAgent() {
     }
 
     setConnectionState('connecting');
-    setTranscripts([{ id: Date.now(), speaker: 'system', text: 'Starting call...' }]);
+    setLiveTranscripts([{ id: Date.now().toString(), sender: 'system', text: 'Starting call...', timestamp: new Date().toISOString() }]);
     setCurrentInput('');
     setCurrentOutput('');
     setIsThinking(false);
     currentInputRef.current = '';
     currentOutputRef.current = '';
+    transcriptHistoryRef.current = [];
 
     try {
       if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
@@ -142,7 +162,7 @@ export function useLiveAgent() {
         callbacks: {
           onopen: async () => {
             setConnectionState('connected');
-            setTranscripts(prev => [...prev, { id: Date.now(), speaker: 'system', text: 'Connection established.' }]);
+            setLiveTranscripts(prev => [...prev, { id: Date.now().toString(), sender: 'system', text: 'Connection established.', timestamp: new Date().toISOString() }]);
 
             if (!inputAudioContextRef.current || inputAudioContextRef.current.state === 'closed') {
               const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -192,18 +212,17 @@ export function useLiveAgent() {
             if (message.serverContent?.turnComplete) {
               const finalInput = currentInputRef.current.trim();
               const finalOutput = currentOutputRef.current.trim();
+              const newTranscripts: Message[] = [];
 
-              if (finalInput || finalOutput) {
-                setTranscripts(prev => {
-                  const newTranscripts: Transcript[] = [];
-                  if (finalInput) {
-                    newTranscripts.push({ id: Date.now(), speaker: 'user', text: finalInput });
-                  }
-                  if (finalOutput) {
-                    newTranscripts.push({ id: Date.now() + 1, speaker: 'ai', text: finalOutput });
-                  }
-                  return [...prev, ...newTranscripts];
-                });
+              if (finalInput) {
+                  newTranscripts.push({ id: Date.now().toString(), sender: 'user', text: finalInput, timestamp: new Date().toISOString() });
+              }
+              if (finalOutput) {
+                  newTranscripts.push({ id: (Date.now() + 1).toString(), sender: 'agent', text: finalOutput, timestamp: new Date().toISOString() });
+              }
+              if (newTranscripts.length > 0) {
+                 setLiveTranscripts(prev => [...prev, ...newTranscripts]);
+                 transcriptHistoryRef.current.push(...newTranscripts);
               }
 
               if (finalInput && !finalOutput) {
@@ -248,7 +267,7 @@ export function useLiveAgent() {
           },
           onclose: () => {
             cleanup();
-            setTranscripts(prev => [...prev, { id: Date.now(), speaker: 'system', text: 'Call ended.' }]);
+            toast({ title: 'Call Ended'});
           },
         },
       });
@@ -259,7 +278,7 @@ export function useLiveAgent() {
       setConnectionState('error');
       cleanup();
     }
-  }, [connectionState, cleanup, toast]);
+  }, [connectionState, cleanup, toast, setMessages]);
 
-  return { connectionState, toggleCall, transcripts, isThinking, currentInput, currentOutput };
+  return { connectionState, toggleCall, liveTranscripts, isThinking, currentInput, currentOutput };
 }

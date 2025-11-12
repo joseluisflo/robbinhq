@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import SiriOrb from '@/components/smoothui/ui/SiriOrb';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
-import type { Agent, AgentFile, TextSource, Transcript } from '@/lib/types';
+import type { Agent, AgentFile, TextSource, Message } from '@/lib/types';
 import { getAgentResponse } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useLiveAgent } from '@/hooks/use-live-agent';
@@ -41,12 +41,6 @@ interface ChatWidgetPreviewProps {
   mode?: 'chat' | 'in-call';
 }
 
-interface Message {
-  id: string;
-  sender: 'user' | 'agent';
-  text: string;
-  timestamp: string;
-}
 
 export function ChatWidgetPreview({
   agentData,
@@ -66,11 +60,11 @@ export function ChatWidgetPreview({
   const { 
     connectionState, 
     toggleCall, 
-    transcripts: liveTranscripts, 
+    liveTranscripts, 
     isThinking, 
     currentInput, 
     currentOutput 
-  } = useLiveAgent();
+  } = useLiveAgent(setMessages);
 
   const agentName = agentData?.name || 'Agent Preview';
   const welcomeMessage = agentData?.welcomeMessage;
@@ -93,19 +87,22 @@ export function ChatWidgetPreview({
 
   useEffect(() => {
     // Set initial welcome message when agent data changes and not in a call
-    if (mode === 'chat' && isWelcomeMessageEnabled && welcomeMessage) {
-      setMessages([
-        {
-          id: '1',
-          sender: 'agent',
-          text: welcomeMessage,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
+    if (isWelcomeMessageEnabled && welcomeMessage) {
+      const welcomeMsg: Message = {
+        id: 'welcome-1',
+        sender: 'agent',
+        text: welcomeMessage,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      // Prevent adding duplicate welcome messages
+      if (messages.length === 0 || messages[0].id !== 'welcome-1') {
+        setMessages([welcomeMsg]);
+      }
     } else {
       setMessages([]);
     }
-  }, [welcomeMessage, isWelcomeMessageEnabled, agentData?.id, mode]);
+  }, [welcomeMessage, isWelcomeMessageEnabled, agentData?.id]);
+
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -223,8 +220,9 @@ export function ChatWidgetPreview({
   };
 
   const renderMessages = isCallActive
-    ? liveTranscripts.map(t => ({...t, id: String(t.id), text: t.text, sender: t.speaker === 'ai' ? 'agent' : t.speaker, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}))
-    : messages;
+  ? liveTranscripts.map(t => ({...t, id: String(t.id), timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}))
+  : messages;
+  
 
   const showThinking = isCallActive && isThinking;
   const showCurrentInput = isCallActive ? currentInput : '';
