@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useTransition, useMemo } from 'react';
+import { useState, useEffect, useTransition, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   ResizableHandle,
@@ -59,6 +59,12 @@ export default function DesignPage() {
   const [isFeedbackEnabled, setIsFeedbackEnabled] = useState(true);
   const [isBrandingEnabled, setIsBrandingEnabled] = useState(true);
   const [agentVoice, setAgentVoice] = useState('Zephyr');
+  const [orbColors, setOrbColors] = useState({
+    bg: 'oklch(95% 0.02 264.695)',
+    c1: 'oklch(75% 0.15 350)',
+    c2: 'oklch(80% 0.12 200)',
+    c3: 'oklch(78% 0.14 280)',
+  });
 
 
   const [isSaving, startSaving] = useTransition();
@@ -211,6 +217,18 @@ export default function DesignPage() {
     }
   }
 
+  const handleThemeColorChange = useCallback((newColor: string) => {
+    setThemeColor(newColor);
+  }, []);
+
+  const handleChatButtonColorChange = useCallback((newColor: string) => {
+    setChatButtonColor(newColor);
+  }, []);
+
+  const handleOrbColorChange = useCallback((colorKey: keyof typeof orbColors, value: string) => {
+    setOrbColors(prev => ({...prev, [colorKey]: value}));
+  }, []);
+
 
   const agentData: Partial<Agent> & { textSources: TextSource[], fileSources: AgentFile[] } = {
     name: agentName,
@@ -324,9 +342,7 @@ export default function DesignPage() {
                               <PopoverContent className="w-auto p-0" align="end">
                                   <ColorPicker
                                       value={themeColor}
-                                      onChange={(newColor: string) => {
-                                        setThemeColor(newColor);
-                                      }}
+                                      onChange={handleThemeColorChange}
                                   />
                               </PopoverContent>
                             </Popover>
@@ -344,9 +360,7 @@ export default function DesignPage() {
                               <PopoverContent className="w-auto p-0" align="end">
                                   <ColorPicker
                                       value={chatButtonColor}
-                                      onChange={(newColor: string) => {
-                                        setChatButtonColor(newColor);
-                                      }}
+                                      onChange={handleChatButtonColorChange}
                                   />
                               </PopoverContent>
                             </Popover>
@@ -451,22 +465,6 @@ export default function DesignPage() {
                              </div>
                           </div>
                          <Card>
-                           <CardHeader>
-                             <CardTitle>Orb Customization</CardTitle>
-                             <CardDescription>Customize the appearance and animation of the in-call orb.</CardDescription>
-                           </CardHeader>
-                           <CardContent className="space-y-6">
-                              <div className="space-y-2">
-                                <Label htmlFor="orb-size">Orb Size</Label>
-                                <Input id="orb-size" placeholder="e.g., 192px" defaultValue="160px" />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="orb-animation">Animation Duration (seconds)</Label>
-                                <Slider id="orb-animation" defaultValue={[20]} max={60} step={1} />
-                              </div>
-                           </CardContent>
-                         </Card>
-                         <Card>
                             <CardHeader>
                                 <CardTitle>Orb Colors</CardTitle>
                             </CardHeader>
@@ -474,29 +472,29 @@ export default function DesignPage() {
                                 <div className="flex items-center justify-between">
                                     <Label htmlFor="color-bg">Background</Label>
                                     <div className='flex items-center gap-2'>
-                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: 'oklch(95% 0.02 264.695)' }} />
-                                        <Input id="color-bg" defaultValue="oklch(95% 0.02 264.695)" className="w-48" />
+                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: orbColors.bg }} />
+                                        <Input id="color-bg" value={orbColors.bg} onChange={(e) => handleOrbColorChange('bg', e.target.value)} className="w-48" />
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <Label htmlFor="color-c1">Gradient Color 1</Label>
                                      <div className='flex items-center gap-2'>
-                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: 'oklch(75% 0.15 350)' }} />
-                                        <Input id="color-c1" defaultValue="oklch(75% 0.15 350)" className="w-48" />
+                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: orbColors.c1 }} />
+                                        <Input id="color-c1" value={orbColors.c1} onChange={(e) => handleOrbColorChange('c1', e.target.value)} className="w-48" />
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <Label htmlFor="color-c2">Gradient Color 2</Label>
                                      <div className='flex items-center gap-2'>
-                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: 'oklch(80% 0.12 200)' }} />
-                                        <Input id="color-c2" defaultValue="oklch(80% 0.12 200)" className="w-48" />
+                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: orbColors.c2 }} />
+                                        <Input id="color-c2" value={orbColors.c2} onChange={(e) => handleOrbColorChange('c2', e.target.value)} className="w-48" />
                                     </div>
                                 </div>
                                  <div className="flex items-center justify-between">
                                     <Label htmlFor="color-c3">Gradient Color 3</Label>
                                      <div className='flex items-center gap-2'>
-                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: 'oklch(78% 0.14 280)' }} />
-                                        <Input id="color-c3" defaultValue="oklch(78% 0.14 280)" className="w-48" />
+                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: orbColors.c3 }} />
+                                        <Input id="color-c3" value={orbColors.c3} onChange={(e) => handleOrbColorChange('c3', e.target.value)} className="w-48" />
                                     </div>
                                 </div>
                             </CardContent>
@@ -528,7 +526,7 @@ export default function DesignPage() {
               </TabsContent>
               <TabsContent value="in-call" className="flex-1 mt-0">
                  <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-                    <ChatWidgetPreview agentData={agentData} mode="in-call" />
+                    <ChatWidgetPreview agentData={{...agentData, orbColors}} mode="in-call" />
                  </div>
               </TabsContent>
             </div>

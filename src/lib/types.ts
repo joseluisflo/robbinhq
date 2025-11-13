@@ -40,6 +40,12 @@ export type Agent = {
   // For passing to live agent
   textSources?: TextSource[];
   fileSources?: AgentFile[];
+  orbColors?: {
+    bg: string;
+    c1: string;
+    c2: string;
+    c3: string;
+  };
 };
 
 export type Workflow = {

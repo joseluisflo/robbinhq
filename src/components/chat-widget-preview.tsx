@@ -39,6 +39,12 @@ interface ChatWidgetPreviewProps {
     chatBubbleAlignment?: 'left' | 'right';
     isFeedbackEnabled?: boolean;
     isBrandingEnabled?: boolean;
+    orbColors?: {
+        bg: string;
+        c1: string;
+        c2: string;
+        c3: string;
+    }
   };
   mode?: 'chat' | 'in-call';
 }
@@ -85,6 +91,8 @@ export function ChatWidgetPreview({
   const chatInputPlaceholder = agentData?.chatInputPlaceholder || 'Ask anything';
   const isFeedbackEnabled = agentData?.isFeedbackEnabled ?? true;
   const isBrandingEnabled = agentData?.isBrandingEnabled ?? true;
+  const orbColors = agentData?.orbColors;
+
 
   const isCallActive = connectionState !== 'idle' && connectionState !== 'error';
 
@@ -431,7 +439,7 @@ export function ChatWidgetPreview({
         {mode === 'in-call' && (
           <>
             <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
-              <SiriOrb size="160px" />
+              <SiriOrb size="160px" colors={orbColors} />
             </div>
             <div className="p-4 border-t bg-card flex justify-center gap-4">
               <Button
