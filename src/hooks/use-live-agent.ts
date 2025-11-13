@@ -12,7 +12,7 @@ import { useToast } from './use-toast';
 // interface based on its usage to satisfy TypeScript.
 interface LiveSession {
   close(): void;
-  sendRealtimeInput(request: { media: { data: string; mimeType: string; }; }): void;
+  sendRealtimeInput(request: { media: { data: string; mimeType: string; }; } | { text: string }): void;
 }
 
 // Inlined audio processor code. This is more robust than fetching a separate file.
@@ -30,7 +30,7 @@ class AudioRecorderProcessor extends AudioWorkletProcessor {
 registerProcessor('audio-recorder-processor', AudioRecorderProcessor);
 `;
 
-export function useLiveAgent() {
+export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Message[]>>) {
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [liveTranscripts, setLiveTranscripts] = useState<Message[]>([]);
   const [currentInput, setCurrentInput] = useState('');
@@ -46,11 +46,14 @@ export function useLiveAgent() {
   const nextStartTimeRef = useRef<number>(0);
   const currentInputRef = useRef('');
   const currentOutputRef = useRef('');
+  const isBargeInEnabledRef = useRef(true);
+  const isAgentSpeakingRef = useRef(false);
 
   const { toast } = useToast();
 
   const cleanup = useCallback(() => {
     console.log("Running cleanup...");
+    isAgentSpeakingRef.current = false;
     playingSourcesRef.current.forEach(source => source.stop());
     playingSourcesRef.current.clear();
     
@@ -67,6 +70,10 @@ export function useLiveAgent() {
         inputAudioContextRef.current.close().catch(console.error);
         inputAudioContextRef.current = null;
     }
+     if (outputAudioContextRef.current && outputAudioContextRef.current.state !== 'closed') {
+      outputAudioContextRef.current.close().catch(console.error);
+      outputAudioContextRef.current = null;
+    }
     
     sessionRef.current = null;
     setConnectionState('idle');
@@ -79,6 +86,8 @@ export function useLiveAgent() {
   }, []);
 
   const toggleCall = useCallback(async (agent: Agent & { textSources?: TextSource[], fileSources?: AgentFile[] }) => {
+    isBargeInEnabledRef.current = agent.isBargeInEnabled ?? true;
+
     if (connectionState === 'connected') {
       setConnectionState('closing');
       sessionRef.current?.close(); 
@@ -115,19 +124,20 @@ export function useLiveAgent() {
       ].join('\n\n---\n\n');
 
       const systemInstruction = `
-        You are a voice AI. Your goal is to be as responsive as possible. Keep answers extremely concise and to the point. Prioritize speed.
-        ${agent.inCallWelcomeMessage ? `Your first response must be: "${agent.inCallWelcomeMessage}"` : ''}
+You are a voice AI. Your goal is to be as responsive as possible. Your first response to a user MUST be an immediate, short acknowledgment like "Of course, let me check that" or "Sure, one moment". Then, you will provide the full answer.
+This is a real-time conversation. Keep all your answers concise and to the point. Prioritize speed. Do not use filler phrases.
+${agent.inCallWelcomeMessage ? `Your very first response in this conversation must be: "${agent.inCallWelcomeMessage}"` : ''}
 
-        Your instructions and persona are defined below.
+Your instructions and persona are defined below.
 
-        ### Instructions & Persona
-        ${agent.instructions || 'You are a helpful assistant.'}
+### Instructions & Persona
+${agent.instructions || 'You are a helpful assistant.'}
         
-        ### Knowledge Base
-        Use the following information to answer questions. This is your primary source of truth.
-        ---
-        ${knowledge}
-        ---
+### Knowledge Base
+Use the following information to answer questions. This is your primary source of truth.
+---
+${knowledge}
+---
       `;
 
       const sessionPromise = ai.live.connect({
@@ -176,7 +186,7 @@ export function useLiveAgent() {
             workletNodeRef.current = new AudioWorkletNode(inputAudioContextRef.current, 'audio-recorder-processor');
 
             workletNodeRef.current.port.onmessage = (event) => {
-              if (sessionRef.current) {
+              if (sessionRef.current && (!isAgentSpeakingRef.current || isBargeInEnabledRef.current)) {
                 const inputData = event.data;
                 const pcmBlob = createBlob(inputData);
                 sessionRef.current.sendRealtimeInput({ media: pcmBlob });
@@ -185,6 +195,9 @@ export function useLiveAgent() {
 
             source.connect(workletNodeRef.current);
             workletNodeRef.current.connect(inputAudioContextRef.current.destination);
+
+            // Programmatically start the conversation
+            sessionRef.current?.sendRealtimeInput({ text: "start" });
           },
           onmessage: async (message: LiveServerMessage) => {
             if (message.serverContent?.inputTranscription) {
@@ -227,6 +240,7 @@ export function useLiveAgent() {
 
             const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
             if (base64Audio && outputAudioContextRef.current) {
+              isAgentSpeakingRef.current = true;
               setIsThinking(false);
               const audioBuffer = await decodeAudioData(decode(base64Audio), outputAudioContextRef.current, 24000, 1);
               const sourceNode = outputAudioContextRef.current.createBufferSource();
@@ -240,6 +254,9 @@ export function useLiveAgent() {
               playingSourcesRef.current.add(sourceNode);
               sourceNode.onended = () => {
                 playingSourcesRef.current.delete(sourceNode);
+                if (playingSourcesRef.current.size === 0) {
+                    isAgentSpeakingRef.current = false;
+                }
               };
             }
 
@@ -247,6 +264,7 @@ export function useLiveAgent() {
               playingSourcesRef.current.forEach(source => source.stop());
               playingSourcesRef.current.clear();
               nextStartTimeRef.current = 0;
+              isAgentSpeakingRef.current = false;
             }
           },
           onerror: (e) => {
@@ -268,7 +286,7 @@ export function useLiveAgent() {
       setConnectionState('error');
       cleanup();
     }
-  }, [connectionState, cleanup, toast]);
+  }, [connectionState, cleanup, toast, setMessages]);
 
   return { connectionState, toggleCall, liveTranscripts, isThinking, currentInput, currentOutput };
 }
