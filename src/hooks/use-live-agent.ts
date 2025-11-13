@@ -140,7 +140,7 @@ ${knowledge}
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         config: {
           responseModalities: [Modality.AUDIO],
-          inputAudioTranscription: {},
+          inputAudioTranscription: { interruptions: true },
           outputAudioTranscription: {},
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: agent.agentVoice || 'Zephyr' } },
