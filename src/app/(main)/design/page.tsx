@@ -448,13 +448,6 @@ export default function DesignPage() {
                                   onChange={(e) => setInCallWelcomeMessage(e.target.value)}
                                 />
                               </div>
-                              <div className="flex items-center justify-between rounded-lg border p-4">
-                                <div>
-                                    <Label htmlFor="barge-in-toggle" className="font-medium">Enable Interruptions (Barge-in)</Label>
-                                    <p className="text-sm text-muted-foreground">Allow callers to interrupt the agent while it's speaking.</p>
-                                </div>
-                                <Switch id="barge-in-toggle" defaultChecked />
-                              </div>
                              </div>
                           </div>
                          <Card>
@@ -546,5 +539,3 @@ export default function DesignPage() {
     </div>
   );
 }
-
-    

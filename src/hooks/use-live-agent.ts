@@ -45,7 +45,6 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
   const nextStartTimeRef = useRef<number>(0);
   const currentInputRef = useRef('');
   const currentOutputRef = useRef('');
-  const isBargeInEnabledRef = useRef(true);
   const isAgentSpeakingRef = useRef(false);
 
   const { toast } = useToast();
@@ -85,8 +84,6 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
   }, []);
 
   const toggleCall = useCallback(async (agent: Agent & { textSources?: TextSource[], fileSources?: AgentFile[] }) => {
-    isBargeInEnabledRef.current = agent.isBargeInEnabled ?? true;
-
     if (connectionState === 'connected') {
       setConnectionState('closing');
       sessionRef.current?.close(); 
@@ -185,7 +182,7 @@ ${knowledge}
             workletNodeRef.current = new AudioWorkletNode(inputAudioContextRef.current, 'audio-recorder-processor');
 
             workletNodeRef.current.port.onmessage = (event) => {
-              if (sessionRef.current && (!isAgentSpeakingRef.current || isBargeInEnabledRef.current)) {
+              if (sessionRef.current) {
                 const inputData = event.data;
                 const pcmBlob = createBlob(inputData);
                 sessionRef.current.sendRealtimeInput({ media: pcmBlob });
