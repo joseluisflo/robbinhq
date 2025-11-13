@@ -119,20 +119,6 @@ export default function DesignPage() {
       setIsBrandingEnabled(activeAgent.isBrandingEnabled ?? true);
       setAgentVoice(activeAgent.agentVoice || 'Zephyr');
       setLogoFile(null); // Reset file on agent change
-    } else {
-      setAgentName('');
-      setIsDisplayNameEnabled(true);
-      setThemeColor('#16a34a');
-      setChatButtonColor('#16a34a');
-      setChatBubbleAlignment('right');
-      setWelcomeMessage('Hello! You are talking to the preview agent. Ask me a question to get started!');
-      setInCallWelcomeMessage('Hello, how can I help you today?');
-      setIsWelcomeMessageEnabled(true);
-      setChatPlaceholder('Ask anything');
-      setIsFeedbackEnabled(true);
-      setIsBargeInEnabled(true);
-      setIsBrandingEnabled(true);
-      setAgentVoice('Zephyr');
     }
   }, [activeAgent]);
 
@@ -144,6 +130,14 @@ export default function DesignPage() {
   const handleDisplayNameSwitchChange = (checked: boolean) => {
     setIsDisplayNameEnabled(checked);
   }
+  
+  const handleThemeColorChange = useCallback((newColor: string) => {
+    setThemeColor(newColor);
+  }, []);
+  
+  const handleChatButtonColorChange = useCallback((newColor: string) => {
+    setChatButtonColor(newColor);
+  }, []);
 
   const handleSaveChanges = () => {
     if (!user || !activeAgent || !isChanged) return;
@@ -343,7 +337,7 @@ export default function DesignPage() {
                               <PopoverContent className="w-auto p-0" align="end">
                                   <ColorPicker
                                       value={themeColor}
-                                      onChange={setThemeColor}
+                                      onChange={handleThemeColorChange}
                                   />
                               </PopoverContent>
                             </Popover>
@@ -361,7 +355,7 @@ export default function DesignPage() {
                               <PopoverContent className="w-auto p-0" align="end">
                                   <ColorPicker
                                       value={chatButtonColor}
-                                      onChange={setChatButtonColor}
+                                      onChange={handleChatButtonColorChange}
                                   />
                               </PopoverContent>
                             </Popover>
@@ -483,22 +477,7 @@ export default function DesignPage() {
                                 </div>
                              </div>
                           </div>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Orb Customization</CardTitle>
-                                <CardDescription>Adjust the visual properties of the in-call orb animation.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4 pt-4">
-                                <div className="space-y-2">
-                                    <Label>Animation Speed</Label>
-                                    <Slider defaultValue={[20]} max={60} step={1} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Size</Label>
-                                    <Slider defaultValue={[160]} max={300} step={1} />
-                                </div>
-                            </CardContent>
-                         </Card>
+                         
                          <Card>
                             <CardHeader>
                                 <CardTitle>Orb Colors</CardTitle>
