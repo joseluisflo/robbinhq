@@ -100,7 +100,13 @@ export default function DesignPage() {
     isFeedbackEnabled !== (activeAgent?.isFeedbackEnabled ?? true) ||
     isBargeInEnabled !== (activeAgent?.isBargeInEnabled ?? true) ||
     isBrandingEnabled !== (activeAgent?.isBrandingEnabled ?? true) ||
-    agentVoice !== (activeAgent?.agentVoice || 'Zephyr');
+    agentVoice !== (activeAgent?.agentVoice || 'Zephyr') ||
+    JSON.stringify(orbColors) !== JSON.stringify(activeAgent?.orbColors || {
+        bg: 'oklch(95% 0.02 264.695)',
+        c1: 'oklch(75% 0.15 350)',
+        c2: 'oklch(80% 0.12 200)',
+        c3: 'oklch(78% 0.14 280)',
+    });
 
 
   useEffect(() => {
@@ -118,6 +124,12 @@ export default function DesignPage() {
       setIsBargeInEnabled(activeAgent.isBargeInEnabled ?? true);
       setIsBrandingEnabled(activeAgent.isBrandingEnabled ?? true);
       setAgentVoice(activeAgent.agentVoice || 'Zephyr');
+      setOrbColors(activeAgent.orbColors || {
+        bg: 'oklch(95% 0.02 264.695)',
+        c1: 'oklch(75% 0.15 350)',
+        c2: 'oklch(80% 0.12 200)',
+        c3: 'oklch(78% 0.14 280)',
+      });
       setLogoFile(null); // Reset file on agent change
     }
   }, [activeAgent]);
@@ -137,6 +149,10 @@ export default function DesignPage() {
 
   const handleChatButtonColorChange = (newColor: string) => {
     setChatButtonColor(newColor);
+  };
+
+  const handleOrbColorChange = (colorKey: keyof typeof orbColors, value: string) => {
+    setOrbColors(prev => ({...prev, [colorKey]: value}));
   };
 
   const handleSaveChanges = () => {
@@ -183,6 +199,9 @@ export default function DesignPage() {
       if (agentVoice !== activeAgent.agentVoice) {
         dataToUpdate.agentVoice = agentVoice;
       }
+       if (JSON.stringify(orbColors) !== JSON.stringify(activeAgent.orbColors)) {
+        dataToUpdate.orbColors = orbColors;
+      }
 
 
       if (Object.keys(dataToUpdate).length > 0 || logoFile) {
@@ -215,13 +234,15 @@ export default function DesignPage() {
         setIsBargeInEnabled(activeAgent.isBargeInEnabled ?? true);
         setIsBrandingEnabled(activeAgent.isBrandingEnabled ?? true);
         setAgentVoice(activeAgent.agentVoice || 'Zephyr');
+        setOrbColors(activeAgent.orbColors || {
+            bg: 'oklch(95% 0.02 264.695)',
+            c1: 'oklch(75% 0.15 350)',
+            c2: 'oklch(80% 0.12 200)',
+            c3: 'oklch(78% 0.14 280)',
+        });
         setLogoFile(null);
     }
   }
-
-  const handleOrbColorChange = (colorKey: keyof typeof orbColors, value: string) => {
-    setOrbColors(prev => ({...prev, [colorKey]: value}));
-  };
 
 
   const agentData: Partial<Agent> & { textSources: TextSource[], fileSources: AgentFile[] } = {
@@ -485,32 +506,48 @@ export default function DesignPage() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="color-bg">Background</Label>
-                                    <div className='flex items-center gap-2'>
-                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: orbColors.bg }} />
-                                        <Input id="color-bg" value={orbColors.bg} onChange={(e) => handleOrbColorChange('bg', e.target.value)} className="w-48" />
-                                    </div>
+                                    <Label>Background</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 border" style={{ backgroundColor: orbColors.bg }} />
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="end">
+                                            <ColorPicker value={orbColors.bg} onChange={(color) => handleOrbColorChange('bg', color)} />
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="color-c1">Gradient Color 1</Label>
-                                     <div className='flex items-center gap-2'>
-                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: orbColors.c1 }} />
-                                        <Input id="color-c1" value={orbColors.c1} onChange={(e) => handleOrbColorChange('c1', e.target.value)} className="w-48" />
-                                    </div>
+                                    <Label>Gradient Color 1</Label>
+                                     <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 border" style={{ backgroundColor: orbColors.c1 }} />
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="end">
+                                            <ColorPicker value={orbColors.c1} onChange={(color) => handleOrbColorChange('c1', color)} />
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="color-c2">Gradient Color 2</Label>
-                                     <div className='flex items-center gap-2'>
-                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: orbColors.c2 }} />
-                                        <Input id="color-c2" value={orbColors.c2} onChange={(e) => handleOrbColorChange('c2', e.target.value)} className="w-48" />
-                                    </div>
+                                    <Label>Gradient Color 2</Label>
+                                     <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 border" style={{ backgroundColor: orbColors.c2 }} />
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="end">
+                                            <ColorPicker value={orbColors.c2} onChange={(color) => handleOrbColorChange('c2', color)} />
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                                  <div className="flex items-center justify-between">
-                                    <Label htmlFor="color-c3">Gradient Color 3</Label>
-                                     <div className='flex items-center gap-2'>
-                                        <div className="h-6 w-6 rounded-sm border" style={{ backgroundColor: orbColors.c3 }} />
-                                        <Input id="color-c3" value={orbColors.c3} onChange={(e) => handleOrbColorChange('c3', e.target.value)} className="w-48" />
-                                    </div>
+                                    <Label>Gradient Color 3</Label>
+                                     <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 border" style={{ backgroundColor: orbColors.c3 }} />
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="end">
+                                            <ColorPicker value={orbColors.c3} onChange={(color) => handleOrbColorChange('c3', color)} />
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                             </CardContent>
                          </Card>

@@ -102,6 +102,16 @@
         "agentVoice": {
           "type": "string",
           "description": "The pre-built voice for the agent during calls."
+        },
+        "orbColors": {
+            "type": "object",
+            "description": "Custom colors for the in-call orb animation.",
+            "properties": {
+                "bg": { "type": "string" },
+                "c1": { "type": "string" },
+                "c2": { "type": "string" },
+                "c3": { "type": "string" }
+            }
         }
       },
       "required": ["name", "userId", "createdAt"]
