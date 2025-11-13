@@ -59,9 +59,9 @@ export const ColorPicker = ({
 }: ColorPickerProps) => {
   const [internalColor, setInternalColor] = useState(() => {
     try {
-      return Color(valueProp ?? defaultValue);
+      return Color(valueProp ?? defaultValue, 'hex');
     } catch (e) {
-      return Color(defaultValue);
+      return Color(defaultValue, 'hex');
     }
   });
 
@@ -74,7 +74,7 @@ export const ColorPicker = ({
   useEffect(() => {
     if (valueProp !== undefined) {
       try {
-        const newColor = Color(valueProp);
+        const newColor = Color(valueProp, 'hex');
         if (!newColor.isEqualTo(internalColor)) {
           setInternalColor(newColor);
           setHue(newColor.hue());
@@ -113,9 +113,21 @@ export const ColorPicker = ({
       }}
     >
       <div
-        className={cn('flex size-full flex-col gap-4', className)}
+        className={cn('flex size-full flex-col gap-4 p-4', className)}
         {...props}
-      />
+      >
+        <ColorPickerSelection className="h-36" />
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <ColorPickerEyeDropper />
+            <ColorPickerFormat />
+          </div>
+          <div className="flex flex-col gap-3">
+            <ColorPickerHue />
+            <ColorPickerAlpha />
+          </div>
+        </div>
+      </div>
     </ColorPickerContext.Provider>
   );
 };
