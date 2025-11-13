@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useTransition, useMemo, useCallback } from 'react';
+import { useState, useEffect, useTransition, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   ResizableHandle,
@@ -131,13 +131,13 @@ export default function DesignPage() {
     setIsDisplayNameEnabled(checked);
   }
   
-  const handleThemeColorChange = useCallback((newColor: string) => {
+  const handleThemeColorChange = (newColor: string) => {
     setThemeColor(newColor);
-  }, []);
-  
-  const handleChatButtonColorChange = useCallback((newColor: string) => {
+  };
+
+  const handleChatButtonColorChange = (newColor: string) => {
     setChatButtonColor(newColor);
-  }, []);
+  };
 
   const handleSaveChanges = () => {
     if (!user || !activeAgent || !isChanged) return;
@@ -244,6 +244,7 @@ export default function DesignPage() {
     agentVoice: agentVoice,
     textSources: textSources || [],
     fileSources: fileSources || [],
+    orbColors,
   };
 
    const handleToggleCall = () => {

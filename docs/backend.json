@@ -78,6 +78,10 @@
           "type": "string",
           "description": "The initial message the agent displays to the user."
         },
+        "inCallWelcomeMessage": {
+          "type": "string",
+          "description": "The initial spoken message the agent uses at the start of a call."
+        },
         "isWelcomeMessageEnabled": {
           "type": "boolean",
           "description": "Determines if the welcome message is active."
@@ -98,6 +102,16 @@
         "agentVoice": {
           "type": "string",
           "description": "The pre-built voice for the agent during calls."
+        },
+        "orbColors": {
+            "type": "object",
+            "description": "Custom colors for the in-call orb animation.",
+            "properties": {
+                "bg": { "type": "string" },
+                "c1": { "type": "string" },
+                "c2": { "type": "string" },
+                "c3": { "type": "string" }
+            }
         }
       },
       "required": ["name", "userId", "createdAt"]
