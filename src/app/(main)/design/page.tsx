@@ -225,9 +225,9 @@ export default function DesignPage() {
     }
   }
 
-  const handleOrbColorChange = useCallback((colorKey: keyof typeof orbColors, value: string) => {
+  const handleOrbColorChange = (colorKey: keyof typeof orbColors, value: string) => {
     setOrbColors(prev => ({...prev, [colorKey]: value}));
-  }, []);
+  };
 
 
   const agentData: Partial<Agent> & { textSources: TextSource[], fileSources: AgentFile[] } = {

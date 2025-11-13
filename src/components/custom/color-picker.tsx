@@ -28,10 +28,14 @@ interface ColorPickerContextValue {
   setSaturation: (saturation: number) => void;
   setLightness: (lightness: number) => void;
   setAlpha: (alpha: number) => void;
+  internalColor: Color;
+  setInternalColor: (color: Color) => void;
 }
+
 const ColorPickerContext = createContext<ColorPickerContextValue | undefined>(
   undefined
 );
+
 export const useColorPicker = () => {
   const context = useContext(ColorPickerContext);
   if (!context) {
@@ -39,11 +43,13 @@ export const useColorPicker = () => {
   }
   return context;
 };
+
 export type ColorPickerProps = Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> & {
   value?: Parameters<typeof Color>[0];
   defaultValue?: Parameters<typeof Color>[0];
   onChange?: (value: string) => void;
 };
+
 export const ColorPicker = ({
   value: valueProp,
   defaultValue = '#000000',
@@ -51,7 +57,6 @@ export const ColorPicker = ({
   className,
   ...props
 }: ColorPickerProps) => {
-  
   const [internalColor, setInternalColor] = useState(() => {
     try {
       return Color(valueProp ?? defaultValue);
@@ -64,8 +69,8 @@ export const ColorPicker = ({
   const [saturation, setSaturation] = useState(internalColor.saturationl() || 100);
   const [lightness, setLightness] = useState(internalColor.lightness() || 50);
   const [alpha, setAlpha] = useState(internalColor.alpha() * 100);
-
-  // Update internal state if valueProp changes
+  const value = useMemo(() => internalColor.hexa(), [internalColor]);
+  
   useEffect(() => {
     if (valueProp !== undefined) {
       try {
@@ -83,7 +88,6 @@ export const ColorPicker = ({
     }
   }, [valueProp, internalColor]);
 
-  // Call onChange when color changes
   useEffect(() => {
     const newColor = Color.hsl(hue, saturation, lightness).alpha(alpha / 100);
     const newColorString = newColor.hexa();
@@ -91,8 +95,6 @@ export const ColorPicker = ({
       onChange(newColorString);
     }
   }, [hue, saturation, lightness, alpha, onChange, valueProp]);
-  
-  const value = useMemo(() => internalColor.hexa(), [internalColor]);
   
   return (
     <ColorPickerContext.Provider
@@ -106,6 +108,8 @@ export const ColorPicker = ({
         setSaturation,
         setLightness,
         setAlpha,
+        internalColor,
+        setInternalColor,
       }}
     >
       <div
@@ -115,7 +119,9 @@ export const ColorPicker = ({
     </ColorPickerContext.Provider>
   );
 };
+
 export type ColorPickerSelectionProps = HTMLAttributes<HTMLDivElement>;
+
 export const ColorPickerSelection = memo(
   ({ className, ...props }: ColorPickerSelectionProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
