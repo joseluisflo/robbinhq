@@ -61,10 +61,10 @@ export default function DesignPage() {
   const [isBrandingEnabled, setIsBrandingEnabled] = useState(true);
   const [agentVoice, setAgentVoice] = useState('Zephyr');
   const [orbColors, setOrbColors] = useState({
-    bg: 'oklch(95% 0.02 264.695)',
-    c1: 'oklch(75% 0.15 350)',
-    c2: 'oklch(80% 0.12 200)',
-    c3: 'oklch(78% 0.14 280)',
+    bg: '#F5F3F9',
+    c1: '#F4ABC4',
+    c2: '#A4DDEE',
+    c3: '#D6B9ED',
   });
 
 
@@ -102,10 +102,10 @@ export default function DesignPage() {
     isBrandingEnabled !== (activeAgent?.isBrandingEnabled ?? true) ||
     agentVoice !== (activeAgent?.agentVoice || 'Zephyr') ||
     JSON.stringify(orbColors) !== JSON.stringify(activeAgent?.orbColors || {
-        bg: 'oklch(95% 0.02 264.695)',
-        c1: 'oklch(75% 0.15 350)',
-        c2: 'oklch(80% 0.12 200)',
-        c3: 'oklch(78% 0.14 280)',
+        bg: '#F5F3F9',
+        c1: '#F4ABC4',
+        c2: '#A4DDEE',
+        c3: '#D6B9ED',
     });
 
 
@@ -125,10 +125,10 @@ export default function DesignPage() {
       setIsBrandingEnabled(activeAgent.isBrandingEnabled ?? true);
       setAgentVoice(activeAgent.agentVoice || 'Zephyr');
       setOrbColors(activeAgent.orbColors || {
-        bg: 'oklch(95% 0.02 264.695)',
-        c1: 'oklch(75% 0.15 350)',
-        c2: 'oklch(80% 0.12 200)',
-        c3: 'oklch(78% 0.14 280)',
+        bg: '#F5F3F9',
+        c1: '#F4ABC4',
+        c2: '#A4DDEE',
+        c3: '#D6B9ED',
       });
       setLogoFile(null); // Reset file on agent change
     }
@@ -143,14 +143,6 @@ export default function DesignPage() {
     setIsDisplayNameEnabled(checked);
   }
   
-  const handleThemeColorChange = (newColor: string) => {
-    setThemeColor(newColor);
-  };
-
-  const handleChatButtonColorChange = (newColor: string) => {
-    setChatButtonColor(newColor);
-  };
-
   const handleOrbColorChange = (colorKey: keyof typeof orbColors, value: string) => {
     setOrbColors(prev => ({...prev, [colorKey]: value}));
   };
@@ -235,10 +227,10 @@ export default function DesignPage() {
         setIsBrandingEnabled(activeAgent.isBrandingEnabled ?? true);
         setAgentVoice(activeAgent.agentVoice || 'Zephyr');
         setOrbColors(activeAgent.orbColors || {
-            bg: 'oklch(95% 0.02 264.695)',
-            c1: 'oklch(75% 0.15 350)',
-            c2: 'oklch(80% 0.12 200)',
-            c3: 'oklch(78% 0.14 280)',
+            bg: '#F5F3F9',
+            c1: '#F4ABC4',
+            c2: '#A4DDEE',
+            c3: '#D6B9ED',
         });
         setLogoFile(null);
     }
@@ -359,7 +351,7 @@ export default function DesignPage() {
                               <PopoverContent className="w-auto p-0" align="end">
                                   <ColorPicker
                                       value={themeColor}
-                                      onChange={handleThemeColorChange}
+                                      onChange={(newColor) => setThemeColor(newColor)}
                                   />
                               </PopoverContent>
                             </Popover>
@@ -377,7 +369,7 @@ export default function DesignPage() {
                               <PopoverContent className="w-auto p-0" align="end">
                                   <ColorPicker
                                       value={chatButtonColor}
-                                      onChange={handleChatButtonColorChange}
+                                      onChange={(newColor) => setChatButtonColor(newColor)}
                                   />
                               </PopoverContent>
                             </Popover>
