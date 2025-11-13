@@ -51,44 +51,48 @@ export const ColorPicker = ({
   className,
   ...props
 }: ColorPickerProps) => {
-  const [value, setValue] = useState(valueProp ?? defaultValue);
   
-  const initialColor = useMemo(() => {
+  const [internalColor, setInternalColor] = useState(() => {
     try {
-      return Color(value);
+      return Color(valueProp ?? defaultValue);
     } catch (e) {
       return Color(defaultValue);
     }
-  }, [value, defaultValue]);
+  });
 
-  const [hue, setHue] = useState(initialColor.hue() || 0);
-  const [saturation, setSaturation] = useState(initialColor.saturationl() || 100);
-  const [lightness, setLightness] = useState(initialColor.lightness() || 50);
-  const [alpha, setAlpha] = useState(initialColor.alpha() * 100);
+  const [hue, setHue] = useState(internalColor.hue() || 0);
+  const [saturation, setSaturation] = useState(internalColor.saturationl() || 100);
+  const [lightness, setLightness] = useState(internalColor.lightness() || 50);
+  const [alpha, setAlpha] = useState(internalColor.alpha() * 100);
 
+  // Update internal state if valueProp changes
   useEffect(() => {
     if (valueProp !== undefined) {
       try {
-        const color = Color(valueProp);
-        setHue(color.hue());
-        setSaturation(color.saturationl());
-        setLightness(color.lightness());
-        setAlpha(color.alpha() * 100);
-        setValue(valueProp);
+        const newColor = Color(valueProp);
+        if (!newColor.isEqualTo(internalColor)) {
+          setInternalColor(newColor);
+          setHue(newColor.hue());
+          setSaturation(newColor.saturationl());
+          setLightness(newColor.lightness());
+          setAlpha(newColor.alpha() * 100);
+        }
       } catch (e) {
         console.warn('Invalid color prop passed to ColorPicker:', valueProp);
       }
     }
-  }, [valueProp]);
+  }, [valueProp, internalColor]);
 
+  // Call onChange when color changes
   useEffect(() => {
     const newColor = Color.hsl(hue, saturation, lightness).alpha(alpha / 100);
     const newColorString = newColor.hexa();
-    if (onChange) {
+    if (onChange && newColorString !== valueProp) {
       onChange(newColorString);
     }
-    setValue(newColorString);
-  }, [hue, saturation, lightness, alpha, onChange]);
+  }, [hue, saturation, lightness, alpha, onChange, valueProp]);
+  
+  const value = useMemo(() => internalColor.hexa(), [internalColor]);
   
   return (
     <ColorPickerContext.Provider
@@ -132,7 +136,7 @@ export const ColorPickerSelection = memo(
 
     const handlePointerMove = useCallback(
       (event: PointerEvent) => {
-        if (!(isDragging && containerRef.current)) {
+        if (!containerRef.current) {
           return;
         }
         const rect = containerRef.current.getBoundingClientRect();
@@ -144,19 +148,19 @@ export const ColorPickerSelection = memo(
         const newLightness = topLightness * (1 - y);
         setLightness(newLightness);
       },
-      [isDragging, setSaturation, setLightness]
+      [setSaturation, setLightness]
     );
-
+    
     useEffect(() => {
-      const handlePointerUp = () => setIsDragging(false);
-      if (isDragging) {
-        window.addEventListener('pointermove', handlePointerMove);
-        window.addEventListener('pointerup', handlePointerUp);
-      }
-      return () => {
-        window.removeEventListener('pointermove', handlePointerMove);
-        window.removeEventListener('pointerup', handlePointerUp);
-      };
+        const handleUp = () => setIsDragging(false);
+        if (isDragging) {
+            document.addEventListener('pointermove', handlePointerMove);
+            document.addEventListener('pointerup', handleUp, { once: true });
+        }
+        return () => {
+            document.removeEventListener('pointermove', handlePointerMove);
+            document.removeEventListener('pointerup', handleUp);
+        };
     }, [isDragging, handlePointerMove]);
 
     return (

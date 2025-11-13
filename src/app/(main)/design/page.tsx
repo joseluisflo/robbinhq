@@ -57,6 +57,7 @@ export default function DesignPage() {
   const [isWelcomeMessageEnabled, setIsWelcomeMessageEnabled] = useState(true);
   const [chatPlaceholder, setChatPlaceholder] = useState('');
   const [isFeedbackEnabled, setIsFeedbackEnabled] = useState(true);
+  const [isBargeInEnabled, setIsBargeInEnabled] = useState(true);
   const [isBrandingEnabled, setIsBrandingEnabled] = useState(true);
   const [agentVoice, setAgentVoice] = useState('Zephyr');
   const [orbColors, setOrbColors] = useState({
@@ -97,6 +98,7 @@ export default function DesignPage() {
     isWelcomeMessageEnabled !== (activeAgent?.isWelcomeMessageEnabled ?? true) ||
     chatPlaceholder !== (activeAgent?.chatInputPlaceholder || '') ||
     isFeedbackEnabled !== (activeAgent?.isFeedbackEnabled ?? true) ||
+    isBargeInEnabled !== (activeAgent?.isBargeInEnabled ?? true) ||
     isBrandingEnabled !== (activeAgent?.isBrandingEnabled ?? true) ||
     agentVoice !== (activeAgent?.agentVoice || 'Zephyr');
 
@@ -113,6 +115,7 @@ export default function DesignPage() {
       setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
       setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
       setIsFeedbackEnabled(activeAgent.isFeedbackEnabled ?? true);
+      setIsBargeInEnabled(activeAgent.isBargeInEnabled ?? true);
       setIsBrandingEnabled(activeAgent.isBrandingEnabled ?? true);
       setAgentVoice(activeAgent.agentVoice || 'Zephyr');
       setLogoFile(null); // Reset file on agent change
@@ -127,6 +130,7 @@ export default function DesignPage() {
       setIsWelcomeMessageEnabled(true);
       setChatPlaceholder('Ask anything');
       setIsFeedbackEnabled(true);
+      setIsBargeInEnabled(true);
       setIsBrandingEnabled(true);
       setAgentVoice('Zephyr');
     }
@@ -176,6 +180,9 @@ export default function DesignPage() {
       if (isFeedbackEnabled !== activeAgent.isFeedbackEnabled) {
         dataToUpdate.isFeedbackEnabled = isFeedbackEnabled;
       }
+      if (isBargeInEnabled !== activeAgent.isBargeInEnabled) {
+        dataToUpdate.isBargeInEnabled = isBargeInEnabled;
+      }
       if (isBrandingEnabled !== activeAgent.isBrandingEnabled) {
         dataToUpdate.isBrandingEnabled = isBrandingEnabled;
       }
@@ -211,19 +218,12 @@ export default function DesignPage() {
         setIsWelcomeMessageEnabled(activeAgent.isWelcomeMessageEnabled ?? true);
         setChatPlaceholder(activeAgent.chatInputPlaceholder || 'Ask anything');
         setIsFeedbackEnabled(activeAgent.isFeedbackEnabled ?? true);
+        setIsBargeInEnabled(activeAgent.isBargeInEnabled ?? true);
         setIsBrandingEnabled(activeAgent.isBrandingEnabled ?? true);
         setAgentVoice(activeAgent.agentVoice || 'Zephyr');
         setLogoFile(null);
     }
   }
-
-  const handleThemeColorChange = useCallback((newColor: string) => {
-    setThemeColor(newColor);
-  }, []);
-
-  const handleChatButtonColorChange = useCallback((newColor: string) => {
-    setChatButtonColor(newColor);
-  }, []);
 
   const handleOrbColorChange = useCallback((colorKey: keyof typeof orbColors, value: string) => {
     setOrbColors(prev => ({...prev, [colorKey]: value}));
@@ -243,6 +243,7 @@ export default function DesignPage() {
     chatBubbleAlignment: chatBubbleAlignment,
     chatInputPlaceholder: chatPlaceholder,
     isFeedbackEnabled: isFeedbackEnabled,
+    isBargeInEnabled: isBargeInEnabled,
     isBrandingEnabled: isBrandingEnabled,
     instructions: activeAgent?.instructions,
     temperature: activeAgent?.temperature,
@@ -342,7 +343,7 @@ export default function DesignPage() {
                               <PopoverContent className="w-auto p-0" align="end">
                                   <ColorPicker
                                       value={themeColor}
-                                      onChange={handleThemeColorChange}
+                                      onChange={setThemeColor}
                                   />
                               </PopoverContent>
                             </Popover>
@@ -360,7 +361,7 @@ export default function DesignPage() {
                               <PopoverContent className="w-auto p-0" align="end">
                                   <ColorPicker
                                       value={chatButtonColor}
-                                      onChange={handleChatButtonColorChange}
+                                      onChange={setChatButtonColor}
                                   />
                               </PopoverContent>
                             </Popover>
@@ -462,8 +463,42 @@ export default function DesignPage() {
                                   onChange={(e) => setInCallWelcomeMessage(e.target.value)}
                                 />
                               </div>
+                               <div className="flex items-center justify-between">
+                                <Label htmlFor="barge-in-toggle" className="font-medium flex items-center gap-2">
+                                    Enable Interruptions (Barge-in)
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Allow users to interrupt the agent while it's speaking.</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <Switch 
+                                    id="barge-in-toggle" 
+                                    checked={isBargeInEnabled}
+                                    onCheckedChange={setIsBargeInEnabled}
+                                />
+                                </div>
                              </div>
                           </div>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Orb Customization</CardTitle>
+                                <CardDescription>Adjust the visual properties of the in-call orb animation.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4 pt-4">
+                                <div className="space-y-2">
+                                    <Label>Animation Speed</Label>
+                                    <Slider defaultValue={[20]} max={60} step={1} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Size</Label>
+                                    <Slider defaultValue={[160]} max={300} step={1} />
+                                </div>
+                            </CardContent>
+                         </Card>
                          <Card>
                             <CardHeader>
                                 <CardTitle>Orb Colors</CardTitle>
