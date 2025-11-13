@@ -500,11 +500,11 @@ export default function DesignPage() {
                              </div>
                           </div>
                          
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Orb Colors</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
+                         <div className="space-y-4">
+                            <div>
+                                <h3 className="text-lg font-semibold">Orb Colors</h3>
+                            </div>
+                            <div className="space-y-4 pl-2">
                                 <div className="flex items-center justify-between">
                                     <Label>Background</Label>
                                     <Popover>
@@ -549,8 +549,8 @@ export default function DesignPage() {
                                         </PopoverContent>
                                     </Popover>
                                 </div>
-                            </CardContent>
-                         </Card>
+                            </div>
+                         </div>
                        </div>
                     </TabsContent>
                 </div>
