@@ -368,6 +368,7 @@ export default function WorkflowDetailPage() {
                 onConnect={onConnect}
                 onNodeClick={handleNodeClick}
                 fitView
+                proOptions={{ hideAttribution: true }}
             >
                 <Background />
                 <Controls />
