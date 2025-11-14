@@ -93,8 +93,8 @@ function WorkflowCard({ workflow }: { workflow: Workflow }) {
           </p>
         </Link>
       </CardContent>
-      <CardFooter className="p-4 flex items-center justify-between">
-         <Button variant="outline" asChild>
+      <CardFooter className="p-4 flex items-center justify-between gap-2">
+         <Button variant="outline" asChild className="flex-1">
            <Link href={`/workflow/${workflow.id}`}>Edit</Link>
          </Button>
          <DropdownMenu>
