@@ -70,11 +70,11 @@ export function useWorkflowEditor(workflowId: string) {
     });
 
     setEdges((currentEdges) => {
-        const lastRealNode = nodes.filter(n => n.type !== 'addBlockNode').at(-1);
+        const lastRealNodeId = nodes.filter(n => n.type !== 'addBlockNode').at(-1)?.id;
         
-        const newEdge: Edge | null = lastRealNode ? {
-            id: `e${lastRealNode.id}-${newBlock.id}`,
-            source: lastRealNode.id,
+        const newEdge: Edge | null = lastRealNodeId ? {
+            id: `e${lastRealNodeId}-${newBlock.id}`,
+            source: lastRealNodeId,
             target: newBlock.id,
         } : null;
         
@@ -86,9 +86,9 @@ export function useWorkflowEditor(workflowId: string) {
 
         const edgesWithoutAdd = currentEdges.filter(e => e.target !== 'add-block-node');
         
-        return newEdge ? [...edgesWithoutAdd, newEdge, addNodeEdge] : [...edgesWithoutAdd, newEdge, addNodeEdge];
+        return newEdge ? [...edgesWithoutAdd, newEdge, addNodeEdge] : [...edgesWithoutAdd, addNodeEdge];
     });
-  }, [setBlocks, setNodes, setEdges, nodes]);
+  }, [setBlocks, setNodes, setEdges]);
 
 
   useEffect(() => {
@@ -145,7 +145,7 @@ export function useWorkflowEditor(workflowId: string) {
     });
 
     return () => unsubscribe();
-  }, [docRef, toast, handleAddBlock, setNodes, setEdges]);
+  }, [docRef, toast, handleAddBlock, setNodes, setEdges, user, activeAgent]);
   
   const isChanged = useMemo(() => {
     if (!workflow) return false;
