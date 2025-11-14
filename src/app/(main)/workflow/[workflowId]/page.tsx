@@ -22,8 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import ReactFlow, { 
     Background, 
-    Controls, 
-    MiniMap,
+    Controls,
     useNodesState,
     useEdgesState,
     addEdge as rfAddEdge,
@@ -378,12 +377,10 @@ export default function WorkflowDetailPage() {
                 onConnect={onConnect}
                 onNodeClick={handleNodeClick}
                 nodeTypes={nodeTypes}
-                fitView
                 proOptions={{ hideAttribution: true }}
             >
                 <Background />
                 <Controls />
-                <MiniMap />
             </ReactFlow>
           </div>
         </ResizablePanel>
