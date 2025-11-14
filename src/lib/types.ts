@@ -2,6 +2,7 @@
 
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -114,4 +115,5 @@ export type Message = {
   sender: 'user' | 'agent' | 'system';
   text: string;
   timestamp: string;
+  options?: string[];
 };

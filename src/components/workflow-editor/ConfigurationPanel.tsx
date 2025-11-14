@@ -1,17 +1,11 @@
 'use client';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle, X } from 'lucide-react';
 import type { WorkflowBlock } from '@/lib/types';
 import { AddBlockPopover } from '@/components/add-block-popover';
 
@@ -52,9 +46,23 @@ export function ConfigurationPanel({
   handleSaveChanges,
   handleDiscardChanges,
 }: ConfigurationPanelProps) {
-  const selectedBlockGroup = selectedBlock
-    ? blockGroups[selectedBlock.type]
-    : null;
+  const [newOption, setNewOption] = useState('');
+
+  const handleAddOption = () => {
+    if (newOption.trim() && selectedBlock) {
+      const currentOptions = selectedBlock.params.options || [];
+      handleBlockParamChange(selectedBlock.id, 'options', [...currentOptions, newOption.trim()]);
+      setNewOption('');
+    }
+  };
+
+  const handleRemoveOption = (indexToRemove: number) => {
+    if (selectedBlock) {
+      const currentOptions = selectedBlock.params.options || [];
+      const updatedOptions = currentOptions.filter((_: any, index: number) => index !== indexToRemove);
+      handleBlockParamChange(selectedBlock.id, 'options', updatedOptions);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -137,6 +145,56 @@ export function ConfigurationPanel({
                       )
                     }
                   />
+                </div>
+              </div>
+            )}
+            {selectedBlock.type === 'Show Multiple Choice' && (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold">Show Multiple Choice</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Present the user with a set of options to choose from.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`multiple-choice-prompt-${selectedBlock.id}`}>
+                    Prompt
+                  </Label>
+                  <Textarea
+                    id={`multiple-choice-prompt-${selectedBlock.id}`}
+                    placeholder="e.g. What would you like to do next?"
+                    value={selectedBlock.params.prompt || ''}
+                    onChange={(e) => handleBlockParamChange(selectedBlock.id, 'prompt', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Options</Label>
+                   <ul className="space-y-2">
+                      {(selectedBlock.params.options || []).map((option: string, index: number) => (
+                        <li key={index} className="flex items-center justify-between text-sm p-2 border rounded-md bg-muted/50">
+                          <span className="truncate pr-2">{option}</span>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveOption(index)}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Add a new option"
+                      value={newOption}
+                      onChange={(e) => setNewOption(e.target.value)}
+                       onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddOption();
+                        }
+                      }}
+                    />
+                    <Button onClick={handleAddOption} disabled={!newOption.trim()}>
+                        <PlusCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
