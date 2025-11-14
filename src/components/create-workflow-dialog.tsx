@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,25 +17,53 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useUser, useFirestore } from '@/firebase';
+import { useActiveAgent } from '@/app/(main)/layout';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
+import type { Workflow } from '@/lib/types';
 
 export function CreateWorkflowDialog({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
+  const [isCreating, startCreation] = useTransition();
+
   const router = useRouter();
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { activeAgent } = useActiveAgent();
+  const { toast } = useToast();
 
   const dialogImage = PlaceHolderImages.find((img) => img.id === 'dialog-create-workflow');
 
   const handleCreateWorkflow = () => {
-    if (!name) return;
-    const workflowId = name.toLowerCase().replace(/\s+/g, '-');
-    router.push(`/workflow/${workflowId}`);
-    setIsOpen(false);
+    if (!name || !user || !activeAgent?.id) return;
+    
+    startCreation(async () => {
+      try {
+        const workflowsCollection = collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'workflows');
+        const newWorkflow: Omit<Workflow, 'id'> = {
+          name,
+          createdAt: serverTimestamp(),
+          lastModified: serverTimestamp(),
+          blocks: [],
+        };
+        const docRef = await addDoc(workflowsCollection, newWorkflow);
+        
+        toast({ title: 'Success', description: 'Workflow created successfully.' });
+        router.push(`/workflow/${docRef.id}`);
+        setIsOpen(false);
+      } catch (error: any) {
+        console.error("Error creating workflow: ", error);
+        toast({ title: 'Error', description: error.message || 'Could not create workflow.', variant: 'destructive'});
+      }
+    });
   };
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
-      // Reset state when closing
       setTimeout(() => {
         setName('');
       }, 200);
@@ -73,21 +101,28 @@ export function CreateWorkflowDialog({ children }: { children: React.ReactNode }
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Customer Onboarding"
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleCreateWorkflow();
+                    }
+                }}
               />
             </div>
           </DialogHeader>
 
           <DialogFooter className="grid grid-cols-2 gap-2 sm:flex-row sm:space-x-0">
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" disabled={isCreating}>
                 Cancel
               </Button>
             </DialogClose>
             <Button
               type="button"
               onClick={handleCreateWorkflow}
-              disabled={!name}
+              disabled={!name || isCreating}
             >
+              {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Workflow
             </Button>
           </DialogFooter>

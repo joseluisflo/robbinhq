@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useTransition } from 'react';
+import { useParams, notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -8,21 +9,101 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { Info, PlusCircle } from 'lucide-react';
+import { Info, PlusCircle, Loader2 } from 'lucide-react';
 import { AddBlockPopover } from '@/components/add-block-popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import { useUser, useFirestore } from '@/firebase';
+import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
+import type { Workflow, WorkflowBlock } from '@/lib/types';
+import { useActiveAgent } from '../../layout';
+import { useToast } from '@/hooks/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function WorkflowDetailPage() {
-  const [blocks, setBlocks] = useState<string[]>([]);
+  const params = useParams();
+  const workflowId = params.workflowId as string;
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { activeAgent } = useActiveAgent();
+  const { toast } = useToast();
+
+  const [workflow, setWorkflow] = useState<Workflow | null>(null);
+  const [blocks, setBlocks] = useState<WorkflowBlock[]>([]);
+  const [initialBlocks, setInitialBlocks] = useState<WorkflowBlock[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isSaving, startSaving] = useTransition();
+
+  const docRef = useMemo(() => {
+    if (!user || !activeAgent?.id || !workflowId) return null;
+    return doc(firestore, 'users', user.uid, 'agents', activeAgent.id, 'workflows', workflowId);
+  }, [user, firestore, activeAgent?.id, workflowId]);
+
+  useEffect(() => {
+    if (!docRef) {
+      if (user && activeAgent) setLoading(false);
+      return;
+    };
+
+    setLoading(true);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data() as Workflow;
+        setWorkflow({ ...data, id: docSnap.id });
+        const loadedBlocks = data.blocks || [];
+        setBlocks(loadedBlocks);
+        setInitialBlocks(loadedBlocks);
+      } else {
+        setWorkflow(null);
+        notFound();
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching workflow:", error);
+      toast({ title: 'Error', description: 'Could not load workflow.', variant: 'destructive'});
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [docRef, toast]);
+  
+  const isChanged = useMemo(() => JSON.stringify(blocks) !== JSON.stringify(initialBlocks), [blocks, initialBlocks]);
 
   const handleAddBlock = (blockType: string) => {
-    // For now, allow adding multiple blocks of the same type.
-    // We can add logic to prevent duplicates if needed.
-    setBlocks((prevBlocks) => [...prevBlocks, blockType]);
+    const newBlock: WorkflowBlock = {
+      id: uuidv4(),
+      type: blockType,
+      params: {},
+    };
+    setBlocks((prevBlocks) => [...prevBlocks, newBlock]);
   };
+
+  const handleSaveChanges = () => {
+    if (!docRef || !isChanged) return;
+    
+    startSaving(async () => {
+      try {
+        await setDoc(docRef, { blocks, lastModified: serverTimestamp() }, { merge: true });
+        toast({ title: 'Success', description: 'Workflow saved successfully.' });
+      } catch (error: any) {
+        console.error("Error saving workflow: ", error);
+        toast({ title: 'Error', description: error.message || 'Could not save workflow.', variant: 'destructive'});
+      }
+    });
+  };
+
+  const handleDiscardChanges = () => {
+    setBlocks(initialBlocks);
+  };
+  
+  if (loading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  }
+  
+  if (!workflow) {
+    return notFound();
+  }
 
   return (
     <div className="h-full flex-1 flex flex-col">
@@ -30,6 +111,10 @@ export default function WorkflowDetailPage() {
         {/* Configuration Panel */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="flex h-full flex-col">
+            <div className="p-6 border-b">
+                <h2 className="text-xl font-bold">{workflow.name}</h2>
+                <p className="text-sm text-muted-foreground">Design and configure your agent's workflow.</p>
+            </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -62,7 +147,10 @@ export default function WorkflowDetailPage() {
               ) : (
                 <div className="space-y-4">
                   {blocks.map((block, index) => {
-                    if (block === 'Trigger') {
+                    // This is a placeholder for actual block components
+                    // In a real app, you'd have a component for each block type
+                    // and manage their state properly.
+                    if (block.type === 'Trigger') {
                       return (
                         <Card key={index}>
                           <CardHeader>
@@ -84,7 +172,7 @@ export default function WorkflowDetailPage() {
                         </Card>
                       );
                     }
-                    if (block === 'Ask a question') {
+                    if (block.type === 'Ask a question') {
                       return (
                         <Card key={index}>
                           <CardHeader>
@@ -106,7 +194,7 @@ export default function WorkflowDetailPage() {
                         </Card>
                       );
                     }
-                    if (block === 'Search web') {
+                    if (block.type === 'Search web') {
                       return (
                         <Card key={index}>
                           <CardHeader>
@@ -128,86 +216,7 @@ export default function WorkflowDetailPage() {
                         </Card>
                       );
                     }
-                    if (block === 'Condition') {
-                      return (
-                        <Card key={index}>
-                          <CardHeader>
-                            <CardTitle>Condition</CardTitle>
-                            <CardDescription>
-                              Split the workflow based on a condition.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div>
-                              <Label htmlFor={`condition-if-${index}`} className="text-xs font-semibold">IF</Label>
-                              <Textarea 
-                                id={`condition-if-${index}`}
-                                placeholder="e.g. User's message contains 'help'"
-                                className="min-h-[80px] mt-1"
-                              />
-                            </div>
-                            <div className="flex gap-4">
-                              <div className="flex-1 space-y-2">
-                                <Label className="text-xs font-semibold">THEN</Label>
-                                <div className="p-4 bg-muted/50 rounded-lg min-h-[100px] border border-dashed">
-                                  <AddBlockPopover onAddBlock={handleAddBlock}>
-                                      <Button variant="ghost" size="sm" className="w-full">
-                                          <PlusCircle className="mr-2 h-4 w-4" />
-                                          Add block
-                                      </Button>
-                                  </AddBlockPopover>
-                                </div>
-                              </div>
-                              <div className="flex-1 space-y-2">
-                                <Label className="text-xs font-semibold">ELSE</Label>
-                                <div className="p-4 bg-muted/50 rounded-lg min-h-[100px] border border-dashed">
-                                  <AddBlockPopover onAddBlock={handleAddBlock}>
-                                      <Button variant="ghost" size="sm" className="w-full">
-                                          <PlusCircle className="mr-2 h-4 w-4" />
-                                          Add block
-                                      </Button>
-                                  </AddBlockPopover>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    }
-                    if (block === 'Loop') {
-                      return (
-                        <Card key={index}>
-                          <CardHeader>
-                            <CardTitle>Loop</CardTitle>
-                            <CardDescription>
-                              Repeat a set of actions a specific number of times or for each item in a list.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div>
-                              <Label htmlFor={`loop-condition-${index}`} className="text-xs font-semibold">REPEAT</Label>
-                              <Textarea 
-                                id={`loop-condition-${index}`}
-                                placeholder="e.g. 5 times, or 'For each customer in leads list'"
-                                className="min-h-[80px] mt-1"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-xs font-semibold">DO</Label>
-                              <div className="p-4 bg-muted/50 rounded-lg min-h-[100px] border border-dashed">
-                                <AddBlockPopover onAddBlock={handleAddBlock}>
-                                  <Button variant="ghost" size="sm" className="w-full">
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Add block
-                                  </Button>
-                                </AddBlockPopover>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    }
-                    if (block === 'Set variable') {
+                     if (block.type === 'Set variable') {
                       return (
                         <Card key={index}>
                           <CardHeader>
@@ -231,7 +240,7 @@ export default function WorkflowDetailPage() {
                         </Card>
                       );
                     }
-                    if (block === 'Send Email') {
+                    if (block.type === 'Send Email') {
                       return (
                         <Card key={index}>
                           <CardHeader>
@@ -257,98 +266,8 @@ export default function WorkflowDetailPage() {
                         </Card>
                       );
                     }
-                    if (block === 'Send SMS') {
-                        return (
-                          <Card key={index}>
-                            <CardHeader>
-                              <CardTitle>Send SMS</CardTitle>
-                              <CardDescription>
-                                Send an SMS message to a specified phone number.
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div className="space-y-2">
-                                <Label htmlFor={`sms-to-${index}`}>Phone Number</Label>
-                                <Input id={`sms-to-${index}`} placeholder="+15551234567" />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`sms-body-${index}`}>Message</Label>
-                                <Textarea id={`sms-body-${index}`} placeholder="Write your SMS content here." className="min-h-[100px]" />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      }
-                      if (block === 'Create PDF') {
-                        return (
-                          <Card key={index}>
-                            <CardHeader>
-                              <CardTitle>Create PDF</CardTitle>
-                              <CardDescription>
-                                Describe the content of the PDF. You can use variables from previous steps.
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div>
-                                <Label htmlFor={`create-pdf-content-${index}`} className="sr-only">PDF Content</Label>
-                                <Textarea 
-                                  id={`create-pdf-content-${index}`}
-                                  placeholder="e.g. Create a summary with the results: {{search_results}} for client {{client_name}}"
-                                  className="min-h-[120px]"
-                                />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      }
-                       if (block === 'Wait for User Reply') {
-                        return (
-                          <Card key={index}>
-                            <CardHeader>
-                              <CardTitle>Wait for User Reply</CardTitle>
-                              <CardDescription>
-                                Pause the workflow and wait for the user's input, saving it to a variable.
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-2">
-                                <Label htmlFor={`wait-for-reply-variable-${index}`}>Save reply to variable</Label>
-                                <Input id={`wait-for-reply-variable-${index}`} placeholder="e.g. userFeedback" />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      }
-                      if (block === 'Show Multiple Choice') {
-                        return (
-                          <Card key={index}>
-                            <CardHeader>
-                              <CardTitle>Show Multiple Choice</CardTitle>
-                              <CardDescription>
-                                Present the user with a set of options to choose from.
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div className="space-y-2">
-                                <Label htmlFor={`multiple-choice-prompt-${index}`}>Prompt / Question</Label>
-                                <Textarea 
-                                  id={`multiple-choice-prompt-${index}`}
-                                  placeholder="e.g. What would you like to do next?"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`multiple-choice-options-${index}`}>Options (one per line)</Label>
-                                <Textarea 
-                                  id={`multiple-choice-options-${index}`}
-                                  placeholder="Option 1&#10;Option 2&#10;Option 3"
-                                  className="min-h-[100px]"
-                                />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      }
-                    return null;
+                    // Render other block types here...
+                    return <Card key={index}><CardHeader><CardTitle>{block.type}</CardTitle></CardHeader></Card>;
                   })}
                   <AddBlockPopover onAddBlock={handleAddBlock}>
                       <Button variant="outline" className="w-full">
@@ -360,8 +279,11 @@ export default function WorkflowDetailPage() {
               )}
             </div>
             <div className="flex justify-between items-center gap-3 px-6 py-4 border-t bg-background">
-              <Button variant="ghost">Discard changes</Button>
-              <Button>Save changes</Button>
+              <Button variant="ghost" onClick={handleDiscardChanges} disabled={!isChanged || isSaving}>Discard changes</Button>
+              <Button onClick={handleSaveChanges} disabled={!isChanged || isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save changes
+              </Button>
             </div>
           </div>
         </ResizablePanel>

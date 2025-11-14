@@ -4,10 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -16,13 +13,32 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CreateWorkflowDialog } from '@/components/create-workflow-dialog';
-import { mockWorkflows } from '@/lib/data';
 import type { Workflow } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useActiveAgent } from '../layout';
+import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
+import { useMemo } from 'react';
+import { Timestamp } from 'firebase/firestore';
+
 
 export default function WorkflowPage() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { activeAgent } = useActiveAgent();
+
+  const workflowsQuery = useMemo(() => {
+    if (!user || !activeAgent?.id) return null;
+    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'workflows'));
+  }, [user, firestore, activeAgent?.id]);
+  
+  const { data: workflows, loading } = useCollection<Workflow>(workflowsQuery);
+
+  if (loading) {
+     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+  
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -35,9 +51,9 @@ export default function WorkflowPage() {
         </CreateWorkflowDialog>
       </div>
 
-      {mockWorkflows.length > 0 ? (
+      {workflows && workflows.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {mockWorkflows.map((workflow) => (
+          {workflows.map((workflow) => (
             <WorkflowCard key={workflow.id} workflow={workflow} />
           ))}
         </div>
@@ -60,6 +76,10 @@ export default function WorkflowPage() {
 }
 
 function WorkflowCard({ workflow }: { workflow: Workflow }) {
+  const lastModifiedDate = workflow.lastModified instanceof Timestamp 
+    ? workflow.lastModified.toDate() 
+    : new Date();
+
   return (
     <Card>
       <Link href={`/workflow/${workflow.id}`}>
@@ -70,7 +90,7 @@ function WorkflowCard({ workflow }: { workflow: Workflow }) {
           <Link href={`/workflow/${workflow.id}`} className="group">
             <p className="font-semibold group-hover:underline">{workflow.name}</p>
             <p className="text-sm text-muted-foreground">
-              {formatDistanceToNow(new Date(workflow.lastModified), { addSuffix: true })}
+              {formatDistanceToNow(lastModifiedDate, { addSuffix: true })}
             </p>
           </Link>
         </div>

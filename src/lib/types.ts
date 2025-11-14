@@ -1,5 +1,6 @@
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -48,10 +49,18 @@ export type Agent = {
   fileSources?: AgentFile[];
 };
 
-export type Workflow = {
+export type WorkflowBlock = {
   id: string;
+  type: string;
+  params: Record<string, any>;
+};
+
+export type Workflow = {
+  id?: string;
   name: string;
-  lastModified: string;
+  lastModified?: any;
+  createdAt?: any;
+  blocks?: WorkflowBlock[];
 };
 
 export type Lead = {
