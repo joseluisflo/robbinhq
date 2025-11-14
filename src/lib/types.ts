@@ -3,6 +3,7 @@
 
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -116,4 +117,13 @@ export type Message = {
   text: string;
   timestamp: string;
   options?: string[];
+};
+
+export type WorkflowRun = {
+  id: string;
+  workflowId: string;
+  status: 'running' | 'awaiting_input' | 'completed' | 'failed';
+  context: Record<string, any>;
+  currentStepIndex: number;
+  promptForUser?: string;
 };
