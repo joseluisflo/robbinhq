@@ -1,5 +1,7 @@
 "use step";
 
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+
 // Placeholder for asking a question to the user (e.g., via chat)
 export async function askQuestionStep(question: string) {
   console.log(`Asking user: ${question}`);
@@ -48,9 +50,27 @@ export async function sendSmsStep(to: string, message: string) {
 
 // Simulates creating a PDF
 export async function createPdfStep(content: string) {
-    console.log('Simulating PDF creation with content:', content.substring(0, 50) + '...');
-    // This would use a library like pdf-lib or puppeteer to generate a PDF.
-    return { pdfUrl: "https://example.com/simulated.pdf" };
+    console.log('Creating PDF with content:', content.substring(0, 50) + '...');
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage();
+    const { width, height } = page.getSize();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontSize = 12;
+
+    page.drawText(content, {
+        x: 50,
+        y: height - 4 * fontSize,
+        font,
+        fontSize,
+        color: rgb(0, 0, 0),
+        maxWidth: width - 100,
+        lineHeight: 14,
+    });
+    
+    const pdfBytes = await pdfDoc.save();
+    const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
+    
+    return { pdfBase64: pdfBase64 };
 }
 
 // This step's main purpose is to be used within the orchestrator to manage state.
