@@ -1,15 +1,15 @@
 
 @import 'reactflow/dist/style.css';
 
+/* Reset default React Flow node styles to prevent double borders */
 .react-flow__node {
-    @apply rounded-lg border-2 bg-background text-sm shadow-md;
-    @apply focus:ring-ring focus:ring-2 focus:ring-offset-2;
-}
-
-.react-flow__node.selected {
-    @apply border-primary shadow-lg;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
 }
 
 .react-flow__handle {
-    @apply h-2 w-2 bg-primary;
+    @apply !bg-primary;
 }
