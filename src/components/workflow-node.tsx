@@ -43,18 +43,18 @@ export function WorkflowNode({ data, selected }: NodeProps<{ label: string; type
   return (
     <div
       className={cn(
-        'w-48 rounded-2xl border-2 bg-background p-3 shadow-md transition-all',
-        selected ? 'border-primary shadow-lg' : 'border-border'
+        'w-48 rounded-lg border bg-background p-3 shadow-sm transition-all',
+        selected && 'border-primary ring-2 ring-primary ring-offset-2'
       )}
     >
       <div className="flex items-center gap-3">
-        <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', colorClass)}>
+        <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', colorClass)}>
           <Icon className="h-5 w-5" />
         </div>
-        <span className="text-sm font-semibold">{label}</span>
+        <span className="text-sm font-medium text-foreground">{label}</span>
       </div>
-      <Handle type="target" position={Position.Top} className="!bg-primary" />
-      <Handle type="source" position={Position.Bottom} className="!bg-primary" />
+      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !-top-1 !bg-primary" />
+      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !-bottom-1 !bg-primary" />
     </div>
   );
 }
