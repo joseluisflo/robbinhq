@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -9,7 +10,6 @@ import ReactFlow, {
   type Connection,
   type OnNodesChange,
   type OnEdgesChange,
-  type NodeProps,
 } from 'reactflow';
 import { nodeTypes } from '@/components/workflow/nodes';
 
