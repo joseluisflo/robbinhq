@@ -34,15 +34,10 @@ export function FlowCanvas({
     
     React.useEffect(() => {
         if (nodes.length > 0) {
-            const addNode = nodes.find(n => n.type === 'addBlockNode');
-            if(addNode?.position) {
-                 setTimeout(() => {
-                    const { x, y } = addNode.position;
-                    reactFlowInstance.setCenter(x, y - 100, { zoom: 1, duration: 300 });
-                }, 50);
-            }
+            reactFlowInstance.fitView({ duration: 300, padding: 0.2 });
         }
-    }, [nodes.length, reactFlowInstance, nodes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [nodes.length]);
 
   return (
     <div className="flex h-full items-center justify-center bg-muted/30">
@@ -54,6 +49,7 @@ export function FlowCanvas({
         onConnect={onConnect}
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
+        fitView
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} />
