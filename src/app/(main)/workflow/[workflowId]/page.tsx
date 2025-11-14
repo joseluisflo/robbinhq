@@ -3,17 +3,13 @@
 import '@/app/react-flow.css';
 import { useState, useEffect, useMemo, useTransition, useCallback } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { Info, Plus, PlusCircle, Loader2, Play, Wrench, GitFork, Database } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { AddBlockPopover } from '@/components/add-block-popover';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { Workflow, WorkflowBlock, Node, Edge } from '@/lib/types';
@@ -21,49 +17,15 @@ import { useActiveAgent } from '../../layout';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import ReactFlow, { 
-    Background, 
-    Controls,
     useNodesState,
     useEdgesState,
     addEdge as rfAddEdge,
     type Connection,
-    type Edge as RfEdge,
     ReactFlowProvider,
     useReactFlow,
-    BackgroundVariant,
-    type NodeProps,
-    Handle,
-    Position,
 } from 'reactflow';
-import { WorkflowNode } from '@/components/workflow-node';
-import { cn } from '@/lib/utils';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfigurationPanel } from '@/components/workflow-editor/ConfigurationPanel';
-
-function AddBlockNode({ data }: NodeProps<{ onAddBlock: (blockType: string) => void }>) {
-  return (
-    <>
-      <AddBlockPopover onAddBlock={data.onAddBlock}>
-        <button className="w-48 rounded-lg border bg-background p-3 shadow-sm transition-all hover:shadow-md">
-          <div className="flex items-center gap-3">
-            <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', 'bg-gray-100 text-gray-700')}>
-              <Plus className="h-5 w-5" />
-            </div>
-            <span className="text-sm font-medium text-foreground">Add block</span>
-          </div>
-        </button>
-      </AddBlockPopover>
-      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !-top-1 !bg-primary" />
-    </>
-  );
-}
-
-
-const nodeTypes = {
-  workflowNode: WorkflowNode,
-  addBlockNode: AddBlockNode,
-};
-
+import { FlowCanvas } from '@/components/workflow-editor/FlowCanvas';
 
 
 function FlowEditor() {
@@ -186,12 +148,6 @@ function FlowEditor() {
         
         setNodes([...initialNodes, addNode]);
         setEdges(initialEdges);
-        
-        if (initialNodes.length > 0) {
-            setTimeout(() => {
-                reactFlowInstance.fitView({ duration: 300, padding: 0.2 });
-            }, 50);
-        }
 
       } else {
         setWorkflow(null);
@@ -205,13 +161,12 @@ function FlowEditor() {
     });
 
     return () => unsubscribe();
-  }, [docRef, toast, handleAddBlock, reactFlowInstance]);
+  }, [docRef, toast, handleAddBlock]);
   
   const isChanged = useMemo(() => {
     if (!workflow) return false;
     const workflowBlocks = workflow.blocks || [];
     
-    // Filter out addBlockNode for comparison
     const currentNodesToCompare = nodes.filter(n => n.type !== 'addBlockNode').map(({type, data, ...rest}) => rest);
     const currentEdgesToCompare = edges.filter(e => e.target !== 'add-block-node');
 
@@ -338,22 +293,14 @@ function FlowEditor() {
 
         {/* Preview/Canvas Panel */}
         <ResizablePanel defaultSize={65} minSize={30}>
-            <div className="flex h-full items-center justify-center bg-muted/30">
-                <ReactFlow
-                    nodes={nodes}
-                    edges={edges}
-                    onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
-                    onConnect={onConnect}
-                    onNodeClick={handleNodeClick}
-                    nodeTypes={nodeTypes}
-                    proOptions={{ hideAttribution: true }}
-                    fitView
-                >
-                    <Background variant={BackgroundVariant.Dots} />
-                    <Controls />
-                </ReactFlow>
-            </div>
+            <FlowCanvas 
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onNodeClick={handleNodeClick}
+            />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
