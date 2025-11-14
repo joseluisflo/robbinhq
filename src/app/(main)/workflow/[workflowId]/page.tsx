@@ -30,6 +30,11 @@ import ReactFlow, {
     type Connection,
     type Edge as RfEdge,
 } from 'reactflow';
+import { WorkflowNode } from '@/components/workflow-node';
+
+const nodeTypes = {
+  workflowNode: WorkflowNode,
+};
 
 export default function WorkflowDetailPage() {
   const params = useParams();
@@ -66,18 +71,17 @@ export default function WorkflowDetailPage() {
       if (docSnap.exists()) {
         const data = docSnap.data() as Workflow;
         setWorkflow({ ...data, id: docSnap.id });
-        setBlocks(data.blocks || []);
+        const savedBlocks = data.blocks || [];
+        setBlocks(savedBlocks);
 
-        // Initialize React Flow state from Firestore data
         if (data.nodes && data.nodes.length > 0) {
-            setNodes(data.nodes);
+            setNodes(data.nodes.map(n => ({...n, type: 'workflowNode'})));
         } else {
-            // Convert blocks to nodes if no node data exists
-            const initialNodes = (data.blocks || []).map((block, index) => ({
+            const initialNodes = savedBlocks.map((block, index) => ({
                 id: block.id,
-                type: 'default',
+                type: 'workflowNode',
                 position: { x: 250, y: 100 * index },
-                data: { label: block.type },
+                data: { label: block.type, type: block.type },
             }));
             setNodes(initialNodes);
         }
@@ -99,9 +103,15 @@ export default function WorkflowDetailPage() {
   
   const isChanged = useMemo(() => {
     if (!workflow) return false;
-    const hasBlockChanges = JSON.stringify(blocks) !== JSON.stringify(workflow.blocks || []);
-    const hasNodeChanges = JSON.stringify(nodes) !== JSON.stringify(workflow.nodes || []);
-    const hasEdgeChanges = JSON.stringify(edges) !== JSON.stringify(workflow.edges || []);
+    // Compare current state with the initial state from Firestore
+    const workflowBlocks = workflow.blocks || [];
+    const workflowNodes = (workflow.nodes || []).map(n => ({...n, type: 'workflowNode'}));
+    const workflowEdges = workflow.edges || [];
+
+    const hasBlockChanges = JSON.stringify(blocks) !== JSON.stringify(workflowBlocks);
+    const hasNodeChanges = JSON.stringify(nodes) !== JSON.stringify(workflowNodes);
+    const hasEdgeChanges = JSON.stringify(edges) !== JSON.stringify(workflowEdges);
+    
     return hasBlockChanges || hasNodeChanges || hasEdgeChanges;
   }, [blocks, nodes, edges, workflow]);
 
@@ -114,12 +124,11 @@ export default function WorkflowDetailPage() {
     };
     setBlocks((prevBlocks) => [...prevBlocks, newBlock]);
     
-    // Add a corresponding node to React Flow
     const newNode: Node = {
         id: newBlock.id,
-        type: 'default',
+        type: 'workflowNode',
         position: { x: Math.random() * 400, y: Math.random() * 400 },
-        data: { label: blockType },
+        data: { label: blockType, type: blockType },
     };
     setNodes((nds) => [...nds, newNode]);
   };
@@ -144,7 +153,8 @@ export default function WorkflowDetailPage() {
     
     startSaving(async () => {
       try {
-        await setDoc(docRef, { blocks, nodes, edges, lastModified: serverTimestamp() }, { merge: true });
+        const nodesToSave = nodes.map(({type, ...node}) => node);
+        await setDoc(docRef, { blocks, nodes: nodesToSave, edges, lastModified: serverTimestamp() }, { merge: true });
         toast({ title: 'Success', description: 'Workflow saved successfully.' });
       } catch (error: any) {
         console.error("Error saving workflow: ", error);
@@ -156,7 +166,7 @@ export default function WorkflowDetailPage() {
   const handleDiscardChanges = () => {
     if (workflow) {
         setBlocks(workflow.blocks || []);
-        setNodes(workflow.nodes || []);
+        setNodes((workflow.nodes || []).map(n => ({...n, type: 'workflowNode'})));
         setEdges(workflow.edges || []);
     }
   };
@@ -367,6 +377,7 @@ export default function WorkflowDetailPage() {
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
                 onNodeClick={handleNodeClick}
+                nodeTypes={nodeTypes}
                 fitView
                 proOptions={{ hideAttribution: true }}
             >
