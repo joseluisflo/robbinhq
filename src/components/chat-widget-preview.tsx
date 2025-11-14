@@ -126,26 +126,14 @@ export function ChatWidgetPreview({
     return name.substring(0, 2).toUpperCase();
   };
 
-  const handleSendMessage = () => {
-    if (!prompt.trim()) return;
-
-    const newUserMessage: Message = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text: prompt,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setMessages(prev => [...prev, newUserMessage]);
-    setPrompt('');
-
+  const handleAgentResponse = (userMessage: string) => {
     startResponding(async () => {
       // Convert complex objects to plain objects before sending to the server action
       const plainTextSources = textSources.map(ts => ({ title: ts.title, content: ts.content }));
       const plainFileSources = fileSources.map(fs => ({ name: fs.name, extractedText: fs.extractedText || '' }));
 
       const result = await getAgentResponse({
-        message: prompt,
+        message: userMessage,
         instructions: instructions,
         temperature: temperature,
         textSources: plainTextSources,
@@ -175,6 +163,33 @@ export function ChatWidgetPreview({
         setMessages(prev => [...prev, agentMessage]);
       }
     });
+  };
+
+  const handleSendMessage = () => {
+    if (!prompt.trim()) return;
+
+    const newUserMessage: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text: prompt,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages(prev => [...prev, newUserMessage]);
+    const messageToSend = prompt;
+    setPrompt('');
+    handleAgentResponse(messageToSend);
+  };
+  
+  const handleOptionClick = (option: string) => {
+    const newUserMessage: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text: option,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setMessages(prev => [...prev, newUserMessage]);
+    handleAgentResponse(option);
   };
 
   const handleWheel = (e: WheelEvent) => {
@@ -276,8 +291,8 @@ export function ChatWidgetPreview({
             {/* Chat Messages */}
             <div ref={chatContainerRef} className="flex-1 px-4 pt-4 bg-background flex flex-col justify-between overflow-y-auto">
               <div className="space-y-4">
-                 {displayedMessages.map((message) => (
-                    <div key={message.id} className={cn("flex", message.sender === 'user' ? 'justify-end' : 'justify-start')}>
+                 {displayedMessages.map((message, index) => (
+                    <div key={message.id} className={cn("flex flex-col", message.sender === 'user' ? 'items-end' : 'items-start')}>
                         <div className={cn("max-w-[75%]", message.sender === 'user' ? 'text-right' : 'text-left')}>
                             <div
                                 className={cn("p-3 rounded-2xl",
@@ -307,6 +322,21 @@ export function ChatWidgetPreview({
                                 )}
                             </div>
                         </div>
+                        {message.sender === 'agent' && message.options && message.options.length > 0 && index === displayedMessages.length -1 && (
+                            <div className="flex flex-col items-start w-full mt-2 space-y-2">
+                                {message.options.map((option, i) => (
+                                    <Button
+                                        key={i}
+                                        variant="outline"
+                                        className="rounded-lg h-auto py-2 text-left w-full max-w-[75%]"
+                                        onClick={() => handleOptionClick(option)}
+                                        disabled={isResponding}
+                                    >
+                                        {option}
+                                    </Button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 ))}
                 {isResponding && !isCallActive && (
