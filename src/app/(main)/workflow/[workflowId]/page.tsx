@@ -395,7 +395,7 @@ function FlowEditor() {
                 </div>
               )}
             </div>
-            <div className="flex w-full items-center gap-3 px-6 py-4 border-t bg-background">
+            <div className="flex w-full items-center justify-between gap-3 px-6 py-4 border-t bg-background">
               <Button 
                 variant="ghost" 
                 onClick={handleDiscardChanges} 
@@ -405,7 +405,7 @@ function FlowEditor() {
               </Button>
               
               <Button 
-                className="flex-1 max-w-xs ml-auto" 
+                className="flex-1 max-w-xs" 
                 onClick={handleSaveChanges} 
                 disabled={!isChanged || isSaving}
               >
@@ -463,4 +463,3 @@ export default function WorkflowDetailPage() {
         </ReactFlowProvider>
     )
 }
-
