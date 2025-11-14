@@ -4,13 +4,12 @@ import '@/app/react-flow.css';
 import { useState, useEffect, useMemo, useTransition, useCallback } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { Info, PlusCircle, Loader2 } from 'lucide-react';
+import { Info, Plus, PlusCircle, Loader2 } from 'lucide-react';
 import { AddBlockPopover } from '@/components/add-block-popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -34,6 +33,8 @@ import ReactFlow, {
     BackgroundVariant,
 } from 'reactflow';
 import { WorkflowNode } from '@/components/workflow-node';
+import { cn } from '@/lib/utils';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const nodeTypes = {
   workflowNode: WorkflowNode,
@@ -409,10 +410,14 @@ function FlowEditor() {
             {blocks.length === 0 ? (
                 <div className="flex h-full items-center justify-center bg-muted/30">
                     <AddBlockPopover onAddBlock={handleAddBlock}>
-                        <Button variant="ghost" className="h-auto p-8 flex-col gap-4 border-2 border-dashed">
-                             <PlusCircle className="h-8 w-8 text-muted-foreground" />
-                             <span className='text-base text-muted-foreground'>Add a block to start</span>
-                        </Button>
+                      <button className="w-48 rounded-lg border bg-background p-3 shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-center gap-3">
+                          <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', 'bg-gray-100 text-gray-700')}>
+                            <Plus className="h-5 w-5" />
+                          </div>
+                          <span className="text-sm font-medium text-foreground">Add block</span>
+                        </div>
+                      </button>
                     </AddBlockPopover>
                 </div>
             ) : (
