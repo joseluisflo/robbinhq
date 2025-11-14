@@ -152,15 +152,28 @@ function FlowEditor() {
       type: blockType,
       params: {},
     };
+    
     setBlocks((prevBlocks) => [...prevBlocks, newBlock]);
+    
+    const lastNode = nodes[nodes.length - 1];
+    const newYPosition = lastNode ? lastNode.position.y + 120 : 0;
     
     const newNode: Node = {
         id: newBlock.id,
         type: 'workflowNode',
-        position: { x: 0, y: nodes.length * 120 },
+        position: { x: lastNode?.position.x || 0, y: newYPosition },
         data: { label: blockType, type: blockType },
     };
     setNodes((nds) => [...nds, newNode]);
+    
+    if (lastNode) {
+        const newEdge: Edge = {
+            id: `e${lastNode.id}-${newNode.id}`,
+            source: lastNode.id,
+            target: newNode.id,
+        };
+        setEdges((eds) => [...eds, newEdge]);
+    }
   };
   
   const handleBlockParamChange = (blockId: string, paramName: string, value: any) => {
@@ -392,7 +405,7 @@ function FlowEditor() {
               </Button>
               
               <Button 
-                className="flex-1 max-w-xs" 
+                className="flex-1 max-w-xs ml-auto" 
                 onClick={handleSaveChanges} 
                 disabled={!isChanged || isSaving}
               >
@@ -450,3 +463,4 @@ export default function WorkflowDetailPage() {
         </ReactFlowProvider>
     )
 }
+
