@@ -1,3 +1,4 @@
+
 'use client';
 import '@/app/react-flow.css';
 import { useState, useEffect, useMemo, useTransition, useCallback } from 'react';
@@ -368,21 +369,32 @@ export default function WorkflowDetailPage() {
 
         {/* Preview/Canvas Panel */}
         <ResizablePanel defaultSize={65} minSize={30}>
-          <div className="flex h-full items-center justify-center bg-muted/30">
-            <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                onNodeClick={handleNodeClick}
-                nodeTypes={nodeTypes}
-                proOptions={{ hideAttribution: true }}
-            >
-                <Background />
-                <Controls />
-            </ReactFlow>
-          </div>
+            {blocks.length === 0 ? (
+                <div className="flex h-full items-center justify-center bg-muted/30">
+                    <AddBlockPopover onAddBlock={handleAddBlock}>
+                        <Button variant="ghost" className="h-auto p-8 flex-col gap-4 border-2 border-dashed">
+                             <PlusCircle className="h-8 w-8 text-muted-foreground" />
+                             <span className='text-base text-muted-foreground'>Add a block to start</span>
+                        </Button>
+                    </AddBlockPopover>
+                </div>
+            ) : (
+                <div className="flex h-full items-center justify-center bg-muted/30">
+                    <ReactFlow
+                        nodes={nodes}
+                        edges={edges}
+                        onNodesChange={onNodesChange}
+                        onEdgesChange={onEdgesChange}
+                        onConnect={onConnect}
+                        onNodeClick={handleNodeClick}
+                        nodeTypes={nodeTypes}
+                        proOptions={{ hideAttribution: true }}
+                    >
+                        <Background />
+                        <Controls />
+                    </ReactFlow>
+                </div>
+            )}
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
