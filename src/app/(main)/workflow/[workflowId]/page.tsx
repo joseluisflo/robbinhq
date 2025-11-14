@@ -83,10 +83,11 @@ function FlowEditor() {
         if (data.nodes && data.nodes.length > 0) {
             initialNodes = data.nodes.map(n => ({...n, type: 'workflowNode'}));
         } else {
+            // Arrange nodes in a vertical line if no positions are saved
             initialNodes = savedBlocks.map((block, index) => ({
                 id: block.id,
                 type: 'workflowNode',
-                position: { x: 250, y: 120 * index },
+                position: { x: 0, y: index * 120 }, // Vertical layout
                 data: { label: block.type, type: block.type },
             }));
         }
@@ -141,7 +142,7 @@ function FlowEditor() {
     const newNode: Node = {
         id: newBlock.id,
         type: 'workflowNode',
-        position: { x: 250, y: 120 * nodes.length },
+        position: { x: 0, y: nodes.length * 120 },
         data: { label: blockType, type: blockType },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -369,18 +370,17 @@ function FlowEditor() {
                 </div>
               )}
             </div>
-            <div className="flex w-full items-center justify-between gap-3 px-6 py-4 border-t bg-background">
+            <div className="flex w-full items-center gap-3 px-6 py-4 border-t bg-background">
               <Button 
                 variant="ghost" 
                 onClick={handleDiscardChanges} 
                 disabled={!isChanged || isSaving}
-                className="flex-shrink-0"
               >
                 Discard changes
               </Button>
               
               <Button 
-                className="flex-1 sm:flex-initial sm:min-w-[200px]" 
+                className="flex-1 max-w-xs" 
                 onClick={handleSaveChanges} 
                 disabled={!isChanged || isSaving}
               >
