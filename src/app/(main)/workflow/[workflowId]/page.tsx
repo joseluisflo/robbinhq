@@ -387,7 +387,7 @@ function FlowEditor() {
                 onClick={handleDiscardChanges} 
                 disabled={!isChanged || isSaving}
               >
-                Discard changes
+                Discard
               </Button>
               
               <Button 
