@@ -78,6 +78,17 @@ export default function WorkflowDetailPage() {
     };
     setBlocks((prevBlocks) => [...prevBlocks, newBlock]);
   };
+  
+  const handleBlockParamChange = (blockId: string, paramName: string, value: any) => {
+    setBlocks(prevBlocks =>
+      prevBlocks.map(block =>
+        block.id === blockId
+          ? { ...block, params: { ...block.params, [paramName]: value } }
+          : block
+      )
+    );
+  };
+
 
   const handleSaveChanges = () => {
     if (!docRef || !isChanged) return;
@@ -86,6 +97,7 @@ export default function WorkflowDetailPage() {
       try {
         await setDoc(docRef, { blocks, lastModified: serverTimestamp() }, { merge: true });
         toast({ title: 'Success', description: 'Workflow saved successfully.' });
+        setInitialBlocks(blocks); // Update initial state after saving
       } catch (error: any) {
         console.error("Error saving workflow: ", error);
         toast({ title: 'Error', description: error.message || 'Could not save workflow.', variant: 'destructive'});
@@ -146,13 +158,13 @@ export default function WorkflowDetailPage() {
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {blocks.map((block, index) => {
+                  {blocks.map((block) => {
                     // This is a placeholder for actual block components
                     // In a real app, you'd have a component for each block type
                     // and manage their state properly.
                     if (block.type === 'Trigger') {
                       return (
-                        <Card key={index}>
+                        <Card key={block.id}>
                           <CardHeader>
                             <CardTitle>When to use</CardTitle>
                             <CardDescription>
@@ -161,11 +173,13 @@ export default function WorkflowDetailPage() {
                           </CardHeader>
                           <CardContent>
                             <div>
-                                <Label htmlFor="trigger-description" className="sr-only">When to use description</Label>
+                                <Label htmlFor={`trigger-description-${block.id}`} className="sr-only">When to use description</Label>
                                 <Textarea 
-                                  id="trigger-description"
+                                  id={`trigger-description-${block.id}`}
                                   placeholder="e.g. When the user asks to create a new marketing campaign..."
                                   className="min-h-[100px]"
+                                  value={block.params.description || ''}
+                                  onChange={(e) => handleBlockParamChange(block.id, 'description', e.target.value)}
                                 />
                             </div>
                           </CardContent>
@@ -174,7 +188,7 @@ export default function WorkflowDetailPage() {
                     }
                     if (block.type === 'Ask a question') {
                       return (
-                        <Card key={index}>
+                        <Card key={block.id}>
                           <CardHeader>
                             <CardTitle>Ask a question</CardTitle>
                             <CardDescription>
@@ -183,11 +197,13 @@ export default function WorkflowDetailPage() {
                           </CardHeader>
                           <CardContent>
                             <div>
-                                <Label htmlFor={`ask-a-question-prompt-${index}`} className="sr-only">Question to ask</Label>
+                                <Label htmlFor={`ask-a-question-prompt-${block.id}`} className="sr-only">Question to ask</Label>
                                 <Textarea 
-                                  id={`ask-a-question-prompt-${index}`}
+                                  id={`ask-a-question-prompt-${block.id}`}
                                   placeholder="e.g. What is your email address?"
                                   className="min-h-[100px]"
+                                  value={block.params.prompt || ''}
+                                  onChange={(e) => handleBlockParamChange(block.id, 'prompt', e.target.value)}
                                 />
                             </div>
                           </CardContent>
@@ -196,7 +212,7 @@ export default function WorkflowDetailPage() {
                     }
                     if (block.type === 'Search web') {
                       return (
-                        <Card key={index}>
+                        <Card key={block.id}>
                           <CardHeader>
                             <CardTitle>Search web</CardTitle>
                             <CardDescription>
@@ -205,11 +221,13 @@ export default function WorkflowDetailPage() {
                           </CardHeader>
                           <CardContent>
                             <div>
-                                <Label htmlFor={`search-web-query-${index}`} className="sr-only">Search query</Label>
+                                <Label htmlFor={`search-web-query-${block.id}`} className="sr-only">Search query</Label>
                                 <Textarea 
-                                  id={`search-web-query-${index}`}
+                                  id={`search-web-query-${block.id}`}
                                   placeholder="e.g. Latest trends in AI development"
                                   className="min-h-[100px]"
+                                  value={block.params.query || ''}
+                                  onChange={(e) => handleBlockParamChange(block.id, 'query', e.target.value)}
                                 />
                             </div>
                           </CardContent>
@@ -218,7 +236,7 @@ export default function WorkflowDetailPage() {
                     }
                      if (block.type === 'Set variable') {
                       return (
-                        <Card key={index}>
+                        <Card key={block.id}>
                           <CardHeader>
                             <CardTitle>Set variable</CardTitle>
                             <CardDescription>
@@ -228,12 +246,22 @@ export default function WorkflowDetailPage() {
                           <CardContent className="space-y-4">
                             <div className='grid grid-cols-2 gap-4'>
                               <div className="space-y-2">
-                                <Label htmlFor={`variable-name-${index}`}>Variable Name</Label>
-                                <Input id={`variable-name-${index}`} placeholder="e.g. userEmail" />
+                                <Label htmlFor={`variable-name-${block.id}`}>Variable Name</Label>
+                                <Input 
+                                  id={`variable-name-${block.id}`} 
+                                  placeholder="e.g. userEmail"
+                                  value={block.params.variableName || ''}
+                                  onChange={(e) => handleBlockParamChange(block.id, 'variableName', e.target.value)}
+                                />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor={`variable-value-${index}`}>Value</Label>
-                                <Input id={`variable-value-${index}`} placeholder="e.g. '{{answer_from_previous_step}}' " />
+                                <Label htmlFor={`variable-value-${block.id}`}>Value</Label>
+                                <Input 
+                                  id={`variable-value-${block.id}`} 
+                                  placeholder="e.g. '{{answer_from_previous_step}}' "
+                                  value={block.params.value || ''}
+                                  onChange={(e) => handleBlockParamChange(block.id, 'value', e.target.value)}
+                                />
                               </div>
                             </div>
                           </CardContent>
@@ -242,7 +270,7 @@ export default function WorkflowDetailPage() {
                     }
                     if (block.type === 'Send Email') {
                       return (
-                        <Card key={index}>
+                        <Card key={block.id}>
                           <CardHeader>
                             <CardTitle>Send Email</CardTitle>
                             <CardDescription>
@@ -251,23 +279,39 @@ export default function WorkflowDetailPage() {
                           </CardHeader>
                           <CardContent className="space-y-4">
                             <div className="space-y-2">
-                              <Label htmlFor={`email-to-${index}`}>To</Label>
-                              <Input id={`email-to-${index}`} placeholder="recipient@example.com" />
+                              <Label htmlFor={`email-to-${block.id}`}>To</Label>
+                              <Input 
+                                id={`email-to-${block.id}`} 
+                                placeholder="recipient@example.com or {{variableName}}"
+                                value={block.params.to || ''}
+                                onChange={(e) => handleBlockParamChange(block.id, 'to', e.target.value)}
+                              />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor={`email-subject-${index}`}>Subject</Label>
-                              <Input id={`email-subject-${index}`} placeholder="Your email subject" />
+                              <Label htmlFor={`email-subject-${block.id}`}>Subject</Label>
+                              <Input 
+                                id={`email-subject-${block.id}`} 
+                                placeholder="Your email subject"
+                                value={block.params.subject || ''}
+                                onChange={(e) => handleBlockParamChange(block.id, 'subject', e.target.value)}
+                              />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor={`email-body-${index}`}>Body</Label>
-                              <Textarea id={`email-body-${index}`} placeholder="Write your email content here." className="min-h-[120px]" />
+                              <Label htmlFor={`email-body-${block.id}`}>Body</Label>
+                              <Textarea 
+                                id={`email-body-${block.id}`} 
+                                placeholder="Write your email content here." 
+                                className="min-h-[120px]"
+                                value={block.params.body || ''}
+                                onChange={(e) => handleBlockParamChange(block.id, 'body', e.target.value)}
+                              />
                             </div>
                           </CardContent>
                         </Card>
                       );
                     }
                     // Render other block types here...
-                    return <Card key={index}><CardHeader><CardTitle>{block.type}</CardTitle></CardHeader></Card>;
+                    return <Card key={block.id}><CardHeader><CardTitle>{block.type}</CardTitle></CardHeader></Card>;
                   })}
                   <AddBlockPopover onAddBlock={handleAddBlock}>
                       <Button variant="outline" className="w-full">
