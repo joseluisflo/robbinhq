@@ -24,6 +24,7 @@ import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import type { Agent, AgentFile, TextSource, Message } from '@/lib/types';
 import { getAgentResponse } from '@/app/actions/agents';
+import { runOrResumeWorkflow } from '@/app/actions/workflow';
 import { useToast } from '@/hooks/use-toast';
 import { useLiveAgent } from '@/hooks/use-live-agent';
 import { useLocalStorage } from '@/hooks/use-local-storage';
@@ -58,6 +59,8 @@ export function ChatWidgetPreview({
   const [messages, setMessages] = useLocalStorage<Message[]>(storageKey, []);
   const [prompt, setPrompt] = useState('');
   const [isResponding, startResponding] = useTransition();
+  const [currentWorkflowRunId, setCurrentWorkflowRunId] = useState<string | null>(null);
+
 
   const { toast } = useToast();
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -107,6 +110,8 @@ export function ChatWidgetPreview({
       };
       setMessages([welcomeMsg]);
     }
+    // Also reset workflow run ID on agent change
+    setCurrentWorkflowRunId(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentData?.id, isWelcomeMessageEnabled, welcomeMessage]);
 
@@ -126,70 +131,90 @@ export function ChatWidgetPreview({
     return name.substring(0, 2).toUpperCase();
   };
 
-  const handleAgentResponse = (userMessage: string) => {
+  const handleSendMessage = (messageText: string) => {
+    if (!messageText.trim()) return;
+
+    const newUserMessage: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text: messageText,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages(prev => [...prev, newUserMessage]);
+    
     startResponding(async () => {
-      // Convert complex objects to plain objects before sending to the server action
-      const plainTextSources = textSources.map(ts => ({ title: ts.title, content: ts.content }));
-      const plainFileSources = fileSources.map(fs => ({ name: fs.name, extractedText: fs.extractedText || '' }));
-
-      const result = await getAgentResponse({
-        message: userMessage,
-        instructions: instructions,
-        temperature: temperature,
-        textSources: plainTextSources,
-        fileSources: plainFileSources,
-      });
-
-      if ('error' in result) {
-        toast({
-          title: 'Error getting response',
-          description: result.error,
-          variant: 'destructive',
+        if (!agentData || !agentData.id) return;
+        
+        const workflowResult = await runOrResumeWorkflow({
+            userId: 'user', // This should be replaced with actual user ID
+            agentId: agentData.id,
+            workflowId: 'customer-onboarding', // This should be dynamically selected
+            runId: currentWorkflowRunId,
+            userInput: messageText,
         });
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          sender: 'agent',
-          text: 'Sorry, I encountered an error.',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        setMessages(prev => [...prev, errorMessage]);
-      } else {
-        const agentMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          sender: 'agent',
-          text: result.response,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        setMessages(prev => [...prev, agentMessage]);
-      }
+
+        if (workflowResult && 'id' in workflowResult) {
+            setCurrentWorkflowRunId(workflowResult.id);
+            if (workflowResult.status === 'awaiting_input' && workflowResult.promptForUser) {
+                const agentMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    sender: 'agent',
+                    text: workflowResult.promptForUser,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    options: workflowResult.context?.options,
+                };
+                setMessages(prev => [...prev, agentMessage]);
+            } else if (workflowResult.status === 'completed') {
+                const finalResult = workflowResult.context?.finalResult || "Workflow completed.";
+                 const agentMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    sender: 'agent',
+                    text: finalResult,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                };
+                setMessages(prev => [...prev, agentMessage]);
+                setCurrentWorkflowRunId(null);
+            } else if (workflowResult.status === 'failed') {
+                const errorMessage = workflowResult.context?.error || "The workflow failed to execute.";
+                 const agentMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    sender: 'agent',
+                    text: errorMessage,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                };
+                setMessages(prev => [...prev, agentMessage]);
+                setCurrentWorkflowRunId(null);
+            }
+        } else if (workflowResult && 'error' in workflowResult && workflowResult.error.includes("not found")) {
+            // Workflow doesn't exist or not triggered, fallback to default agent response
+            const plainTextSources = textSources.map(ts => ({ title: ts.title, content: ts.content }));
+            const plainFileSources = fileSources.map(fs => ({ name: fs.name, extractedText: fs.extractedText || '' }));
+            const result = await getAgentResponse({ message: messageText, instructions, temperature, textSources: plainTextSources, fileSources: plainFileSources });
+            
+            if ('error' in result) {
+                const errorMessage: Message = { id: (Date.now() + 1).toString(), sender: 'agent', text: 'Sorry, I encountered an error.', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+                setMessages(prev => [...prev, errorMessage]);
+            } else {
+                const agentMessage: Message = { id: (Date.now() + 1).toString(), sender: 'agent', text: result.response, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+                setMessages(prev => [...prev, agentMessage]);
+            }
+        } else if (workflowResult && 'error' in workflowResult) {
+            // Handle other workflow errors
+             const agentMessage: Message = { id: (Date.now() + 1).toString(), sender: 'agent', text: `Workflow error: ${workflowResult.error}`, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+            setMessages(prev => [...prev, agentMessage]);
+        }
     });
   };
-
-  const handleSendMessage = () => {
-    if (!prompt.trim()) return;
-
-    const newUserMessage: Message = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text: prompt,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setMessages(prev => [...prev, newUserMessage]);
+  
+  const handlePromptSubmit = () => {
     const messageToSend = prompt;
     setPrompt('');
-    handleAgentResponse(messageToSend);
-  };
-  
+    handleSendMessage(messageToSend);
+  }
+
   const handleOptionClick = (option: string) => {
-    const newUserMessage: Message = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text: option,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-    setMessages(prev => [...prev, newUserMessage]);
-    handleAgentResponse(option);
+    handleSendMessage(option);
   };
 
   const handleWheel = (e: WheelEvent) => {
@@ -421,7 +446,7 @@ export function ChatWidgetPreview({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
-                      handleSendMessage();
+                      handlePromptSubmit();
                     }
                   }}
                   disabled={isResponding || isCallActive}
@@ -431,7 +456,7 @@ export function ChatWidgetPreview({
                   size="icon"
                   className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-primary-foreground"
                   disabled={!prompt.trim() || isResponding || isCallActive}
-                  onClick={handleSendMessage}
+                  onClick={handlePromptSubmit}
                   style={{ backgroundColor: themeColor }}
                 >
                   <ArrowUp className="h-4 w-4" />
