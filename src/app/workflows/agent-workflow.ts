@@ -10,51 +10,75 @@ import {
   showMultipleChoiceStep,
   setVariableStep,
 } from "./agent-steps";
-
-type WorkflowBlock = {
-  id: string;
-  type: string;
-  params: Record<string, any>;
-};
+import type { WorkflowBlock } from "@/lib/types";
 
 type WorkflowContext = {
   [key: string]: any;
 };
+
+// Helper function to resolve a path in the context object
+function resolveContextPath(context: WorkflowContext, path: string) {
+    return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined) ? acc[part] : undefined, context);
+}
+
+// Helper function to process parameters and replace placeholders
+function processParams(params: Record<string, any>, context: WorkflowContext): Record<string, any> {
+  const processed: Record<string, any> = {};
+  for (const key in params) {
+    let value = params[key];
+    if (typeof value === 'string') {
+      value = value.replace(/{{\s*([^}]+)\s*}}/g, (match, path) => {
+        const resolvedValue = resolveContextPath(context, path.trim());
+        return resolvedValue !== undefined ? String(resolvedValue) : match;
+      });
+    }
+    // Note: This doesn't handle nested objects or arrays with placeholders.
+    // For this implementation, we assume placeholders are only in top-level string values.
+    processed[key] = value;
+  }
+  return processed;
+}
+
 
 export async function runAgentWorkflow(blocks: WorkflowBlock[]) {
   const context: WorkflowContext = {};
 
   for (const block of blocks) {
     let result: any;
+    const processedParams = processParams(block.params, context);
+
     switch (block.type) {
       case "Ask a question":
-        result = await askQuestionStep(block.params.prompt);
+        result = await askQuestionStep(processedParams.prompt);
         break;
       case "Wait for User Reply":
         result = await waitForUserReplyStep();
         break;
       case "Show Multiple Choice":
-        result = await showMultipleChoiceStep(block.params.prompt, block.params.options);
+        result = await showMultipleChoiceStep(processedParams.prompt, processedParams.options);
         break;
       case "Search web":
-        result = await searchWebStep(block.params.query);
+        result = await searchWebStep(processedParams.query);
         break;
       case "Send Email":
-        result = await sendEmailStep(block.params);
+        result = await sendEmailStep(processedParams);
         break;
       case "Send SMS":
-        result = await sendSmsStep(block.params.to, block.params.message);
+        result = await sendSmsStep(processedParams.to, processedParams.message);
         break;
       case "Create PDF":
-        result = await createPdfStep(block.params.content);
+        result = await createPdfStep(processedParams.content);
         break;
       case "Set variable":
-         // The value for the variable might come from a previous step's result
-        const valueToSet = block.params.value; // This might need template parsing later
-        result = await setVariableStep(block.params.variableName, valueToSet);
+        // The value for the variable has already been processed from the context.
+        result = await setVariableStep(processedParams.variableName, processedParams.value);
+        // Also store the variable directly in the context for easier access, e.g. {{myVar}}
+        if (processedParams.variableName) {
+            context[processedParams.variableName] = result;
+        }
         break;
-      // "Condition" and "Loop" blocks would be handled here with more complex logic
     }
+    
     // Store the result of the step in the context, keyed by the block's ID
     if (result) {
         context[block.id] = result;
