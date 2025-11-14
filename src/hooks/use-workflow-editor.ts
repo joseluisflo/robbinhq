@@ -41,59 +41,60 @@ export function useWorkflowEditor(workflowId: string) {
   
   const handleAddBlock = useCallback((blockType: string) => {
     const newBlock: WorkflowBlock = {
-      id: uuidv4(),
-      type: blockType,
-      params: {},
+        id: uuidv4(),
+        type: blockType,
+        params: {},
     };
-    
-    setBlocks((prevBlocks) => [...prevBlocks, newBlock]);
-    
-    setNodes((currentNodes) => {
+
+    setBlocks(prevBlocks => [...prevBlocks, newBlock]);
+
+    setNodes(currentNodes => {
+        const lastRealNode = currentNodes.filter(n => n.type !== 'addBlockNode').pop();
         const addNode = currentNodes.find(n => n.type === 'addBlockNode');
-        const lastRealNode = currentNodes.filter(n => n.type !== 'addBlockNode').at(-1);
 
         const newNode: Node = {
             id: newBlock.id,
             type: 'workflowNode',
-            position: { x: lastRealNode?.position.x || 0, y: (lastRealNode?.position.y || -120) + 120 },
+            position: { x: lastRealNode?.position.x ?? 0, y: (lastRealNode?.position.y ?? -120) + 120 },
             data: { label: blockType, type: blockType },
         };
 
-        const updatedAddNode = addNode ? {
-            ...addNode,
-            position: { x: newNode.position.x, y: newNode.position.y + 120 }
-        } : null;
-        
-        const otherNodes = currentNodes.filter(n => n.id !== addNode?.id);
+        const updatedAddNode = addNode ? { ...addNode, position: { x: newNode.position.x, y: newNode.position.y + 120 } } : null;
 
+        const otherNodes = currentNodes.filter(n => n.id !== 'add-block-node');
+        
         return updatedAddNode ? [...otherNodes, newNode, updatedAddNode] : [...otherNodes, newNode];
     });
 
-    setEdges((currentEdges) => {
-        // Use the functional form of setNodes to get the most up-to-date node list
-        let lastRealNodeId: string | undefined;
-        setNodes(nodes => {
-            lastRealNodeId = nodes.filter(n => n.type !== 'addBlockNode').at(-1)?.id;
-            return nodes;
-        });
+    setEdges(currentEdges => {
+        // Find the node that currently connects TO the 'add-block-node'. That's our last real node.
+        const previousEdge = currentEdges.find(e => e.target === 'add-block-node');
+        const lastRealNodeId = previousEdge?.source;
 
-        const newEdge: Edge | null = lastRealNodeId ? {
-            id: `e${lastRealNodeId}-${newBlock.id}`,
-            source: lastRealNodeId,
-            target: newBlock.id,
-        } : null;
-        
-        const addNodeEdge: Edge = {
-            id: `e${newBlock.id}-add`,
-            source: newBlock.id,
-            target: 'add-block-node'
-        }
-
+        // Remove the old connection to the add-block-node
         const edgesWithoutAdd = currentEdges.filter(e => e.target !== 'add-block-node');
+
+        const newEdges: Edge[] = [];
+
+        // Connect the last real node to our new block
+        if (lastRealNodeId) {
+            newEdges.push({
+                id: `e-${lastRealNodeId}-${newBlock.id}`,
+                source: lastRealNodeId,
+                target: newBlock.id,
+            });
+        }
         
-        return newEdge ? [...edgesWithoutAdd, newEdge, addNodeEdge] : [...edgesWithoutAdd, addNodeEdge];
+        // Connect our new block to the add-block-node
+        newEdges.push({
+            id: `e-${newBlock.id}-add`,
+            source: newBlock.id,
+            target: 'add-block-node',
+        });
+        
+        return [...edgesWithoutAdd, ...newEdges];
     });
-  }, [setBlocks, setNodes, setEdges]);
+}, [setBlocks, setNodes, setEdges]);
 
 
   useEffect(() => {
