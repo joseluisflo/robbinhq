@@ -29,6 +29,8 @@ import ReactFlow, {
     addEdge as rfAddEdge,
     type Connection,
     type Edge as RfEdge,
+    ReactFlowProvider,
+    useReactFlow,
 } from 'reactflow';
 import { WorkflowNode } from '@/components/workflow-node';
 
@@ -36,7 +38,7 @@ const nodeTypes = {
   workflowNode: WorkflowNode,
 };
 
-export default function WorkflowDetailPage() {
+function FlowEditor() {
   const params = useParams();
   const workflowId = params.workflowId as string;
   const { user } = useUser();
@@ -54,6 +56,8 @@ export default function WorkflowDetailPage() {
   const onConnect = useCallback((params: Edge | Connection) => setEdges((eds) => rfAddEdge(params, eds)), [setEdges]);
 
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  
+  const reactFlowInstance = useReactFlow();
 
   const docRef = useMemo(() => {
     if (!user || !activeAgent?.id || !workflowId) return null;
@@ -74,18 +78,28 @@ export default function WorkflowDetailPage() {
         const savedBlocks = data.blocks || [];
         setBlocks(savedBlocks);
 
+        let initialNodes;
         if (data.nodes && data.nodes.length > 0) {
-            setNodes(data.nodes.map(n => ({...n, type: 'workflowNode'})));
+            initialNodes = data.nodes.map(n => ({...n, type: 'workflowNode'}));
         } else {
-            const initialNodes = savedBlocks.map((block, index) => ({
+            initialNodes = savedBlocks.map((block, index) => ({
                 id: block.id,
                 type: 'workflowNode',
                 position: { x: 250, y: 100 * index },
                 data: { label: block.type, type: block.type },
             }));
-            setNodes(initialNodes);
         }
+        
+        setNodes(initialNodes);
         setEdges(data.edges || []);
+        
+        // This ensures that the view is centered on the nodes when they are first loaded.
+        // A small timeout is used to allow the nodes to render before fitting the view.
+        if (initialNodes.length > 0) {
+            setTimeout(() => {
+                reactFlowInstance.fitView({ duration: 300 });
+            }, 50);
+        }
 
       } else {
         setWorkflow(null);
@@ -99,6 +113,7 @@ export default function WorkflowDetailPage() {
     });
 
     return () => unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docRef, toast, setNodes, setEdges]);
   
   const isChanged = useMemo(() => {
@@ -399,4 +414,12 @@ export default function WorkflowDetailPage() {
       </ResizablePanelGroup>
     </div>
   );
+}
+
+export default function WorkflowDetailPage() {
+    return (
+        <ReactFlowProvider>
+            <FlowEditor />
+        </ReactFlowProvider>
+    )
 }
