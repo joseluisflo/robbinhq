@@ -1,29 +1,36 @@
+
 "use step";
 
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-// Placeholder for asking a question to the user (e.g., via chat)
+/**
+ * Pauses the workflow and asks the user a question.
+ * @param question The question to ask the user.
+ * @returns A pause signal for the workflow engine.
+ */
 export async function askQuestionStep(question: string) {
-  console.log(`Asking user: ${question}`);
-  // In a real implementation, this would interact with the chat interface
-  // and wait for a user's response. For now, we simulate success.
-  return { status: "Question asked", question };
+  console.log(`Pausing to ask user: ${question}`);
+  return { _type: 'pause', metadata: { prompt: question } };
 }
 
-// Placeholder for waiting for a user's reply
-export async function waitForUserReplyStep(): Promise<string> {
-    console.log("Waiting for user reply...");
-    // This would typically involve a mechanism like a webhook to pause the workflow
-    // and resume upon receiving a user message. We simulate getting a reply.
-    return "This is a simulated user reply.";
+/**
+ * Pauses the workflow to wait for a user's reply.
+ * @returns A pause signal for the workflow engine.
+ */
+export async function waitForUserReplyStep() {
+    console.log("Pausing to wait for user reply...");
+    return { _type: 'pause', metadata: {} };
 }
 
-// Placeholder for showing multiple choice options
-export async function showMultipleChoiceStep(prompt: string, options: string[]): Promise<string> {
-    console.log(`Showing multiple choice: ${prompt}`, options);
-    // This would present options to the user and return their selection.
-    // We simulate the user picking the first option.
-    return options[0] || "No option selected";
+/**
+ * Pauses the workflow to present multiple choice options to the user.
+ * @param prompt The question to ask the user.
+ * @param options An array of string options for the user to choose from.
+ * @returns A pause signal with the prompt and options.
+ */
+export async function showMultipleChoiceStep(prompt: string, options: string[]) {
+    console.log(`Pausing to show multiple choice: ${prompt}`, options);
+    return { _type: 'pause', metadata: { prompt, options } };
 }
 
 // Simulates web search functionality
