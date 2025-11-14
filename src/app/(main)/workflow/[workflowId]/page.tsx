@@ -202,10 +202,6 @@ function FlowEditor() {
         {/* Configuration Panel */}
         <ResizablePanel defaultSize={35} minSize={25}>
           <div className="flex h-full flex-col">
-            <div className="p-6 border-b">
-                <h2 className="text-xl font-bold">{workflow.name}</h2>
-                <p className="text-sm text-muted-foreground">Design and configure your agent's workflow.</p>
-            </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
