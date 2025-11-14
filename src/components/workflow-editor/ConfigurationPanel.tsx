@@ -324,6 +324,32 @@ export function ConfigurationPanel({
                 </div>
               </div>
             )}
+             {selectedBlock.type === 'Create PDF' && (
+              <div className="space-y-4">
+                <div>
+                    <h4 className="font-semibold">Create PDF</h4>
+                    <p className="text-sm text-muted-foreground">
+                        Generate a PDF document from text content.
+                    </p>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor={`pdf-content-${selectedBlock.id}`}>Content</Label>
+                    <Textarea
+                    id={`pdf-content-${selectedBlock.id}`}
+                    placeholder="Enter the text content for the PDF."
+                    className="min-h-[200px]"
+                    value={selectedBlock.params.content || ''}
+                    onChange={(e) =>
+                        handleBlockParamChange(
+                        selectedBlock.id,
+                        'content',
+                        e.target.value
+                        )
+                    }
+                    />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
