@@ -42,16 +42,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 function AddBlockNode({ data }: NodeProps<{ onAddBlock: (blockType: string) => void }>) {
   return (
     <>
-      <AddBlockPopover onAddBlock={data.onAddBlock}>
-        <button className="w-48 rounded-lg border bg-background p-3 shadow-sm transition-all hover:shadow-md">
-          <div className="flex items-center gap-3">
-            <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', 'bg-gray-100 text-gray-700')}>
-              <Plus className="h-5 w-5" />
-            </div>
-            <span className="text-sm font-medium text-foreground">Add block</span>
+      <button className="w-48 rounded-lg border bg-background p-3 shadow-sm transition-all hover:shadow-md">
+        <div className="flex items-center gap-3">
+          <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', 'bg-gray-100 text-gray-700')}>
+            <Plus className="h-5 w-5" />
           </div>
-        </button>
-      </AddBlockPopover>
+          <span className="text-sm font-medium text-foreground">Add block</span>
+        </div>
+      </button>
       <Handle type="target" position={Position.Top} className="!w-2 !h-2 !-top-1 !bg-primary" />
     </>
   );
@@ -217,7 +215,7 @@ function FlowEditor() {
 
     return () => unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [docRef, toast, setNodes, setEdges, handleAddBlock]); // handleAddBlock is wrapped in useCallback
+  }, [docRef, toast]);
   
   const isChanged = useMemo(() => {
     if (!workflow) return false;
@@ -241,7 +239,7 @@ function FlowEditor() {
     setBlocks(prevBlocks =>
       prevBlocks.map(block =>
         block.id === blockId
-          ? { ...block, params: { ...block.params, [paramName]: value } }
+          ? { ...block, params: { ...block, params: { ...block.params, [paramName]: value } } }
           : block
       )
     );
@@ -311,8 +309,25 @@ function FlowEditor() {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
   
-  if (!workflow) {
-    return notFound();
+  if (!workflow && !loading) {
+     if (blocks.length === 0) {
+      return (
+         <div className="flex h-full items-center justify-center bg-muted/30">
+            <div className="text-center">
+              <p className="font-semibold">Empty Workflow</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Get started by adding your first block.
+              </p>
+               <AddBlockPopover onAddBlock={handleAddBlock}>
+                  <Button variant="secondary" className="mt-4">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add block
+                  </Button>
+              </AddBlockPopover>
+            </div>
+        </div>
+      );
+    }
   }
 
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
