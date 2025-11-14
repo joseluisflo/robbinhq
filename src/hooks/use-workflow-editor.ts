@@ -70,8 +70,13 @@ export function useWorkflowEditor(workflowId: string) {
     });
 
     setEdges((currentEdges) => {
-        const lastRealNodeId = nodes.filter(n => n.type !== 'addBlockNode').at(-1)?.id;
-        
+        // Use the functional form of setNodes to get the most up-to-date node list
+        let lastRealNodeId: string | undefined;
+        setNodes(nodes => {
+            lastRealNodeId = nodes.filter(n => n.type !== 'addBlockNode').at(-1)?.id;
+            return nodes;
+        });
+
         const newEdge: Edge | null = lastRealNodeId ? {
             id: `e${lastRealNodeId}-${newBlock.id}`,
             source: lastRealNodeId,
@@ -107,7 +112,7 @@ export function useWorkflowEditor(workflowId: string) {
 
         let initialNodes;
         if (data.nodes && data.nodes.length > 0) {
-            initialNodes = data.nodes.map(n => ({...n, type: 'workflowNode'}));
+            initialNodes = data.nodes.map(n => ({...n, type: 'workflowNode', data: { ...n.data, label: n.data.label || n.data.type }}));
         } else {
             initialNodes = savedBlocks.map((block, index) => ({
                 id: block.id,
@@ -151,7 +156,7 @@ export function useWorkflowEditor(workflowId: string) {
     if (!workflow) return false;
     const workflowBlocks = workflow.blocks || [];
     
-    const currentNodesToCompare = nodes.filter(n => n.type !== 'addBlockNode').map(({type, data, ...rest}) => rest);
+    const currentNodesToCompare = nodes.filter(n => n.type !== 'addBlockNode').map(({type, ...rest}) => ({...rest, data: {label: rest.data.label, type: rest.data.type}}));
     const currentEdgesToCompare = edges.filter(e => e.target !== 'add-block-node');
 
     const hasBlockChanges = JSON.stringify(blocks) !== JSON.stringify(workflowBlocks);
@@ -186,7 +191,7 @@ export function useWorkflowEditor(workflowId: string) {
     
     startSaving(async () => {
       try {
-        const nodesToSave = nodes.filter(n => n.type !== 'addBlockNode').map(({type, data, ...node}) => node);
+        const nodesToSave = nodes.filter(n => n.type !== 'addBlockNode').map(({type, ...node}) => ({...node, data: {label: node.data.label, type: node.data.type}}));
         const edgesToSave = edges.filter(e => e.target !== 'add-block-node');
         await setDoc(docRef, { blocks, nodes: nodesToSave, edges: edgesToSave, lastModified: serverTimestamp() }, { merge: true });
         toast({ title: 'Success', description: 'Workflow saved successfully.' });
@@ -204,7 +209,7 @@ export function useWorkflowEditor(workflowId: string) {
         
         let initialNodes;
         if (workflow.nodes && workflow.nodes.length > 0) {
-            initialNodes = workflow.nodes.map(n => ({...n, type: 'workflowNode'}));
+            initialNodes = workflow.nodes.map(n => ({...n, type: 'workflowNode', data: {...n.data, label: n.data.label || n.data.type}}));
         } else {
             initialNodes = savedBlocks.map((block, index) => ({
                 id: block.id,
