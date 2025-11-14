@@ -85,16 +85,19 @@ function WorkflowCard({ workflow }: { workflow: Workflow }) {
       <Link href={`/workflow/${workflow.id}`}>
         <div className="h-32 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-t-lg" />
       </Link>
-      <CardFooter className="flex items-center justify-between p-4">
-        <div className="grid gap-0.5">
-          <Link href={`/workflow/${workflow.id}`} className="group">
-            <p className="font-semibold group-hover:underline">{workflow.name}</p>
-            <p className="text-sm text-muted-foreground">
-              {formatDistanceToNow(lastModifiedDate, { addSuffix: true })}
-            </p>
-          </Link>
-        </div>
-        <DropdownMenu>
+      <CardContent className="p-4 border-b">
+        <Link href={`/workflow/${workflow.id}`} className="group">
+          <p className="font-semibold group-hover:underline">{workflow.name}</p>
+          <p className="text-sm text-muted-foreground">
+            {formatDistanceToNow(lastModifiedDate, { addSuffix: true })}
+          </p>
+        </Link>
+      </CardContent>
+      <CardFooter className="p-4 flex items-center justify-between">
+         <Button variant="outline" asChild>
+           <Link href={`/workflow/${workflow.id}`}>Edit</Link>
+         </Button>
+         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0">
               <MoreHorizontal className="h-4 w-4" />
@@ -102,7 +105,6 @@ function WorkflowCard({ workflow }: { workflow: Workflow }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>Edit</DropdownMenuItem>
             <DropdownMenuItem>Duplicate</DropdownMenuItem>
             <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
           </DropdownMenuContent>
