@@ -31,13 +31,36 @@ import ReactFlow, {
     ReactFlowProvider,
     useReactFlow,
     BackgroundVariant,
+    type NodeProps,
+    Handle,
+    Position,
 } from 'reactflow';
 import { WorkflowNode } from '@/components/workflow-node';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
+function AddBlockNode({ data }: NodeProps<{ onAddBlock: (blockType: string) => void }>) {
+  return (
+    <>
+      <AddBlockPopover onAddBlock={data.onAddBlock}>
+        <button className="w-48 rounded-lg border bg-background p-3 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center gap-3">
+            <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', 'bg-gray-100 text-gray-700')}>
+              <Plus className="h-5 w-5" />
+            </div>
+            <span className="text-sm font-medium text-foreground">Add block</span>
+          </div>
+        </button>
+      </AddBlockPopover>
+      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !-top-1 !bg-primary" />
+    </>
+  );
+}
+
+
 const nodeTypes = {
   workflowNode: WorkflowNode,
+  addBlockNode: AddBlockNode,
 };
 
 const blockGroups: Record<string, string> = {
@@ -80,6 +103,59 @@ function FlowEditor() {
     return doc(firestore, 'users', user.uid, 'agents', activeAgent.id, 'workflows', workflowId);
   }, [user, firestore, activeAgent?.id, workflowId]);
 
+  
+  const handleAddBlock = useCallback((blockType: string) => {
+    const newBlock: WorkflowBlock = {
+      id: uuidv4(),
+      type: blockType,
+      params: {},
+    };
+    
+    setBlocks((prevBlocks) => [...prevBlocks, newBlock]);
+    
+    setNodes((currentNodes) => {
+        const addNode = currentNodes.find(n => n.type === 'addBlockNode');
+        const lastRealNode = currentNodes.filter(n => n.type !== 'addBlockNode').at(-1);
+
+        const newNode: Node = {
+            id: newBlock.id,
+            type: 'workflowNode',
+            position: { x: lastRealNode?.position.x || 0, y: (lastRealNode?.position.y || -120) + 120 },
+            data: { label: blockType, type: blockType },
+        };
+
+        const updatedAddNode = addNode ? {
+            ...addNode,
+            position: { x: newNode.position.x, y: newNode.position.y + 120 }
+        } : null;
+        
+        const otherNodes = currentNodes.filter(n => n.id !== addNode?.id);
+
+        return updatedAddNode ? [...otherNodes, newNode, updatedAddNode] : [...otherNodes, newNode];
+    });
+
+    setEdges((currentEdges) => {
+        const lastRealNode = nodes.filter(n => n.type !== 'addBlockNode').at(-1);
+        
+        const newEdge: Edge | null = lastRealNode ? {
+            id: `e${lastRealNode.id}-${newBlock.id}`,
+            source: lastRealNode.id,
+            target: newBlock.id,
+        } : null;
+        
+        const addNodeEdge: Edge = {
+            id: `e${newBlock.id}-add`,
+            source: newBlock.id,
+            target: 'add-block-node'
+        }
+
+        const edgesWithoutAdd = currentEdges.filter(e => e.target !== 'add-block-node');
+        
+        return newEdge ? [...edgesWithoutAdd, newEdge, addNodeEdge] : [...edgesWithoutAdd, addNodeEdge];
+    });
+  }, [setBlocks, setNodes, setEdges, nodes]);
+
+
   useEffect(() => {
     if (!docRef) {
       if (user && activeAgent) setLoading(false);
@@ -98,17 +174,29 @@ function FlowEditor() {
         if (data.nodes && data.nodes.length > 0) {
             initialNodes = data.nodes.map(n => ({...n, type: 'workflowNode'}));
         } else {
-            // Arrange nodes in a vertical line if no positions are saved
             initialNodes = savedBlocks.map((block, index) => ({
                 id: block.id,
                 type: 'workflowNode',
-                position: { x: 0, y: index * 120 }, // Vertical layout
+                position: { x: 0, y: index * 120 },
                 data: { label: block.type, type: block.type },
             }));
         }
+
+        const lastNode = initialNodes.at(-1);
+        const addNode: Node = {
+            id: 'add-block-node',
+            type: 'addBlockNode',
+            position: { x: lastNode?.position.x || 0, y: (lastNode?.position.y || -120) + 120},
+            data: { onAddBlock: handleAddBlock },
+        };
+
+        let initialEdges = data.edges || [];
+        if (lastNode) {
+            initialEdges.push({id: `e${lastNode.id}-add`, source: lastNode.id, target: 'add-block-node'});
+        }
         
-        setNodes(initialNodes);
-        setEdges(data.edges || []);
+        setNodes([...initialNodes, addNode]);
+        setEdges(initialEdges);
         
         if (initialNodes.length > 0) {
             setTimeout(() => {
@@ -129,65 +217,42 @@ function FlowEditor() {
 
     return () => unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [docRef, toast, setNodes, setEdges]);
+  }, [docRef, toast, setNodes, setEdges, handleAddBlock]); // handleAddBlock is wrapped in useCallback
   
   const isChanged = useMemo(() => {
     if (!workflow) return false;
-    // Compare current state with the initial state from Firestore
     const workflowBlocks = workflow.blocks || [];
     const workflowNodes = (workflow.nodes || []).map(n => ({...n, type: 'workflowNode'}));
     const workflowEdges = workflow.edges || [];
+    
+    // Filter out addBlockNode for comparison
+    const currentNodesToCompare = nodes.filter(n => n.type !== 'addBlockNode').map(({type, data, ...rest}) => rest);
+    const currentEdgesToCompare = edges.filter(e => e.target !== 'add-block-node');
 
     const hasBlockChanges = JSON.stringify(blocks) !== JSON.stringify(workflowBlocks);
-    const hasNodeChanges = JSON.stringify(nodes) !== JSON.stringify(workflowNodes);
-    const hasEdgeChanges = JSON.stringify(edges) !== JSON.stringify(workflowEdges);
+    const hasNodeChanges = JSON.stringify(currentNodesToCompare) !== JSON.stringify(workflow.nodes || []);
+    const hasEdgeChanges = JSON.stringify(currentEdgesToCompare) !== JSON.stringify(workflow.edges || []);
     
     return hasBlockChanges || hasNodeChanges || hasEdgeChanges;
   }, [blocks, nodes, edges, workflow]);
 
 
-  const handleAddBlock = (blockType: string) => {
-    const newBlock: WorkflowBlock = {
-      id: uuidv4(),
-      type: blockType,
-      params: {},
-    };
-    
-    setBlocks((prevBlocks) => [...prevBlocks, newBlock]);
-    
-    const lastNode = nodes[nodes.length - 1];
-    const newYPosition = lastNode ? lastNode.position.y + 120 : 0;
-    
-    const newNode: Node = {
-        id: newBlock.id,
-        type: 'workflowNode',
-        position: { x: lastNode?.position.x || 0, y: newYPosition },
-        data: { label: blockType, type: blockType },
-    };
-    setNodes((nds) => [...nds, newNode]);
-    
-    if (lastNode) {
-        const newEdge: Edge = {
-            id: `e${lastNode.id}-${newNode.id}`,
-            source: lastNode.id,
-            target: newNode.id,
-        };
-        setEdges((eds) => [...eds, newEdge]);
-    }
-  };
-  
   const handleBlockParamChange = (blockId: string, paramName: string, value: any) => {
     setBlocks(prevBlocks =>
       prevBlocks.map(block =>
         block.id === blockId
-          ? { ...block, params: { ...block, params: { ...block.params, [paramName]: value } } }
+          ? { ...block, params: { ...block.params, [paramName]: value } }
           : block
       )
     );
   };
   
   const handleNodeClick = (event: React.MouseEvent, node: Node) => {
-    setSelectedBlockId(node.id);
+    if (node.type !== 'addBlockNode') {
+        setSelectedBlockId(node.id);
+    } else {
+        setSelectedBlockId(null);
+    }
   };
 
 
@@ -196,8 +261,9 @@ function FlowEditor() {
     
     startSaving(async () => {
       try {
-        const nodesToSave = nodes.map(({type, ...node}) => node);
-        await setDoc(docRef, { blocks, nodes: nodesToSave, edges, lastModified: serverTimestamp() }, { merge: true });
+        const nodesToSave = nodes.filter(n => n.type !== 'addBlockNode').map(({type, data, ...node}) => node);
+        const edgesToSave = edges.filter(e => e.target !== 'add-block-node');
+        await setDoc(docRef, { blocks, nodes: nodesToSave, edges: edgesToSave, lastModified: serverTimestamp() }, { merge: true });
         toast({ title: 'Success', description: 'Workflow saved successfully.' });
       } catch (error: any) {
         console.error("Error saving workflow: ", error);
@@ -208,9 +274,36 @@ function FlowEditor() {
 
   const handleDiscardChanges = () => {
     if (workflow) {
-        setBlocks(workflow.blocks || []);
-        setNodes((workflow.nodes || []).map(n => ({...n, type: 'workflowNode'})));
-        setEdges(workflow.edges || []);
+        const savedBlocks = workflow.blocks || [];
+        setBlocks(savedBlocks);
+        
+        let initialNodes;
+        if (workflow.nodes && workflow.nodes.length > 0) {
+            initialNodes = workflow.nodes.map(n => ({...n, type: 'workflowNode'}));
+        } else {
+            initialNodes = savedBlocks.map((block, index) => ({
+                id: block.id,
+                type: 'workflowNode',
+                position: { x: 0, y: index * 120 },
+                data: { label: block.type, type: block.type },
+            }));
+        }
+
+        const lastNode = initialNodes.at(-1);
+        const addNode: Node = {
+            id: 'add-block-node',
+            type: 'addBlockNode',
+            position: { x: lastNode?.position.x || 0, y: (lastNode?.position.y || -120) + 120},
+            data: { onAddBlock: handleAddBlock },
+        };
+
+        let initialEdges = workflow.edges || [];
+        if (lastNode) {
+            initialEdges.push({id: `e${lastNode.id}-add`, source: lastNode.id, target: 'add-block-node'});
+        }
+        
+        setNodes([...initialNodes, addNode]);
+        setEdges(initialEdges);
     }
   };
   
@@ -236,12 +329,6 @@ function FlowEditor() {
                 <h3 className="text-lg font-semibold flex items-center gap-2 h-8">
                   {selectedBlockGroup || ''}
                 </h3>
-                <AddBlockPopover onAddBlock={handleAddBlock}>
-                  <Button variant="outline" size="sm">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add
-                  </Button>
-                </AddBlockPopover>
               </div>
 
               {!selectedBlockId ? (
@@ -420,36 +507,22 @@ function FlowEditor() {
 
         {/* Preview/Canvas Panel */}
         <ResizablePanel defaultSize={65} minSize={30}>
-            {blocks.length === 0 ? (
-                <div className="flex h-full items-center justify-center bg-muted/30">
-                    <AddBlockPopover onAddBlock={handleAddBlock}>
-                      <button className="w-48 rounded-lg border bg-background p-3 shadow-sm transition-all hover:shadow-md">
-                        <div className="flex items-center gap-3">
-                          <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', 'bg-gray-100 text-gray-700')}>
-                            <Plus className="h-5 w-5" />
-                          </div>
-                          <span className="text-sm font-medium text-foreground">Add block</span>
-                        </div>
-                      </button>
-                    </AddBlockPopover>
-                </div>
-            ) : (
-                <div className="flex h-full items-center justify-center bg-muted/30">
-                    <ReactFlow
-                        nodes={nodes}
-                        edges={edges}
-                        onNodesChange={onNodesChange}
-                        onEdgesChange={onEdgesChange}
-                        onConnect={onConnect}
-                        onNodeClick={handleNodeClick}
-                        nodeTypes={nodeTypes}
-                        proOptions={{ hideAttribution: true }}
-                    >
-                        <Background variant={BackgroundVariant.Dots} />
-                        <Controls />
-                    </ReactFlow>
-                </div>
-            )}
+            <div className="flex h-full items-center justify-center bg-muted/30">
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    onNodeClick={handleNodeClick}
+                    nodeTypes={nodeTypes}
+                    proOptions={{ hideAttribution: true }}
+                    fitView
+                >
+                    <Background variant={BackgroundVariant.Dots} />
+                    <Controls />
+                </ReactFlow>
+            </div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
