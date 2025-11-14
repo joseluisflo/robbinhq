@@ -31,6 +31,7 @@ import ReactFlow, {
     type Edge as RfEdge,
     ReactFlowProvider,
     useReactFlow,
+    BackgroundVariant,
 } from 'reactflow';
 import { WorkflowNode } from '@/components/workflow-node';
 
@@ -85,7 +86,7 @@ function FlowEditor() {
             initialNodes = savedBlocks.map((block, index) => ({
                 id: block.id,
                 type: 'workflowNode',
-                position: { x: 250, y: 100 * index },
+                position: { x: 250, y: 120 * index },
                 data: { label: block.type, type: block.type },
             }));
         }
@@ -93,11 +94,9 @@ function FlowEditor() {
         setNodes(initialNodes);
         setEdges(data.edges || []);
         
-        // This ensures that the view is centered on the nodes when they are first loaded.
-        // A small timeout is used to allow the nodes to render before fitting the view.
         if (initialNodes.length > 0) {
             setTimeout(() => {
-                reactFlowInstance.fitView({ duration: 300 });
+                reactFlowInstance.fitView({ duration: 300, padding: 0.2 });
             }, 50);
         }
 
@@ -142,7 +141,7 @@ function FlowEditor() {
     const newNode: Node = {
         id: newBlock.id,
         type: 'workflowNode',
-        position: { x: Math.random() * 400, y: Math.random() * 400 },
+        position: { x: 250, y: 120 * nodes.length },
         data: { label: blockType, type: blockType },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -152,7 +151,7 @@ function FlowEditor() {
     setBlocks(prevBlocks =>
       prevBlocks.map(block =>
         block.id === blockId
-          ? { ...block, params: { ...block.params, [paramName]: value } }
+          ? { ...block, params: { ...block, params: { ...block.params, [paramName]: value } } }
           : block
       )
     );
@@ -405,7 +404,7 @@ function FlowEditor() {
                         nodeTypes={nodeTypes}
                         proOptions={{ hideAttribution: true }}
                     >
-                        <Background />
+                        <Background variant={BackgroundVariant.Dots} />
                         <Controls />
                     </ReactFlow>
                 </div>
