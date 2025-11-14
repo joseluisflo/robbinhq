@@ -39,6 +39,20 @@ const nodeTypes = {
   workflowNode: WorkflowNode,
 };
 
+const blockGroups: Record<string, string> = {
+    "Trigger": "Core",
+    "Ask a question": "Tools",
+    "Wait for User Reply": "Tools",
+    "Show Multiple Choice": "Tools",
+    "Search web": "Tools",
+    "Send Email": "Tools",
+    "Send SMS": "Tools",
+    "Create PDF": "Tools",
+    "Condition": "Logic",
+    "Loop": "Logic",
+    "Set variable": "Data",
+};
+
 function FlowEditor() {
   const params = useParams();
   const workflowId = params.workflowId as string;
@@ -195,6 +209,7 @@ function FlowEditor() {
   }
 
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
+  const selectedBlockGroup = selectedBlock ? blockGroups[selectedBlock.type] : null;
 
   return (
     <div className="h-full flex-1 flex flex-col">
@@ -204,8 +219,8 @@ function FlowEditor() {
           <div className="flex h-full flex-col">
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  Blocks
+                <h3 className="text-lg font-semibold flex items-center gap-2 h-8">
+                  {selectedBlockGroup || ''}
                 </h3>
                 <AddBlockPopover onAddBlock={handleAddBlock}>
                   <Button variant="outline" size="sm">
