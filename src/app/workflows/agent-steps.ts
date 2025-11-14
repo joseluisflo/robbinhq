@@ -4,57 +4,58 @@
 export async function askQuestionStep(question: string) {
   console.log(`Asking user: ${question}`);
   // In a real implementation, this would interact with the chat interface
-  // and wait for a user's response.
-  return { status: "Question asked" };
+  // and wait for a user's response. For now, we simulate success.
+  return { status: "Question asked", question };
 }
 
 // Placeholder for waiting for a user's reply
 export async function waitForUserReplyStep(): Promise<string> {
     console.log("Waiting for user reply...");
-    // This would typically involve a mechanism to pause the workflow
-    // and resume upon receiving a user message.
-    return "User's reply text";
+    // This would typically involve a mechanism like a webhook to pause the workflow
+    // and resume upon receiving a user message. We simulate getting a reply.
+    return "This is a simulated user reply.";
 }
 
 // Placeholder for showing multiple choice options
 export async function showMultipleChoiceStep(prompt: string, options: string[]): Promise<string> {
     console.log(`Showing multiple choice: ${prompt}`, options);
     // This would present options to the user and return their selection.
-    return "Selected option";
+    // We simulate the user picking the first option.
+    return options[0] || "No option selected";
 }
 
-// Placeholder for web search functionality
+// Simulates web search functionality
 export async function searchWebStep(query: string) {
   console.log(`Searching web for: ${query}`);
-  // This would call an external search API.
-  return { summary: `Search results for ${query}` };
+  // In a real implementation, this would call an external search API.
+  // We'll simulate a result.
+  return { summary: `Simulated search results for "${query}": AI is transforming industries.` };
 }
 
-// Placeholder for sending an email
+// Simulates sending an email
 export async function sendEmailStep(params: { to: string; subject: string; body: string }) {
-  console.log(`Sending email to ${params.to} with subject "${params.subject}"`);
-  // This would use an email service like Nodemailer or a third-party API.
-  return { status: "Email sent" };
+  console.log(`Simulating email send to ${params.to} with subject "${params.subject}"`);
+  // In a real implementation, this would use an email service.
+  return { status: "Email sent successfully (simulated)." };
 }
 
-// Placeholder for sending an SMS
+// Simulates sending an SMS
 export async function sendSmsStep(to: string, message: string) {
-  console.log(`Sending SMS to ${to}: "${message}"`);
-  // This would use an SMS service like Twilio.
-  return { status: "SMS sent" };
+  console.log(`Simulating SMS to ${to}: "${message}"`);
+  // In a real implementation, this would use an SMS service like Twilio.
+  return { status: "SMS sent successfully (simulated)." };
 }
 
-// Placeholder for creating a PDF
+// Simulates creating a PDF
 export async function createPdfStep(content: string) {
-    console.log('Creating PDF with content:', content);
+    console.log('Simulating PDF creation with content:', content.substring(0, 50) + '...');
     // This would use a library like pdf-lib or puppeteer to generate a PDF.
-    return { pdfUrl: "http://example.com/generated.pdf" };
+    return { pdfUrl: "https://example.com/simulated.pdf" };
 }
 
-// Placeholder for setting a variable
+// This step's main purpose is to be used within the orchestrator to manage state.
+// It returns the value to be stored in the context.
 export async function setVariableStep(variableName: string, value: any) {
     console.log(`Setting variable '${variableName}' to:`, value);
-    // This step's main purpose is to be used within the orchestrator to manage state.
-    // It returns the value to be stored in the context.
     return value;
 }
