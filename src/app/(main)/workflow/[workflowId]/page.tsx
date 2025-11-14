@@ -42,14 +42,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 function AddBlockNode({ data }: NodeProps<{ onAddBlock: (blockType: string) => void }>) {
   return (
     <>
-      <button className="w-48 rounded-lg border bg-background p-3 shadow-sm transition-all hover:shadow-md">
-        <div className="flex items-center gap-3">
-          <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', 'bg-gray-100 text-gray-700')}>
-            <Plus className="h-5 w-5" />
+      <AddBlockPopover onAddBlock={data.onAddBlock}>
+        <button className="w-48 rounded-lg border bg-background p-3 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center gap-3">
+            <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', 'bg-gray-100 text-gray-700')}>
+              <Plus className="h-5 w-5" />
+            </div>
+            <span className="text-sm font-medium text-foreground">Add block</span>
           </div>
-          <span className="text-sm font-medium text-foreground">Add block</span>
-        </div>
-      </button>
+        </button>
+      </AddBlockPopover>
       <Handle type="target" position={Position.Top} className="!w-2 !h-2 !-top-1 !bg-primary" />
     </>
   );
@@ -309,8 +311,7 @@ function FlowEditor() {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
   
-  if (!workflow && !loading) {
-     if (blocks.length === 0) {
+  if (!workflow && !loading && blocks.length === 0) {
       return (
          <div className="flex h-full items-center justify-center bg-muted/30">
             <div className="text-center">
@@ -327,7 +328,6 @@ function FlowEditor() {
             </div>
         </div>
       );
-    }
   }
 
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
@@ -503,7 +503,7 @@ function FlowEditor() {
                 onClick={handleDiscardChanges} 
                 disabled={!isChanged || isSaving}
               >
-                Discard
+                Discard changes
               </Button>
               
               <Button 
