@@ -1,6 +1,7 @@
 
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -55,12 +56,29 @@ export type WorkflowBlock = {
   params: Record<string, any>;
 };
 
+// Add reactflow types
+export type Node = {
+  id: string;
+  type?: string;
+  position: { x: number; y: number };
+  data: any;
+};
+
+export type Edge = {
+  id: string;
+  source: string;
+  target: string;
+};
+
+
 export type Workflow = {
   id?: string;
   name: string;
   lastModified?: any;
   createdAt?: any;
   blocks?: WorkflowBlock[];
+  nodes?: Node[];
+  edges?: Edge[];
 };
 
 export type Lead = {

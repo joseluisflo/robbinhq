@@ -1,6 +1,6 @@
 'use client';
-
-import { useState, useEffect, useMemo, useTransition } from 'react';
+import '@/app/react-flow.css';
+import { useState, useEffect, useMemo, useTransition, useCallback } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,10 +16,20 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
-import type { Workflow, WorkflowBlock } from '@/lib/types';
+import type { Workflow, WorkflowBlock, Node, Edge } from '@/lib/types';
 import { useActiveAgent } from '../../layout';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
+import ReactFlow, { 
+    Background, 
+    Controls, 
+    MiniMap,
+    useNodesState,
+    useEdgesState,
+    addEdge as rfAddEdge,
+    type Connection,
+    type Edge as RfEdge,
+} from 'reactflow';
 
 export default function WorkflowDetailPage() {
   const params = useParams();
@@ -31,9 +41,14 @@ export default function WorkflowDetailPage() {
 
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
   const [blocks, setBlocks] = useState<WorkflowBlock[]>([]);
-  const [initialBlocks, setInitialBlocks] = useState<WorkflowBlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, startSaving] = useTransition();
+
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const onConnect = useCallback((params: Edge | Connection) => setEdges((eds) => rfAddEdge(params, eds)), [setEdges]);
+
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   const docRef = useMemo(() => {
     if (!user || !activeAgent?.id || !workflowId) return null;
@@ -51,9 +66,23 @@ export default function WorkflowDetailPage() {
       if (docSnap.exists()) {
         const data = docSnap.data() as Workflow;
         setWorkflow({ ...data, id: docSnap.id });
-        const loadedBlocks = data.blocks || [];
-        setBlocks(loadedBlocks);
-        setInitialBlocks(loadedBlocks);
+        setBlocks(data.blocks || []);
+
+        // Initialize React Flow state from Firestore data
+        if (data.nodes && data.nodes.length > 0) {
+            setNodes(data.nodes);
+        } else {
+            // Convert blocks to nodes if no node data exists
+            const initialNodes = (data.blocks || []).map((block, index) => ({
+                id: block.id,
+                type: 'default',
+                position: { x: 250, y: 100 * index },
+                data: { label: block.type },
+            }));
+            setNodes(initialNodes);
+        }
+        setEdges(data.edges || []);
+
       } else {
         setWorkflow(null);
         notFound();
@@ -66,9 +95,16 @@ export default function WorkflowDetailPage() {
     });
 
     return () => unsubscribe();
-  }, [docRef, toast]);
+  }, [docRef, toast, setNodes, setEdges]);
   
-  const isChanged = useMemo(() => JSON.stringify(blocks) !== JSON.stringify(initialBlocks), [blocks, initialBlocks]);
+  const isChanged = useMemo(() => {
+    if (!workflow) return false;
+    const hasBlockChanges = JSON.stringify(blocks) !== JSON.stringify(workflow.blocks || []);
+    const hasNodeChanges = JSON.stringify(nodes) !== JSON.stringify(workflow.nodes || []);
+    const hasEdgeChanges = JSON.stringify(edges) !== JSON.stringify(workflow.edges || []);
+    return hasBlockChanges || hasNodeChanges || hasEdgeChanges;
+  }, [blocks, nodes, edges, workflow]);
+
 
   const handleAddBlock = (blockType: string) => {
     const newBlock: WorkflowBlock = {
@@ -77,6 +113,15 @@ export default function WorkflowDetailPage() {
       params: {},
     };
     setBlocks((prevBlocks) => [...prevBlocks, newBlock]);
+    
+    // Add a corresponding node to React Flow
+    const newNode: Node = {
+        id: newBlock.id,
+        type: 'default',
+        position: { x: Math.random() * 400, y: Math.random() * 400 },
+        data: { label: blockType },
+    };
+    setNodes((nds) => [...nds, newNode]);
   };
   
   const handleBlockParamChange = (blockId: string, paramName: string, value: any) => {
@@ -88,6 +133,10 @@ export default function WorkflowDetailPage() {
       )
     );
   };
+  
+  const handleNodeClick = (event: React.MouseEvent, node: Node) => {
+    setSelectedBlockId(node.id);
+  };
 
 
   const handleSaveChanges = () => {
@@ -95,9 +144,8 @@ export default function WorkflowDetailPage() {
     
     startSaving(async () => {
       try {
-        await setDoc(docRef, { blocks, lastModified: serverTimestamp() }, { merge: true });
+        await setDoc(docRef, { blocks, nodes, edges, lastModified: serverTimestamp() }, { merge: true });
         toast({ title: 'Success', description: 'Workflow saved successfully.' });
-        setInitialBlocks(blocks); // Update initial state after saving
       } catch (error: any) {
         console.error("Error saving workflow: ", error);
         toast({ title: 'Error', description: error.message || 'Could not save workflow.', variant: 'destructive'});
@@ -106,7 +154,11 @@ export default function WorkflowDetailPage() {
   };
 
   const handleDiscardChanges = () => {
-    setBlocks(initialBlocks);
+    if (workflow) {
+        setBlocks(workflow.blocks || []);
+        setNodes(workflow.nodes || []);
+        setEdges(workflow.edges || []);
+    }
   };
   
   if (loading) {
@@ -117,11 +169,13 @@ export default function WorkflowDetailPage() {
     return notFound();
   }
 
+  const selectedBlock = blocks.find(b => b.id === selectedBlockId);
+
   return (
     <div className="h-full flex-1 flex flex-col">
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         {/* Configuration Panel */}
-        <ResizablePanel defaultSize={50} minSize={30}>
+        <ResizablePanel defaultSize={35} minSize={25}>
           <div className="flex h-full flex-col">
             <div className="p-6 border-b">
                 <h2 className="text-xl font-bold">{workflow.name}</h2>
@@ -131,7 +185,6 @@ export default function WorkflowDetailPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   Blocks
-                  <Info className="h-4 w-4 text-muted-foreground" />
                 </h3>
                 <AddBlockPopover onAddBlock={handleAddBlock}>
                   <Button variant="outline" size="sm">
@@ -141,184 +194,154 @@ export default function WorkflowDetailPage() {
                 </AddBlockPopover>
               </div>
 
-              {blocks.length === 0 ? (
-                <Card className="text-center flex-1 flex flex-col justify-center border-dashed">
-                  <CardContent className="p-12">
-                    <p className="font-semibold">No block added yet</p>
-                    <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-                      Add block to start to build your workflow
-                    </p>
-                    <AddBlockPopover onAddBlock={handleAddBlock}>
-                      <Button variant="secondary" className="mt-4">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add block
-                      </Button>
-                    </AddBlockPopover>
-                  </CardContent>
-                </Card>
+              {!selectedBlockId ? (
+                <div className="text-center text-muted-foreground pt-12">
+                  <p>Select a block from the canvas to configure it.</p>
+                </div>
+              ) : selectedBlock ? (
+                <div>
+                 {selectedBlock.type === 'Trigger' && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>When to use</CardTitle>
+                        <CardDescription>
+                          Describe when the agent should use this workflow. Be specific and descriptive.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div>
+                            <Label htmlFor={`trigger-description-${selectedBlock.id}`} className="sr-only">When to use description</Label>
+                            <Textarea 
+                              id={`trigger-description-${selectedBlock.id}`}
+                              placeholder="e.g. When the user asks to create a new marketing campaign..."
+                              className="min-h-[100px]"
+                              value={selectedBlock.params.description || ''}
+                              onChange={(e) => handleBlockParamChange(selectedBlock.id, 'description', e.target.value)}
+                            />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {selectedBlock.type === 'Ask a question' && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Ask a question</CardTitle>
+                        <CardDescription>
+                          Prompt the user for specific information.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div>
+                            <Label htmlFor={`ask-a-question-prompt-${selectedBlock.id}`} className="sr-only">Question to ask</Label>
+                            <Textarea 
+                              id={`ask-a-question-prompt-${selectedBlock.id}`}
+                              placeholder="e.g. What is your email address?"
+                              className="min-h-[100px]"
+                              value={selectedBlock.params.prompt || ''}
+                              onChange={(e) => handleBlockParamChange(selectedBlock.id, 'prompt', e.target.value)}
+                            />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {selectedBlock.type === 'Search web' && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Search web</CardTitle>
+                        <CardDescription>
+                          Define what the agent should search for on the internet.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div>
+                            <Label htmlFor={`search-web-query-${selectedBlock.id}`} className="sr-only">Search query</Label>
+                            <Textarea 
+                              id={`search-web-query-${selectedBlock.id}`}
+                              placeholder="e.g. Latest trends in AI development"
+                              className="min-h-[100px]"
+                              value={selectedBlock.params.query || ''}
+                              onChange={(e) => handleBlockParamChange(selectedBlock.id, 'query', e.target.value)}
+                            />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                    {selectedBlock.type === 'Set variable' && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Set variable</CardTitle>
+                        <CardDescription>
+                          Store a value in a variable to use later in the workflow.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className='grid grid-cols-2 gap-4'>
+                          <div className="space-y-2">
+                            <Label htmlFor={`variable-name-${selectedBlock.id}`}>Variable Name</Label>
+                            <Input 
+                              id={`variable-name-${selectedBlock.id}`} 
+                              placeholder="e.g. userEmail"
+                              value={selectedBlock.params.variableName || ''}
+                              onChange={(e) => handleBlockParamChange(selectedBlock.id, 'variableName', e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`variable-value-${selectedBlock.id}`}>Value</Label>
+                            <Input 
+                              id={`variable-value-${selectedBlock.id}`} 
+                              placeholder="e.g. '{{answer_from_previous_step}}' "
+                              value={selectedBlock.params.value || ''}
+                              onChange={(e) => handleBlockParamChange(selectedBlock.id, 'value', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {selectedBlock.type === 'Send Email' && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Send Email</CardTitle>
+                        <CardDescription>
+                          Send an email to a specified recipient.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`email-to-${selectedBlock.id}`}>To</Label>
+                          <Input 
+                            id={`email-to-${selectedBlock.id}`} 
+                            placeholder="recipient@example.com or {{variableName}}"
+                            value={selectedBlock.params.to || ''}
+                            onChange={(e) => handleBlockParamChange(selectedBlock.id, 'to', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`email-subject-${selectedBlock.id}`}>Subject</Label>
+                          <Input 
+                            id={`email-subject-${selectedBlock.id}`} 
+                            placeholder="Your email subject"
+                            value={selectedBlock.params.subject || ''}
+                            onChange={(e) => handleBlockParamChange(selectedBlock.id, 'subject', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`email-body-${selectedBlock.id}`}>Body</Label>
+                          <Textarea 
+                            id={`email-body-${selectedBlock.id}`} 
+                            placeholder="Write your email content here." 
+                            className="min-h-[120px]"
+                            value={selectedBlock.params.body || ''}
+                            onChange={(e) => handleBlockParamChange(selectedBlock.id, 'body', e.target.value)}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               ) : (
-                <div className="space-y-4">
-                  {blocks.map((block) => {
-                    // This is a placeholder for actual block components
-                    // In a real app, you'd have a component for each block type
-                    // and manage their state properly.
-                    if (block.type === 'Trigger') {
-                      return (
-                        <Card key={block.id}>
-                          <CardHeader>
-                            <CardTitle>When to use</CardTitle>
-                            <CardDescription>
-                              Describe when the agent should use this workflow. Be specific and descriptive.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div>
-                                <Label htmlFor={`trigger-description-${block.id}`} className="sr-only">When to use description</Label>
-                                <Textarea 
-                                  id={`trigger-description-${block.id}`}
-                                  placeholder="e.g. When the user asks to create a new marketing campaign..."
-                                  className="min-h-[100px]"
-                                  value={block.params.description || ''}
-                                  onChange={(e) => handleBlockParamChange(block.id, 'description', e.target.value)}
-                                />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    }
-                    if (block.type === 'Ask a question') {
-                      return (
-                        <Card key={block.id}>
-                          <CardHeader>
-                            <CardTitle>Ask a question</CardTitle>
-                            <CardDescription>
-                              Prompt the user for specific information.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div>
-                                <Label htmlFor={`ask-a-question-prompt-${block.id}`} className="sr-only">Question to ask</Label>
-                                <Textarea 
-                                  id={`ask-a-question-prompt-${block.id}`}
-                                  placeholder="e.g. What is your email address?"
-                                  className="min-h-[100px]"
-                                  value={block.params.prompt || ''}
-                                  onChange={(e) => handleBlockParamChange(block.id, 'prompt', e.target.value)}
-                                />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    }
-                    if (block.type === 'Search web') {
-                      return (
-                        <Card key={block.id}>
-                          <CardHeader>
-                            <CardTitle>Search web</CardTitle>
-                            <CardDescription>
-                              Define what the agent should search for on the internet.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div>
-                                <Label htmlFor={`search-web-query-${block.id}`} className="sr-only">Search query</Label>
-                                <Textarea 
-                                  id={`search-web-query-${block.id}`}
-                                  placeholder="e.g. Latest trends in AI development"
-                                  className="min-h-[100px]"
-                                  value={block.params.query || ''}
-                                  onChange={(e) => handleBlockParamChange(block.id, 'query', e.target.value)}
-                                />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    }
-                     if (block.type === 'Set variable') {
-                      return (
-                        <Card key={block.id}>
-                          <CardHeader>
-                            <CardTitle>Set variable</CardTitle>
-                            <CardDescription>
-                              Store a value in a variable to use later in the workflow.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div className='grid grid-cols-2 gap-4'>
-                              <div className="space-y-2">
-                                <Label htmlFor={`variable-name-${block.id}`}>Variable Name</Label>
-                                <Input 
-                                  id={`variable-name-${block.id}`} 
-                                  placeholder="e.g. userEmail"
-                                  value={block.params.variableName || ''}
-                                  onChange={(e) => handleBlockParamChange(block.id, 'variableName', e.target.value)}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`variable-value-${block.id}`}>Value</Label>
-                                <Input 
-                                  id={`variable-value-${block.id}`} 
-                                  placeholder="e.g. '{{answer_from_previous_step}}' "
-                                  value={block.params.value || ''}
-                                  onChange={(e) => handleBlockParamChange(block.id, 'value', e.target.value)}
-                                />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    }
-                    if (block.type === 'Send Email') {
-                      return (
-                        <Card key={block.id}>
-                          <CardHeader>
-                            <CardTitle>Send Email</CardTitle>
-                            <CardDescription>
-                              Send an email to a specified recipient.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                              <Label htmlFor={`email-to-${block.id}`}>To</Label>
-                              <Input 
-                                id={`email-to-${block.id}`} 
-                                placeholder="recipient@example.com or {{variableName}}"
-                                value={block.params.to || ''}
-                                onChange={(e) => handleBlockParamChange(block.id, 'to', e.target.value)}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`email-subject-${block.id}`}>Subject</Label>
-                              <Input 
-                                id={`email-subject-${block.id}`} 
-                                placeholder="Your email subject"
-                                value={block.params.subject || ''}
-                                onChange={(e) => handleBlockParamChange(block.id, 'subject', e.target.value)}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`email-body-${block.id}`}>Body</Label>
-                              <Textarea 
-                                id={`email-body-${block.id}`} 
-                                placeholder="Write your email content here." 
-                                className="min-h-[120px]"
-                                value={block.params.body || ''}
-                                onChange={(e) => handleBlockParamChange(block.id, 'body', e.target.value)}
-                              />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    }
-                    // Render other block types here...
-                    return <Card key={block.id}><CardHeader><CardTitle>{block.type}</CardTitle></CardHeader></Card>;
-                  })}
-                  <AddBlockPopover onAddBlock={handleAddBlock}>
-                      <Button variant="outline" className="w-full">
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Add block
-                      </Button>
-                  </AddBlockPopover>
+                <div className="text-center text-muted-foreground pt-12">
+                  <p>Block not found. It might have been deleted.</p>
                 </div>
               )}
             </div>
@@ -335,9 +358,21 @@ export default function WorkflowDetailPage() {
         <ResizableHandle withHandle />
 
         {/* Preview/Canvas Panel */}
-        <ResizablePanel defaultSize={50} minSize={30}>
-          <div className="flex h-full items-center justify-center p-6 bg-muted/30">
-            <span className="font-semibold">Preview/Canvas Panel</span>
+        <ResizablePanel defaultSize={65} minSize={30}>
+          <div className="flex h-full items-center justify-center bg-muted/30">
+            <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onNodeClick={handleNodeClick}
+                fitView
+            >
+                <Background />
+                <Controls />
+                <MiniMap />
+            </ReactFlow>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
