@@ -44,7 +44,7 @@ export function WorkflowNode({ data, selected }: NodeProps<{ label: string; type
     <div
       className={cn(
         'w-48 rounded-lg border bg-background p-3 shadow-sm transition-all',
-        selected && 'border-primary ring-2 ring-primary ring-offset-2'
+        selected && 'ring-2 ring-primary'
       )}
     >
       <div className="flex items-center gap-3">

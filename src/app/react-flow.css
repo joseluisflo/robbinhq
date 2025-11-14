@@ -2,12 +2,13 @@
 @import 'reactflow/dist/style.css';
 
 /* Reset default React Flow node styles to prevent double borders */
-.react-flow__node {
+.react-flow__node, .react-flow__node:focus, .react-flow__node:focus-visible {
     border: none !important;
     background: transparent !important;
     box-shadow: none !important;
     padding: 0 !important;
     border-radius: 0 !important;
+    outline: none !important;
 }
 
 .react-flow__handle {
