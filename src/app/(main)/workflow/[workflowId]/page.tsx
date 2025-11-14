@@ -369,10 +369,9 @@ function FlowEditor() {
                 </div>
               )}
             </div>
-            <div className="flex w-full items-center gap-3 px-6 py-4 border-t bg-background">
-              <div className="flex-1" />
+            <div className="flex w-full items-center justify-between gap-3 px-6 py-4 border-t bg-background">
               <Button variant="ghost" onClick={handleDiscardChanges} disabled={!isChanged || isSaving}>Discard changes</Button>
-              <Button className="w-48" onClick={handleSaveChanges} disabled={!isChanged || isSaving}>
+              <Button className="flex-grow sm:flex-grow-0" onClick={handleSaveChanges} disabled={!isChanged || isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save changes
               </Button>
