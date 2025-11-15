@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, type MouseEvent, useTransition } from 'react';
+import { useState, useRef, useEffect, type MouseEvent, useTransition, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -22,12 +22,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import SiriOrb from '@/components/smoothui/ui/SiriOrb';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
-import type { Agent, AgentFile, TextSource, Message } from '@/lib/types';
+import type { Agent, AgentFile, TextSource, Message, Workflow } from '@/lib/types';
 import { getAgentResponse } from '@/app/actions/agents';
 import { runOrResumeWorkflow } from '@/app/actions/workflow';
 import { useToast } from '@/hooks/use-toast';
 import { useLiveAgent } from '@/hooks/use-live-agent';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useUser, useFirestore, useCollection, query, collection, where } from '@/firebase';
 
 
 interface ChatWidgetPreviewProps {
@@ -55,11 +56,23 @@ export function ChatWidgetPreview({
   agentData,
   mode = 'chat',
 }: ChatWidgetPreviewProps) {
+  const { user } = useUser();
+  const firestore = useFirestore();
   const storageKey = `chat-preview-history-${agentData?.id}`;
   const [messages, setMessages] = useLocalStorage<Message[]>(storageKey, []);
   const [prompt, setPrompt] = useState('');
   const [isResponding, startResponding] = useTransition();
   const [currentWorkflowRunId, setCurrentWorkflowRunId] = useState<string | null>(null);
+
+  const workflowsQuery = useMemo(() => {
+    if (!user || !agentData?.id) return null;
+    return query(
+      collection(firestore, 'users', user.uid, 'agents', agentData.id, 'workflows'),
+      where('status', '==', 'enabled')
+    );
+  }, [user, agentData?.id, firestore]);
+
+  const { data: enabledWorkflows } = useCollection<Workflow>(workflowsQuery);
 
 
   const { toast } = useToast();
@@ -190,7 +203,14 @@ export function ChatWidgetPreview({
             // Workflow doesn't exist or not triggered, fallback to default agent response
             const plainTextSources = textSources.map(ts => ({ title: ts.title, content: ts.content }));
             const plainFileSources = fileSources.map(fs => ({ name: fs.name, extractedText: fs.extractedText || '' }));
-            const result = await getAgentResponse({ message: messageText, instructions, temperature, textSources: plainTextSources, fileSources: plainFileSources });
+            const result = await getAgentResponse({ 
+                message: messageText, 
+                instructions, 
+                temperature, 
+                textSources: plainTextSources, 
+                fileSources: plainFileSources,
+                enabledWorkflows: enabledWorkflows || [], 
+            });
             
             if ('error' in result) {
                 const errorMessage: Message = { id: (Date.now() + 1).toString(), sender: 'agent', text: 'Sorry, I encountered an error.', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };

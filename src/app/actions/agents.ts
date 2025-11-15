@@ -7,7 +7,7 @@ import { generateAgentInstructions } from '@/ai/flows/agent-instruction-generati
 import { agentChat } from '@/ai/flows/agent-chat';
 import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import type { Agent } from '@/lib/types';
+import type { Agent, Workflow } from '@/lib/types';
 
 
 export async function getTasksSummary(taskResults: string): Promise<string | { error: string }> {
@@ -118,6 +118,7 @@ interface AgentResponseInput {
     temperature?: number;
     textSources: PlainTextSource[];
     fileSources: PlainFileSource[];
+    enabledWorkflows: Workflow[];
 }
 
 export async function getAgentResponse(input: AgentResponseInput): Promise<{ response: string } | { error: string }> {
@@ -126,6 +127,8 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<{ res
         ...input.textSources.map(t => `Title: ${t.title}\nContent: ${t.content}`),
         ...input.fileSources.map(f => `File: ${f.name}\nContent: ${f.extractedText}`)
     ].join('\n\n---\n\n');
+
+    // TODO: Call workflow-selector flow here. For now, we fall back to agentChat.
 
     const result = await agentChat({
       message: input.message,
@@ -138,5 +141,3 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<{ res
     return { error: e.message || 'Failed to get agent response.' };
   }
 }
-
-    
