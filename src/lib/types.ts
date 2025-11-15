@@ -5,6 +5,7 @@
 
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -77,6 +78,7 @@ export type Edge = {
 export type Workflow = {
   id?: string;
   name: string;
+  status?: 'enabled' | 'disabled';
   lastModified?: any;
   createdAt?: any;
   blocks?: WorkflowBlock[];

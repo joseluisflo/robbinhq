@@ -45,6 +45,7 @@ export function CreateWorkflowDialog({ children }: { children: React.ReactNode }
         const workflowsCollection = collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'workflows');
         const newWorkflow: Omit<Workflow, 'id'> = {
           name,
+          status: 'disabled',
           createdAt: serverTimestamp(),
           lastModified: serverTimestamp(),
           blocks: [],

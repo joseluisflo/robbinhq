@@ -184,6 +184,11 @@
           "type": "string",
           "description": "The name of the workflow."
         },
+        "status": {
+          "type": "string",
+          "description": "The activation status of the workflow.",
+          "enum": ["enabled", "disabled"]
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",

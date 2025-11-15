@@ -13,6 +13,7 @@ import {
 } from '@/app/workflows/agent-steps';
 import type { Workflow, WorkflowRun } from '@/lib/types';
 import { firebaseAdmin } from '@/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
 // This server action needs userId, agentId, and workflowId to construct Firestore paths.
@@ -142,4 +143,30 @@ export async function runOrResumeWorkflow(
     promptForUser: run.promptForUser,
     context: run.context, // Return context for debugging or display
   };
+}
+
+export async function updateWorkflowStatus(
+  userId: string,
+  agentId: string,
+  workflowId: string,
+  status: 'enabled' | 'disabled'
+): Promise<{ success: boolean } | { error: string }> {
+  if (!userId || !agentId || !workflowId || !status) {
+    return { error: 'User ID, Agent ID, Workflow ID, and status are required.' };
+  }
+
+  try {
+    const firestore = firebaseAdmin.firestore();
+    const workflowRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId).collection('workflows').doc(workflowId);
+    
+    await workflowRef.update({
+      status: status,
+      lastModified: FieldValue.serverTimestamp(),
+    });
+
+    return { success: true };
+  } catch (e: any) {
+    console.error('Failed to update workflow status:', e);
+    return { error: e.message || 'Failed to update workflow status.' };
+  }
 }
