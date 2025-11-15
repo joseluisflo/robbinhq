@@ -34,7 +34,11 @@ export function FlowCanvas({
     
     React.useEffect(() => {
         if (nodes.length > 0) {
-            reactFlowInstance.fitView({ duration: 300, padding: 0.2 });
+            reactFlowInstance.fitView({ 
+                duration: 300, 
+                padding: 0.8,  // Aumentado de 0.2 a 0.8 para más espacio
+                maxZoom: 1     // Limita el zoom máximo
+            });
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [nodes.length]);
@@ -50,6 +54,7 @@ export function FlowCanvas({
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
         fitView
+        defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}  // Zoom inicial más alejado
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} />
