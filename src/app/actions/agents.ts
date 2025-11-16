@@ -181,7 +181,6 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
 
     let selectedWorkflowId: string | null = null;
     
-    // Step 1: Decide if a workflow should be used
     if (enabledWorkflows.length > 0) {
       const plainWorkflows = enabledWorkflows.map(w => ({
         id: w.id!,
@@ -191,15 +190,13 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       const { output } = await workflowSelectorPrompt({ userInput: message, workflows: plainWorkflows })
         .catch(err => {
             console.error("Workflow selector prompt failed:", err);
-            return { output: null }; // Default to no workflow on error
+            return { output: null };
         });
         
       selectedWorkflowId = output?.workflowId ?? null;
     }
 
-    // Step 2: Execute based on the decision
     if (selectedWorkflowId) {
-      // A workflow was selected, run it.
       const workflowResult = await runOrResumeWorkflow({
         userId,
         agentId,
@@ -221,7 +218,6 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         finalResult: workflowResult.context?.finalResult,
       };
     } else {
-      // No workflow selected, proceed with a general chat response.
       const textsSnapshot = await agentRef.collection('texts').get();
       const filesSnapshot = await agentRef.collection('files').get();
 
