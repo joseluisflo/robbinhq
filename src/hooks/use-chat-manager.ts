@@ -9,14 +9,13 @@ import { getAgentResponse } from '@/app/actions/agents';
 
 // Define the shape of the data the hook will manage and return
 export interface UseChatManagerProps {
-  agentData?: Partial<Agent> & {
+  agent: (Partial<Agent> & {
     textSources?: TextSource[];
     fileSources?: AgentFile[];
-  };
-  agentId?: string;
+  }) | null;
 }
 
-export function useChatManager({ agentData, agentId }: UseChatManagerProps) {
+export function useChatManager({ agent }: UseChatManagerProps) {
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -24,6 +23,8 @@ export function useChatManager({ agentData, agentId }: UseChatManagerProps) {
   const [prompt, setPrompt] = useState('');
   const [isResponding, startResponding] = useTransition();
   const [currentWorkflowRunId, setCurrentWorkflowRunId] = useState<string | null>(null);
+
+  const agentId = agent?.id;
 
   // Firestore query for enabled workflows
   const workflowsQuery = useMemo(() => {
@@ -38,8 +39,8 @@ export function useChatManager({ agentData, agentId }: UseChatManagerProps) {
 
   // Effect to set initial welcome message
   useEffect(() => {
-    const isWelcomeEnabled = agentData?.isWelcomeMessageEnabled ?? true;
-    const welcomeMessage = agentData?.welcomeMessage;
+    const isWelcomeEnabled = agent?.isWelcomeMessageEnabled ?? true;
+    const welcomeMessage = agent?.welcomeMessage;
 
     if (isWelcomeEnabled && welcomeMessage) {
       const welcomeMsg: Message = {
@@ -54,7 +55,7 @@ export function useChatManager({ agentData, agentId }: UseChatManagerProps) {
     }
     setCurrentWorkflowRunId(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentId, agentData?.isWelcomeMessageEnabled, agentData?.welcomeMessage]);
+  }, [agentId, agent?.isWelcomeMessageEnabled, agent?.welcomeMessage]);
 
   const handleSendMessage = (messageText: string) => {
     if (!messageText.trim() || !agentId || !user) return;
@@ -141,8 +142,8 @@ export function useChatManager({ agentData, agentId }: UseChatManagerProps) {
             userId: user.uid,
             agentId: agentId,
             message: messageText, 
-            instructions: agentData?.instructions,
-            temperature: agentData?.temperature,
+            instructions: agent?.instructions,
+            temperature: agent?.temperature,
         });
         
         const agentMessage: Message = { 

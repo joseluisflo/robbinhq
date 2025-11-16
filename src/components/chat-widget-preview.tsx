@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Agent, AgentFile, TextSource } from '@/lib/types';
@@ -13,16 +12,16 @@ import { Button } from './ui/button';
 import { Chat02Icon } from './lo-icons';
 
 interface ChatWidgetPreviewProps {
-  agentData: Partial<Agent> & {
+  agent: (Partial<Agent> & {
     textSources?: TextSource[];
     fileSources?: AgentFile[];
-  };
+  }) | null; // Allow agent to be null
   mode?: 'chat' | 'in-call';
 }
 
 
 export function ChatWidgetPreview({
-  agentData,
+  agent,
   mode = 'chat',
 }: ChatWidgetPreviewProps) {
   const { 
@@ -33,7 +32,7 @@ export function ChatWidgetPreview({
     isResponding,
     handleSendMessage,
     handleOptionClick
-  } = useChatManager({ agentData, agentId: agentData.id });
+  } = useChatManager({ agent });
   
   const { 
     connectionState, 
@@ -43,24 +42,29 @@ export function ChatWidgetPreview({
     currentInput, 
     currentOutput 
   } = useLiveAgent(setMessages);
+  
+  // Gracefully handle the case where agent is not yet loaded
+  if (!agent) {
+    return null; // Or return a loading skeleton
+  }
 
-  const agentName = agentData?.name || 'Agent Preview';
-  const conversationStarters = agentData?.conversationStarters || [];
-  const isDisplayNameEnabled = agentData?.isDisplayNameEnabled ?? true;
-  const logoUrl = agentData?.logoUrl;
-  const themeColor = agentData?.themeColor || '#16a34a';
-  const chatButtonColor = agentData?.chatButtonColor || themeColor;
-  const chatBubbleAlignment = agentData?.chatBubbleAlignment || 'right';
-  const chatInputPlaceholder = agentData?.chatInputPlaceholder || 'Ask anything';
-  const isFeedbackEnabled = agentData?.isFeedbackEnabled ?? true;
-  const isBrandingEnabled = agentData?.isBrandingEnabled ?? true;
-  const orbColors = agentData?.orbColors;
+  const agentName = agent.name || 'Agent Preview';
+  const conversationStarters = agent.conversationStarters || [];
+  const isDisplayNameEnabled = agent.isDisplayNameEnabled ?? true;
+  const logoUrl = agent.logoUrl;
+  const themeColor = agent.themeColor || '#16a34a';
+  const chatButtonColor = agent.chatButtonColor || themeColor;
+  const chatBubbleAlignment = agent.chatBubbleAlignment || 'right';
+  const chatInputPlaceholder = agent.chatInputPlaceholder || 'Ask anything';
+  const isFeedbackEnabled = agent.isFeedbackEnabled ?? true;
+  const isBrandingEnabled = agent.isBrandingEnabled ?? true;
+  const orbColors = agent.orbColors;
 
   const isCallActive = connectionState !== 'idle' && connectionState !== 'error';
   
   const handleToggleCall = () => {
-    if (agentData) {
-      toggleCall(agentData as Agent);
+    if (agent) {
+      toggleCall(agent as Agent);
     }
   };
 
