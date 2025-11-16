@@ -69,6 +69,7 @@ export function useChatManager({ agentData }: UseChatManagerProps) {
     
     startResponding(async () => {
       const workflows = enabledWorkflows || [];
+      
       const workflowSelectorResult = await selectWorkflow({ userInput: messageText, workflows: workflows.map(w => ({ id: w.id!, triggerDescription: w.blocks?.[0]?.params.description || '' }))})
         .catch(err => {
             console.error("Workflow selector failed:", err);
@@ -126,16 +127,13 @@ export function useChatManager({ agentData }: UseChatManagerProps) {
         // Fallback to general agent response
         const textSources = agentData.textSources || [];
         const fileSources = agentData.fileSources || [];
-        const plainTextSources = textSources.map(ts => ({ title: ts.title, content: ts.content }));
-        const plainFileSources = fileSources.map(fs => ({ name: fs.name, extractedText: fs.extractedText || '' }));
         
         const result = await getAgentResponse({ 
             message: messageText, 
             instructions: agentData.instructions, 
             temperature: agentData.temperature, 
-            textSources: plainTextSources, 
-            fileSources: plainFileSources,
-            enabledWorkflows: [],
+            textSources: textSources, 
+            fileSources: fileSources,
         });
         
         const agentMessage: Message = { 

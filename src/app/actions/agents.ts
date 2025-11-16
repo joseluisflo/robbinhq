@@ -7,7 +7,7 @@ import { generateAgentInstructions } from '@/ai/flows/agent-instruction-generati
 import { agentChat } from '@/ai/flows/agent-chat';
 import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import type { Agent, Workflow } from '@/lib/types';
+import type { Agent, TextSource, AgentFile } from '@/lib/types';
 
 
 export async function getTasksSummary(taskResults: string): Promise<string | { error: string }> {
@@ -102,33 +102,20 @@ export async function updateAgent(userId: string, agentId: string, data: Partial
 }
 
 
-interface PlainTextSource {
-  title: string;
-  content: string;
-}
-
-interface PlainFileSource {
-  name: string;
-  extractedText: string;
-}
-
 interface AgentResponseInput {
     message: string;
     instructions?: string;
     temperature?: number;
-    textSources: PlainTextSource[];
-    fileSources: PlainFileSource[];
-    enabledWorkflows: Workflow[];
+    textSources: TextSource[];
+    fileSources: AgentFile[];
 }
 
 export async function getAgentResponse(input: AgentResponseInput): Promise<{ response: string } | { error: string }> {
   try {
     const knowledge = [
         ...input.textSources.map(t => `Title: ${t.title}\nContent: ${t.content}`),
-        ...input.fileSources.map(f => `File: ${f.name}\nContent: ${f.extractedText}`)
+        ...input.fileSources.map(f => `File: ${f.name}\nContent: ${f.extractedText || ''}`)
     ].join('\n\n---\n\n');
-
-    // TODO: Call workflow-selector flow here. For now, we fall back to agentChat.
 
     const result = await agentChat({
       message: input.message,
