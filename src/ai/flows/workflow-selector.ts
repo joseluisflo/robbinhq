@@ -31,13 +31,54 @@ const WorkflowSelectorOutputSchema = z.object({
 export type WorkflowSelectorOutput = z.infer<typeof WorkflowSelectorOutputSchema>;
 
 
+// Task 1.1: Implement the Genkit Prompt
+const workflowSelectorPrompt = ai.definePrompt({
+    name: 'workflowSelectorPrompt',
+    input: { schema: WorkflowSelectorInputSchema },
+    output: { schema: WorkflowSelectorOutputSchema },
+    prompt: `
+      You are an expert at routing user requests to the correct tool. Your task is to analyze the user's input and determine if it matches the purpose of any of the available workflows.
+
+      User Input: "{{userInput}}"
+
+      Available Workflows:
+      {{#each workflows}}
+      - Workflow ID: "{{this.id}}"
+        Trigger Description: "{{this.triggerDescription}}"
+      {{/each}}
+
+      Your ONLY job is to respond with the ID of the workflow that is the best match for the user's input.
+      - If you find a clear match, return the corresponding workflowId.
+      - If the user's input is ambiguous, or does not match any of the workflow descriptions, you MUST return null for the workflowId.
+      - Do not try to answer the user's question. Only provide the workflowId or null.
+    `,
+});
+
+// Task 1.2: Implement the Genkit Flow
+const workflowSelectorFlow = ai.defineFlow(
+    {
+        name: 'workflowSelectorFlow',
+        inputSchema: WorkflowSelectorInputSchema,
+        outputSchema: WorkflowSelectorOutputSchema,
+    },
+    async (input) => {
+        // Handle the case where there are no workflows to choose from.
+        if (input.workflows.length === 0) {
+            return { workflowId: null };
+        }
+        
+        const { output } = await workflowSelectorPrompt(input);
+        return output!;
+    }
+);
+
+
 /**
  * Determines which workflow to run based on the user's input.
  * @param input The user's query and the list of available, enabled workflows.
  * @returns An object containing the ID of the selected workflow, or null.
  */
 export async function selectWorkflow(input: WorkflowSelectorInput): Promise<WorkflowSelectorOutput> {
-  // Placeholder implementation. In the next step, this will call a Genkit flow.
-  console.log("Workflow selector called, but not yet implemented. Falling back to no workflow.");
-  return Promise.resolve({ workflowId: null });
+  // Task 1.3: Connect the main function to the flow
+  return workflowSelectorFlow(input);
 }
