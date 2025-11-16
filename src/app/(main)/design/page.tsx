@@ -237,7 +237,7 @@ export default function DesignPage() {
   }
 
 
-  const agentDataForPreview = useMemo(() => {
+  const agentForPreview = useMemo(() => {
     const data: Partial<Agent> & { textSources: TextSource[], fileSources: AgentFile[] } = {
         // We pass the activeAgent which contains the ID
         ...activeAgent,
@@ -264,7 +264,7 @@ export default function DesignPage() {
         textSources: textSources || [],
         fileSources: fileSources || [],
     };
-    return data;
+    return data as Agent;
   }, [
       activeAgent, agentName, isDisplayNameEnabled, logoFile, welcomeMessage, 
       inCallWelcomeMessage, isWelcomeMessageEnabled, themeColor, chatButtonColor, 
@@ -275,7 +275,7 @@ export default function DesignPage() {
 
    const handleToggleCall = () => {
     if (activeAgent) {
-      toggleCall(agentDataForPreview as Agent);
+      toggleCall(agentForPreview);
     }
   };
 
@@ -578,12 +578,12 @@ export default function DesignPage() {
             <div className="flex h-full flex-col">
               <TabsContent value="chat" className="flex-1 mt-0">
                 <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-                    <ChatWidgetPreview agentData={agentDataForPreview} mode="chat" />
+                    <ChatWidgetPreview agent={agentForPreview} mode="chat" />
                 </div>
               </TabsContent>
               <TabsContent value="in-call" className="flex-1 mt-0">
                  <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-                    <ChatWidgetPreview agentData={{...agentDataForPreview, orbColors}} mode="in-call" />
+                    <ChatWidgetPreview agent={{...agentForPreview, orbColors}} mode="in-call" />
                  </div>
               </TabsContent>
             </div>
