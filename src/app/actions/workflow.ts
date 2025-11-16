@@ -117,7 +117,8 @@ export async function runOrResumeWorkflow(
       workflowId: workflowId,
       status: 'running',
       context: { userInput },
-      currentStepIndex: 0,
+      // Start at index 0. We will skip the trigger block inside the loop.
+      currentStepIndex: 0, 
     };
   }
 
@@ -128,6 +129,12 @@ export async function runOrResumeWorkflow(
       run.status = 'failed';
       run.context.error = 'Invalid step index.';
       break;
+    }
+    
+    // THE FIX: If the block is a Trigger, just skip to the next one.
+    if (currentBlock.type === 'Trigger') {
+      run.currentStepIndex++;
+      continue;
     }
 
     const stepFunction = stepRegistry.get(currentBlock.type);
