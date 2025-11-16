@@ -186,6 +186,8 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         id: w.id!,
         triggerDescription: w.blocks?.[0]?.params.description || ''
       }));
+      
+      console.log('DEBUG: plainWorkflows sent to AI: ', JSON.stringify(plainWorkflows, null, 2));
 
       const { output } = await workflowSelectorPrompt({ userInput: message, workflows: plainWorkflows })
         .catch(err => {
@@ -194,6 +196,14 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         });
         
       selectedWorkflowId = output?.workflowId ?? null;
+      
+      console.log('DEBUG: selectedWorkflowId received from AI: ', selectedWorkflowId);
+      console.log('DEBUG: typeof selectedWorkflowId: ', typeof selectedWorkflowId);
+      
+      // Robust check to handle if the model returns the string "null"
+      if (selectedWorkflowId === "null") {
+        selectedWorkflowId = null;
+      }
     }
 
     if (selectedWorkflowId) {
