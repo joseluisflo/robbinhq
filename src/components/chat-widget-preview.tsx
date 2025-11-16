@@ -1,33 +1,26 @@
 
 'use client';
 
-import { useState, useRef, useEffect, type MouseEvent, useTransition, useMemo } from 'react';
+import { useState, useRef, useEffect, useTransition, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import {
-  ArrowUp,
-  Paperclip,
-  Phone,
-  Bot,
   MoreHorizontal,
   X,
-  PhoneOff,
-  MicOff,
-  Loader2,
-  ThumbsUp,
-  ThumbsDown,
+  Phone,
 } from 'lucide-react';
 import { Chat02Icon } from '@/components/lo-icons';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import SiriOrb from '@/components/smoothui/ui/SiriOrb';
-import { ScrollArea, ScrollBar } from './ui/scroll-area';
-import { cn } from '@/lib/utils';
 import type { Agent, AgentFile, TextSource, Message, Workflow } from '@/lib/types';
 import { getAgentResponse } from '@/app/actions/agents';
-import { runOrResumeWorkflow } from '@/app/actions/workflow';
 import { useToast } from '@/hooks/use-toast';
 import { useLiveAgent } from '@/hooks/use-live-agent';
 import { useUser, useFirestore, useCollection, query, collection, where } from '@/firebase';
+import { selectWorkflow } from '@/ai/flows/workflow-selector';
+import { runOrResumeWorkflow } from '@/app/actions/workflow';
+
+import { ChatHeader } from './chat/ChatHeader';
+import { ChatMessages } from './chat/ChatMessages';
+import { ChatInput } from './chat/ChatInput';
+import { InCallView } from './chat/InCallView';
 
 
 interface ChatWidgetPreviewProps {
@@ -74,11 +67,6 @@ export function ChatWidgetPreview({
 
 
   const { toast } = useToast();
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
-  const startX = useRef(0);
-  const scrollLeft = useRef(0);
   
   const { 
     connectionState, 
@@ -128,22 +116,6 @@ export function ChatWidgetPreview({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentData?.id, isWelcomeMessageEnabled, welcomeMessage]);
 
-
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [messages, liveTranscripts, currentInput, currentOutput, isThinking]);
-
-  const getInitials = (name: string) => {
-    if (!name) return 'A';
-    const names = name.split(' ');
-    if (names.length > 1) {
-        return (names[0][0] + names[names.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
-
   const handleSendMessage = (messageText: string) => {
     if (!messageText.trim()) return;
 
@@ -158,15 +130,20 @@ export function ChatWidgetPreview({
     
     startResponding(async () => {
       const workflows = enabledWorkflows || [];
-      const workflowResponse = workflows.length > 0 
-        ? await selectWorkflow({ userInput: messageText, workflows: workflows.map(w => ({ id: w.id!, triggerDescription: w.blocks?.[0]?.params.description || '' }))})
-        : { workflowId: null };
+      
+      const workflowSelectorResult = await selectWorkflow({ userInput: messageText, workflows: workflows.map(w => ({ id: w.id!, triggerDescription: w.blocks?.[0]?.params.description || '' }))})
+        .catch(err => {
+            console.error("Workflow selector failed:", err);
+            return null; // Fallback gracefully
+        });
 
-      if (workflowResponse && workflowResponse.workflowId) {
+      const workflowId = workflowSelectorResult?.workflowId;
+
+      if (workflowId) {
         const workflowResult = await runOrResumeWorkflow({
           userId: user!.uid,
           agentId: agentData!.id!,
-          workflowId: workflowResponse.workflowId,
+          workflowId: workflowId,
           runId: currentWorkflowRunId,
           userInput: messageText,
         });
@@ -230,57 +207,8 @@ export function ChatWidgetPreview({
     });
   };
   
-  const handlePromptSubmit = () => {
-    const messageToSend = prompt;
-    setPrompt('');
-    handleSendMessage(messageToSend);
-  }
-
   const handleOptionClick = (option: string) => {
     handleSendMessage(option);
-  };
-
-  const handleWheel = (e: WheelEvent) => {
-    if (viewportRef.current) {
-      e.preventDefault();
-      viewportRef.current.scrollLeft += e.deltaY;
-    }
-  };
-
-  useEffect(() => {
-    const viewport = viewportRef.current;
-    if (viewport) {
-      viewport.addEventListener('wheel', handleWheel, { passive: false });
-    }
-    return () => {
-      if (viewport) {
-        viewport.removeEventListener('wheel', handleWheel);
-      }
-    };
-  }, []);
-
-  const onMouseDown = (e: MouseEvent<HTMLDivElement>) => {
-    if (!viewportRef.current) return;
-    isDragging.current = true;
-    startX.current = e.pageX - viewportRef.current.offsetLeft;
-    scrollLeft.current = viewportRef.current.scrollLeft;
-    viewportRef.current.style.cursor = 'grabbing';
-    viewportRef.current.style.userSelect = 'none';
-  };
-
-  const onMouseLeaveOrUp = () => {
-    if (!viewportRef.current) return;
-    isDragging.current = false;
-    viewportRef.current.style.cursor = 'grab';
-    viewportRef.current.style.removeProperty('user-select');
-  };
-
-  const onMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current || !viewportRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - viewportRef.current.offsetLeft;
-    const walk = (x - startX.current) * 2; //scroll-fast
-    viewportRef.current.scrollLeft = scrollLeft.current - walk;
   };
   
   const handleToggleCall = () => {
@@ -289,255 +217,58 @@ export function ChatWidgetPreview({
     }
   };
 
-  const displayedMessages = isCallActive ? liveTranscripts : messages;
-  const showThinking = isCallActive && isThinking;
-  const showCurrentInput = isCallActive ? currentInput : '';
-  const showCurrentOutput = isCallActive ? currentOutput : '';
-
-
   return (
     <div
-      className={cn(
-        'flex flex-col',
+      className={`flex flex-col ${
         chatBubbleAlignment === 'right' ? 'items-end' : 'items-start'
-      )}
+      }`}
     >
       <div
         className="flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden"
         style={{ width: '400px', height: '650px' }}
       >
-        {/* Chat Header */}
-        <div className="p-4 border-b flex items-center justify-between bg-card">
-          {isDisplayNameEnabled ? (
-            <div className="flex items-center gap-3">
-              <Avatar className="h-8 w-8">
-                {logoUrl && <AvatarImage src={logoUrl} alt={agentName} />}
-                <AvatarFallback>{getInitials(agentName)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold text-sm">
-                  {agentName}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  The team can also help
-                </p>
-              </div>
-            </div>
-          ) : <div />}
-          <div className={cn("flex items-center gap-1", !isDisplayNameEnabled && "w-full justify-end")}>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <ChatHeader 
+          agentName={agentName}
+          isDisplayNameEnabled={isDisplayNameEnabled}
+          logoUrl={logoUrl}
+        />
 
         {mode === 'chat' && (
-          <>
-            {/* Chat Messages */}
-            <div ref={chatContainerRef} className="flex-1 px-4 pt-4 bg-background flex flex-col justify-between overflow-y-auto">
-              <div className="space-y-4">
-                 {displayedMessages.map((message, index) => (
-                    <div key={message.id} className={cn("flex flex-col", message.sender === 'user' ? 'items-end' : 'items-start')}>
-                        <div className={cn("max-w-[75%]", message.sender === 'user' ? 'text-right' : 'text-left')}>
-                            <div
-                                className={cn("p-3 rounded-2xl",
-                                    message.sender === 'user'
-                                    ? 'rounded-br-sm bg-primary text-primary-foreground'
-                                    : 'bg-muted rounded-tl-sm text-foreground'
-                                )}
-                                style={{
-                                    backgroundColor: message.sender === 'user' ? themeColor : undefined
-                                }}
-                            >
-                                <p className="text-sm text-left">{message.text}</p>
-                            </div>
-                             <div className="flex items-center gap-2 mt-1.5 px-1">
-                                <p className="text-xs text-muted-foreground">
-                                    {message.sender === 'agent' ? agentName : 'You'}
-                                </p>
-                                {message.sender === 'agent' && isFeedbackEnabled && (
-                                    <div className="flex items-center gap-1">
-                                        <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
-                                            <ThumbsUp className="h-3 w-3" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
-                                            <ThumbsDown className="h-3 w-3" />
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        {message.sender === 'agent' && message.options && message.options.length > 0 && index === displayedMessages.length -1 && (
-                            <div className="flex flex-col items-start w-full mt-2 space-y-2">
-                                {message.options.map((option, i) => (
-                                    <Button
-                                        key={i}
-                                        variant="outline"
-                                        className="rounded-lg h-auto py-2 text-left w-full max-w-[75%]"
-                                        onClick={() => handleOptionClick(option)}
-                                        disabled={isResponding}
-                                    >
-                                        {option}
-                                    </Button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                ))}
-                {isResponding && !isCallActive && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[75%]">
-                      <div className="p-3 rounded-2xl rounded-tl-sm bg-muted flex items-center">
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                 {showCurrentInput && (
-                    <div className="flex justify-end">
-                        <div className="max-w-[75%]">
-                            <div className="p-3 rounded-2xl rounded-br-sm bg-primary text-primary-foreground" style={{ backgroundColor: themeColor }}>
-                                <p className="text-sm text-left italic">{showCurrentInput}</p>
-                            </div>
-                        </div>
-                    </div>
-                 )}
-                 {showThinking && (
-                    <div className="flex justify-start">
-                        <div className="p-3 rounded-2xl rounded-tl-sm bg-muted flex items-center">
-                            <div className="flex items-center justify-center space-x-1.5 h-[20px]">
-                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
-                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                            </div>
-                        </div>
-                    </div>
-                 )}
-                 {showCurrentOutput && (
-                    <div className="flex justify-start">
-                        <div className="max-w-[75%]">
-                            <div className="p-3 rounded-2xl rounded-tl-sm bg-muted text-foreground">
-                                <p className="text-sm text-left italic">{showCurrentOutput}</p>
-                            </div>
-                        </div>
-                    </div>
-                 )}
-              </div>
-              
-              {/* Conversation Starters */}
-              {conversationStarters && conversationStarters.length > 0 && !isCallActive && (
-                <div className="pb-2 mt-4">
-                  <ScrollArea
-                    viewportRef={viewportRef}
-                    className="w-full whitespace-nowrap"
-                    onMouseDown={onMouseDown}
-                    onMouseLeave={onMouseLeaveOrUp}
-                    onMouseUp={onMouseLeaveOrUp}
-                    onMouseMove={onMouseMove}
-                    style={{ cursor: 'grab' }}
-                  >
-                    <div className="flex w-max space-x-2">
-                      {conversationStarters.map((starter, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          className="rounded-full h-8 text-sm"
-                          onClick={() => setPrompt(starter)}
-                        >
-                          {starter}
-                        </Button>
-                      ))}
-                    </div>
-                    <ScrollBar orientation="horizontal" className="h-2" />
-                  </ScrollArea>
-                </div>
-              )}
-            </div>
-
-            {/* Chat Input */}
-            <div className="p-4 border-t bg-card">
-              <div className="relative">
-                <Textarea
-                  placeholder={isCallActive ? 'Call in progress...' : chatInputPlaceholder}
-                  className="w-full resize-none pr-12 min-h-[52px] max-h-32 rounded-xl"
-                  rows={1}
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handlePromptSubmit();
-                    }
-                  }}
-                  disabled={isResponding || isCallActive}
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-primary-foreground"
-                  disabled={!prompt.trim() || isResponding || isCallActive}
-                  onClick={handlePromptSubmit}
-                  style={{ backgroundColor: themeColor }}
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground"
-                    disabled={isCallActive}
-                  >
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground"
-                    onClick={handleToggleCall}
-                  >
-                    <Phone className="h-4 w-4" />
-                  </Button>
-                </div>
-                {isBrandingEnabled && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <Bot className="h-3 w-3" /> Powered by AgentVerse
-                    </p>
-                )}
-              </div>
-            </div>
-          </>
+          <div className="flex-1 flex flex-col bg-background overflow-hidden">
+            <ChatMessages 
+                messages={messages}
+                liveTranscripts={liveTranscripts}
+                isResponding={isResponding}
+                isThinking={isThinking}
+                currentInput={currentInput}
+                currentOutput={currentOutput}
+                isCallActive={isCallActive}
+                agentName={agentName}
+                isFeedbackEnabled={isFeedbackEnabled}
+                themeColor={themeColor}
+                onOptionClick={handleOptionClick}
+            />
+            <ChatInput 
+                prompt={prompt}
+                setPrompt={setPrompt}
+                handleSendMessage={handleSendMessage}
+                isResponding={isResponding}
+                isCallActive={isCallActive}
+                placeholder={chatInputPlaceholder}
+                themeColor={themeColor}
+                conversationStarters={conversationStarters}
+                onToggleCall={handleToggleCall}
+                isBrandingEnabled={isBrandingEnabled}
+            />
+          </div>
         )}
 
         {mode === 'in-call' && (
-          <>
-            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
-              <SiriOrb size="160px" colors={orbColors} />
-            </div>
-            <div className="p-4 border-t bg-card flex justify-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-12 w-12 rounded-full"
-              >
-                <MicOff className="h-6 w-6" />
-              </Button>
-              <Button
-                variant={connectionState === 'connected' ? 'destructive' : 'default'}
-                size="icon"
-                className="h-12 w-12 rounded-full"
-                onClick={handleToggleCall}
-                disabled={connectionState === 'connecting' || connectionState === 'closing'}
-              >
-                {connectionState === 'connected' ? <PhoneOff className="h-6 w-6" /> : <Phone className="h-6 w-6" />}
-              </Button>
-            </div>
-          </>
+          <InCallView
+            connectionState={connectionState}
+            toggleCall={handleToggleCall}
+            orbColors={orbColors}
+          />
         )}
       </div>
        <Button
@@ -550,3 +281,5 @@ export function ChatWidgetPreview({
     </div>
   );
 }
+
+    
