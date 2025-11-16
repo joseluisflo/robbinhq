@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useMemo, useEffect } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import type { Agent, Message } from '@/lib/types';
 import { useUser } from '@/firebase';
 import { getAgentResponse } from '@/app/actions/agents';
