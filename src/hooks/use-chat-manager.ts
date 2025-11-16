@@ -56,7 +56,7 @@ export function useChatManager({ agentData }: UseChatManagerProps) {
   }, [agentData?.id, agentData?.isWelcomeMessageEnabled, agentData?.welcomeMessage]);
 
   const handleSendMessage = (messageText: string) => {
-    if (!messageText.trim() || !agentData) return;
+    if (!messageText.trim() || !agentData || !user) return;
 
     const newUserMessage: Message = {
       id: Date.now().toString(),
@@ -125,15 +125,23 @@ export function useChatManager({ agentData }: UseChatManagerProps) {
         }
       } else {
         // Fallback to general agent response
-        const textSources = agentData.textSources || [];
-        const fileSources = agentData.fileSources || [];
-        
+        if (!agentData.id) {
+            const errorMessage: Message = { 
+                id: (Date.now() + 1).toString(), 
+                sender: 'agent', 
+                text: 'Sorry, I cannot respond without an agent context.', 
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+            };
+            setMessages(prev => [...prev, errorMessage]);
+            return;
+        }
+
         const result = await getAgentResponse({ 
+            userId: user.uid,
+            agentId: agentData.id,
             message: messageText, 
             instructions: agentData.instructions, 
-            temperature: agentData.temperature, 
-            textSources: textSources, 
-            fileSources: fileSources,
+            temperature: agentData.temperature,
         });
         
         const agentMessage: Message = { 

@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { summarizeTaskResults } from '@/ai/flows/task-summarization';
@@ -103,18 +101,27 @@ export async function updateAgent(userId: string, agentId: string, data: Partial
 
 
 interface AgentResponseInput {
+    userId: string;
+    agentId: string;
     message: string;
     instructions?: string;
     temperature?: number;
-    textSources: TextSource[];
-    fileSources: AgentFile[];
 }
 
 export async function getAgentResponse(input: AgentResponseInput): Promise<{ response: string } | { error: string }> {
   try {
+    const firestore = firebaseAdmin.firestore();
+    const agentRef = firestore.collection('users').doc(input.userId).collection('agents').doc(input.agentId);
+
+    const textsSnapshot = await agentRef.collection('texts').get();
+    const filesSnapshot = await agentRef.collection('files').get();
+
+    const textSources = textsSnapshot.docs.map(doc => doc.data() as TextSource);
+    const fileSources = filesSnapshot.docs.map(doc => doc.data() as AgentFile);
+
     const knowledge = [
-        ...input.textSources.map(t => `Title: ${t.title}\nContent: ${t.content}`),
-        ...input.fileSources.map(f => `File: ${f.name}\nContent: ${f.extractedText || ''}`)
+        ...textSources.map(t => `Title: ${t.title}\nContent: ${t.content}`),
+        ...fileSources.map(f => `File: ${f.name}\nContent: ${f.extractedText || ''}`)
     ].join('\n\n---\n\n');
 
     const result = await agentChat({
