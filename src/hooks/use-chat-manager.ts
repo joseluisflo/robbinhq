@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, useMemo, useEffect } from 'react';
-import type { Agent, Message, Workflow, TextSource, AgentFile } from '@/lib/types';
+import type { Agent, Message, Workflow } from '@/lib/types';
 import { useUser, useFirestore, useCollection, query, collection, where } from '@/firebase';
 import { selectWorkflow } from '@/ai/flows/workflow-selector';
 import { runOrResumeWorkflow } from '@/app/actions/workflow';
@@ -9,10 +9,7 @@ import { getAgentResponse } from '@/app/actions/agents';
 
 // Define the shape of the data the hook will manage and return
 export interface UseChatManagerProps {
-  agent: (Partial<Agent> & {
-    textSources?: TextSource[];
-    fileSources?: AgentFile[];
-  }) | null;
+  agent: Agent | null;
 }
 
 export function useChatManager({ agent }: UseChatManagerProps) {
@@ -39,23 +36,25 @@ export function useChatManager({ agent }: UseChatManagerProps) {
 
   // Effect to set initial welcome message
   useEffect(() => {
-    const isWelcomeEnabled = agent?.isWelcomeMessageEnabled ?? true;
-    const welcomeMessage = agent?.welcomeMessage;
+    if (agent) {
+      const isWelcomeEnabled = agent.isWelcomeMessageEnabled ?? true;
+      const welcomeMessage = agent.welcomeMessage;
 
-    if (isWelcomeEnabled && welcomeMessage) {
-      const welcomeMsg: Message = {
-        id: 'welcome-1',
-        sender: 'agent',
-        text: welcomeMessage,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages([welcomeMsg]);
-    } else {
-      setMessages([]);
+      if (isWelcomeEnabled && welcomeMessage) {
+        const welcomeMsg: Message = {
+          id: 'welcome-1',
+          sender: 'agent',
+          text: welcomeMessage,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages([welcomeMsg]);
+      } else {
+        setMessages([]);
+      }
+      setCurrentWorkflowRunId(null);
     }
-    setCurrentWorkflowRunId(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentId, agent?.isWelcomeMessageEnabled, agent?.welcomeMessage]);
+  }, [agent]);
 
   const handleSendMessage = (messageText: string) => {
     if (!messageText.trim() || !agentId || !user) return;
@@ -126,30 +125,15 @@ export function useChatManager({ agent }: UseChatManagerProps) {
              setMessages(prev => [...prev, agentMessage]);
         }
       } else {
-        // Fallback to general agent response
-        if (!agentId) {
-            const errorMessage: Message = { 
-                id: (Date.now() + 1).toString(), 
-                sender: 'agent', 
-                text: 'Sorry, I cannot respond without an agent context.', 
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-            };
-            setMessages(prev => [...prev, errorMessage]);
-            return;
-        }
-
+        // Fallback to general agent response if no workflow is matched
         const result = await getAgentResponse({ 
-            userId: user.uid,
-            agentId: agentId,
-            message: messageText, 
-            instructions: agent?.instructions,
-            temperature: agent?.temperature,
+            agent,
         });
         
         const agentMessage: Message = { 
             id: (Date.now() + 1).toString(), 
             sender: 'agent', 
-            text: 'error' in result ? 'Sorry, I encountered an error.' : result.response, 
+            text: 'error' in result ? result.error : result.response, 
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
         };
         setMessages(prev => [...prev, agentMessage]);
