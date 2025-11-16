@@ -1,3 +1,4 @@
+
 'use server';
 
 import { summarizeTaskResults } from '@/ai/flows/task-summarization';
@@ -140,18 +141,21 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
     const workflowsSnapshot = await agentRef.collection('workflows').where('status', '==', 'enabled').get();
     const enabledWorkflows = workflowsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Workflow[];
 
-    const plainWorkflows = enabledWorkflows.map(w => ({
-      id: w.id!,
-      triggerDescription: w.blocks?.[0]?.params.description || ''
-    }));
+    let workflowId: string | null = null;
+    if (enabledWorkflows.length > 0) {
+      const plainWorkflows = enabledWorkflows.map(w => ({
+        id: w.id!,
+        triggerDescription: w.blocks?.[0]?.params.description || ''
+      }));
 
-    const workflowSelectorResult = await selectWorkflow({ userInput: message, workflows: plainWorkflows })
-      .catch(err => {
-          console.error("Workflow selector failed:", err);
-          return null;
-      });
-      
-    const workflowId = workflowSelectorResult?.workflowId;
+      const workflowSelectorResult = await selectWorkflow({ userInput: message, workflows: plainWorkflows })
+        .catch(err => {
+            console.error("Workflow selector failed:", err);
+            return null;
+        });
+      workflowId = workflowSelectorResult?.workflowId ?? null;
+    }
+
 
     if (workflowId) {
       const workflowResult = await runOrResumeWorkflow({
@@ -175,7 +179,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         finalResult: workflowResult.context?.finalResult,
       };
     } else {
-      // Fallback to general chat
+      // Fallback to general chat if no workflow is selected
       const textsSnapshot = await agentRef.collection('texts').get();
       const filesSnapshot = await agentRef.collection('files').get();
 
