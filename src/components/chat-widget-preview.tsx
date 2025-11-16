@@ -13,21 +13,9 @@ import { Button } from './ui/button';
 import { Chat02Icon } from './lo-icons';
 
 interface ChatWidgetPreviewProps {
-  agentData?: Partial<Agent> & {
+  agentData: Partial<Agent> & {
     textSources?: TextSource[];
     fileSources?: AgentFile[];
-    isDisplayNameEnabled?: boolean;
-    themeColor?: string;
-    chatButtonColor?: string;
-    chatBubbleAlignment?: 'left' | 'right';
-    isFeedbackEnabled?: boolean;
-    isBrandingEnabled?: boolean;
-    orbColors?: {
-        bg: string;
-        c1: string;
-        c2: string;
-        c3: string;
-    }
   };
   mode?: 'chat' | 'in-call';
 }
@@ -45,7 +33,7 @@ export function ChatWidgetPreview({
     isResponding,
     handleSendMessage,
     handleOptionClick
-  } = useChatManager({ agentData });
+  } = useChatManager({ agentData, agentId: agentData.id });
   
   const { 
     connectionState, 

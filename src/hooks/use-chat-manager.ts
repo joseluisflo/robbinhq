@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, useMemo, useEffect } from 'react';
-import type { Agent, Message, Workflow } from '@/lib/types';
+import type { Agent, Message, Workflow, TextSource, AgentFile } from '@/lib/types';
 import { useUser, useFirestore, useCollection, query, collection, where } from '@/firebase';
 import { selectWorkflow } from '@/ai/flows/workflow-selector';
 import { runOrResumeWorkflow } from '@/app/actions/workflow';
@@ -9,10 +9,14 @@ import { getAgentResponse } from '@/app/actions/agents';
 
 // Define the shape of the data the hook will manage and return
 export interface UseChatManagerProps {
-  agentData?: Partial<Agent>;
+  agentData?: Partial<Agent> & {
+    textSources?: TextSource[];
+    fileSources?: AgentFile[];
+  };
+  agentId?: string;
 }
 
-export function useChatManager({ agentData }: UseChatManagerProps) {
+export function useChatManager({ agentData, agentId }: UseChatManagerProps) {
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -23,12 +27,12 @@ export function useChatManager({ agentData }: UseChatManagerProps) {
 
   // Firestore query for enabled workflows
   const workflowsQuery = useMemo(() => {
-    if (!user || !agentData?.id) return null;
+    if (!user || !agentId) return null;
     return query(
-      collection(firestore, 'users', user.uid, 'agents', agentData.id, 'workflows'),
+      collection(firestore, 'users', user.uid, 'agents', agentId, 'workflows'),
       where('status', '==', 'enabled')
     );
-  }, [user, agentData?.id, firestore]);
+  }, [user, agentId, firestore]);
 
   const { data: enabledWorkflows } = useCollection<Workflow>(workflowsQuery);
 
@@ -50,10 +54,10 @@ export function useChatManager({ agentData }: UseChatManagerProps) {
     }
     setCurrentWorkflowRunId(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentData?.id, agentData?.isWelcomeMessageEnabled, agentData?.welcomeMessage]);
+  }, [agentId, agentData?.isWelcomeMessageEnabled, agentData?.welcomeMessage]);
 
   const handleSendMessage = (messageText: string) => {
-    if (!messageText.trim() || !agentData || !user) return;
+    if (!messageText.trim() || !agentId || !user) return;
 
     const newUserMessage: Message = {
       id: Date.now().toString(),
@@ -75,10 +79,10 @@ export function useChatManager({ agentData }: UseChatManagerProps) {
 
       const workflowId = workflowSelectorResult?.workflowId;
 
-      if (workflowId && user && agentData.id) {
+      if (workflowId && user && agentId) {
         const workflowResult = await runOrResumeWorkflow({
           userId: user.uid,
-          agentId: agentData.id,
+          agentId: agentId,
           workflowId: workflowId,
           runId: currentWorkflowRunId,
           userInput: messageText,
@@ -122,7 +126,7 @@ export function useChatManager({ agentData }: UseChatManagerProps) {
         }
       } else {
         // Fallback to general agent response
-        if (!agentData.id) {
+        if (!agentId) {
             const errorMessage: Message = { 
                 id: (Date.now() + 1).toString(), 
                 sender: 'agent', 
@@ -135,10 +139,10 @@ export function useChatManager({ agentData }: UseChatManagerProps) {
 
         const result = await getAgentResponse({ 
             userId: user.uid,
-            agentId: agentData.id,
+            agentId: agentId,
             message: messageText, 
-            instructions: agentData.instructions, 
-            temperature: agentData.temperature,
+            instructions: agentData?.instructions,
+            temperature: agentData?.temperature,
         });
         
         const agentMessage: Message = { 

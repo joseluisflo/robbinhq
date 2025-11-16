@@ -237,32 +237,45 @@ export default function DesignPage() {
   }
 
 
-  const agentData: Partial<Agent> & { textSources: TextSource[], fileSources: AgentFile[] } = {
-    name: agentName,
-    logoUrl: activeAgent?.logoUrl, // Pass the current logo url
-    isDisplayNameEnabled: isDisplayNameEnabled,
-    welcomeMessage: welcomeMessage,
-    inCallWelcomeMessage: inCallWelcomeMessage,
-    isWelcomeMessageEnabled: isWelcomeMessageEnabled,
-    conversationStarters: activeAgent?.conversationStarters,
-    themeColor: themeColor,
-    chatButtonColor: chatButtonColor,
-    chatBubbleAlignment: chatBubbleAlignment,
-    chatInputPlaceholder: chatPlaceholder,
-    isFeedbackEnabled: isFeedbackEnabled,
-    isBargeInEnabled: isBargeInEnabled,
-    isBrandingEnabled: isBrandingEnabled,
-    instructions: activeAgent?.instructions,
-    temperature: activeAgent?.temperature,
-    agentVoice: agentVoice,
-    textSources: textSources || [],
-    fileSources: fileSources || [],
-    orbColors,
-  };
+  const agentDataForPreview = useMemo(() => {
+    const data: Partial<Agent> & { textSources: TextSource[], fileSources: AgentFile[] } = {
+        // We pass the activeAgent which contains the ID
+        ...activeAgent,
+        // Then override with the current state from the form fields
+        name: agentName,
+        isDisplayNameEnabled: isDisplayNameEnabled,
+        logoUrl: logoFile ? URL.createObjectURL(logoFile) : activeAgent?.logoUrl,
+        welcomeMessage: welcomeMessage,
+        inCallWelcomeMessage: inCallWelcomeMessage,
+        isWelcomeMessageEnabled: isWelcomeMessageEnabled,
+        conversationStarters: activeAgent?.conversationStarters,
+        themeColor: themeColor,
+        chatButtonColor: chatButtonColor,
+        chatBubbleAlignment: chatBubbleAlignment,
+        chatInputPlaceholder: chatPlaceholder,
+        isFeedbackEnabled: isFeedbackEnabled,
+        isBargeInEnabled: isBargeInEnabled,
+        isBrandingEnabled: isBrandingEnabled,
+        instructions: activeAgent?.instructions,
+        temperature: activeAgent?.temperature,
+        agentVoice: agentVoice,
+        orbColors,
+        // Pass the loaded sources for context
+        textSources: textSources || [],
+        fileSources: fileSources || [],
+    };
+    return data;
+  }, [
+      activeAgent, agentName, isDisplayNameEnabled, logoFile, welcomeMessage, 
+      inCallWelcomeMessage, isWelcomeMessageEnabled, themeColor, chatButtonColor, 
+      chatBubbleAlignment, chatPlaceholder, isFeedbackEnabled, isBargeInEnabled, 
+      isBrandingEnabled, agentVoice, orbColors, textSources, fileSources
+  ]);
+
 
    const handleToggleCall = () => {
     if (activeAgent) {
-      toggleCall(agentData as Agent);
+      toggleCall(agentDataForPreview as Agent);
     }
   };
 
@@ -565,12 +578,12 @@ export default function DesignPage() {
             <div className="flex h-full flex-col">
               <TabsContent value="chat" className="flex-1 mt-0">
                 <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-                    <ChatWidgetPreview agentData={agentData} mode="chat" />
+                    <ChatWidgetPreview agentData={agentDataForPreview} mode="chat" />
                 </div>
               </TabsContent>
               <TabsContent value="in-call" className="flex-1 mt-0">
                  <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-                    <ChatWidgetPreview agentData={{...agentData, orbColors}} mode="in-call" />
+                    <ChatWidgetPreview agentData={{...agentDataForPreview, orbColors}} mode="in-call" />
                  </div>
               </TabsContent>
             </div>
