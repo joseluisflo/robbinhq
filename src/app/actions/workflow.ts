@@ -11,7 +11,7 @@ import {
   showMultipleChoiceStep,
   waitForUserReplyStep,
 } from '@/app/workflows/agent-steps';
-import type { Workflow, WorkflowRun } from '@/lib/types';
+import type { Workflow, WorkflowRun, WorkflowBlock } from '@/lib/types';
 import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,7 +29,7 @@ interface RunWorkflowParams {
 
 
 // Registry to map block types to their corresponding step functions.
-const stepRegistry = new Map<string, (...args: any[]) => Promise<any>>([
+const stepRegistry = new Map<string, (params: any, context: any) => Promise<any>>([
   ['Ask a question', askQuestionStep],
   ['Wait for User Reply', waitForUserReplyStep],
   ['Show Multiple Choice', showMultipleChoiceStep],
@@ -40,6 +40,32 @@ const stepRegistry = new Map<string, (...args: any[]) => Promise<any>>([
   ['Set variable', setVariableStep],
   // 'Condition' and 'Loop' will require special handling within the engine
 ]);
+
+function resolvePlaceholders(value: any, context: Record<string, any>): any {
+    if (typeof value !== 'string') return value;
+
+    return value.replace(/{{\s*([\w.-]+)\s*}}/g, (match, placeholder) => {
+        const keys = placeholder.split('.');
+        let resolvedValue = context;
+        for (const key of keys) {
+            if (resolvedValue && typeof resolvedValue === 'object' && key in resolvedValue) {
+                resolvedValue = resolvedValue[key];
+            } else {
+                return match; // Return original placeholder if path not found
+            }
+        }
+        return resolvedValue;
+    });
+}
+
+function processParams(params: Record<string, any>, context: Record<string, any>): Record<string, any> {
+    const processedParams: Record<string, any> = {};
+    for (const key in params) {
+        processedParams[key] = resolvePlaceholders(params[key], context);
+    }
+    return processedParams;
+}
+
 
 /**
  * Runs a new workflow or resumes a paused one.
@@ -55,6 +81,15 @@ export async function runOrResumeWorkflow(
   let run: WorkflowRun;
   const now = new Date();
 
+  // Load the workflow definition first
+  const workflowRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId).collection('workflows').doc(workflowId);
+  const workflowDoc = await workflowRef.get();
+  if (!workflowDoc.exists) {
+    return { error: `Workflow with ID ${workflowId} not found.` };
+  }
+  const workflow = workflowDoc.data() as Workflow;
+  const blocks = workflow.blocks || [];
+
   // 1. Differentiate between starting a new run and resuming an existing one.
   if (runId) {
     // Resume existing run
@@ -64,8 +99,15 @@ export async function runOrResumeWorkflow(
       return { error: `Workflow run with ID ${runId} not found.` };
     }
     run = runDoc.data() as WorkflowRun;
-    // Add user's new input to the context
-    run.context.userInput = userInput;
+    
+    // Store the user's new input in the context, keyed by the previous step's ID
+    if (run.status === 'awaiting_input' && run.currentStepIndex > 0) {
+        const previousBlockId = blocks[run.currentStepIndex - 1].id;
+        run.context[previousBlockId] = { ...run.context[previousBlockId], answer: userInput };
+    } else {
+        run.context.userInput = userInput; // Initial input
+    }
+    
     run.status = 'running'; // Set to running to start the loop
   } else {
     // Start new run
@@ -78,15 +120,6 @@ export async function runOrResumeWorkflow(
       currentStepIndex: 0,
     };
   }
-  
-  // Load the workflow definition
-  const workflowRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId).collection('workflows').doc(workflowId);
-  const workflowDoc = await workflowRef.get();
-  if (!workflowDoc.exists) {
-    return { error: `Workflow with ID ${workflowId} not found.` };
-  }
-  const workflow = workflowDoc.data() as Workflow;
-  const blocks = workflow.blocks || [];
 
   // 2. Main execution loop
   while (run.status === 'running' && run.currentStepIndex < blocks.length) {
@@ -105,17 +138,20 @@ export async function runOrResumeWorkflow(
     }
 
     try {
-        const stepResult = await stepFunction(currentBlock.params);
+        const processedParams = processParams(currentBlock.params, run.context);
+        const stepResult = await stepFunction(processedParams, run.context);
 
         // 3. Handle signals from steps
         if (stepResult && stepResult._type === 'pause') {
             run.status = 'awaiting_input';
             run.promptForUser = stepResult.metadata.prompt;
-            // TODO: Handle other metadata like 'options' for multiple choice
+            run.context.options = stepResult.metadata.options;
+            // IMPORTANT: Increment step index BEFORE pausing, so we resume at the next step.
+            run.currentStepIndex++;
             break; // Exit the loop to wait for user input
         } else {
-            // Continue execution
-            run.context[currentBlock.id] = stepResult; // Store step result in context
+            // Continue execution: Store step result and move to the next step
+            run.context[currentBlock.id] = stepResult;
             run.currentStepIndex++;
         }
 
@@ -130,6 +166,18 @@ export async function runOrResumeWorkflow(
   // Check if workflow completed
   if (run.status === 'running' && run.currentStepIndex >= blocks.length) {
       run.status = 'completed';
+      // Try to find a meaningful final result, otherwise provide a generic message.
+      const lastBlockId = blocks[blocks.length - 1]?.id;
+      const lastResult = run.context[lastBlockId];
+      if (typeof lastResult === 'string') {
+          run.context.finalResult = lastResult;
+      } else if (lastResult && typeof lastResult === 'object' && lastResult.summary) {
+          run.context.finalResult = lastResult.summary;
+      } else if (lastResult && typeof lastResult === 'object' && lastResult.status) {
+          run.context.finalResult = lastResult.status;
+      } else {
+          run.context.finalResult = "Workflow finished.";
+      }
   }
 
   // 4. Persist the final state of the run to Firestore
@@ -141,7 +189,7 @@ export async function runOrResumeWorkflow(
     id: run.id,
     status: run.status,
     promptForUser: run.promptForUser,
-    context: run.context, // Return context for debugging or display
+    context: run.context,
   };
 }
 
@@ -170,3 +218,5 @@ export async function updateWorkflowStatus(
     return { error: e.message || 'Failed to update workflow status.' };
   }
 }
+
+    

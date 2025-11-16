@@ -5,12 +5,12 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 /**
  * Pauses the workflow and asks the user a question.
- * @param question The question to ask the user.
+ * @param params An object containing the prompt to ask the user.
  * @returns A pause signal for the workflow engine.
  */
-export async function askQuestionStep(question: string) {
-  console.log(`Pausing to ask user: ${question}`);
-  return { _type: 'pause', metadata: { prompt: question } };
+export async function askQuestionStep({ prompt }: { prompt: string }) {
+  console.log(`Pausing to ask user: ${prompt}`);
+  return { _type: 'pause', metadata: { prompt } };
 }
 
 /**
@@ -24,17 +24,16 @@ export async function waitForUserReplyStep() {
 
 /**
  * Pauses the workflow to present multiple choice options to the user.
- * @param prompt The question to ask the user.
- * @param options An array of string options for the user to choose from.
+ * @param params An object containing the prompt and options array.
  * @returns A pause signal with the prompt and options.
  */
-export async function showMultipleChoiceStep(prompt: string, options: string[]) {
+export async function showMultipleChoiceStep({ prompt, options }: { prompt: string, options: string[] }) {
     console.log(`Pausing to show multiple choice: ${prompt}`, options);
     return { _type: 'pause', metadata: { prompt, options } };
 }
 
 // Simulates web search functionality
-export async function searchWebStep(query: string) {
+export async function searchWebStep({ query }: { query: string }) {
   console.log(`Searching web for: ${query}`);
   // In a real implementation, this would call an external search API.
   // We'll simulate a result.
@@ -42,21 +41,21 @@ export async function searchWebStep(query: string) {
 }
 
 // Simulates sending an email
-export async function sendEmailStep(params: { to: string; subject: string; body: string }) {
-  console.log(`Simulating email send to ${params.to} with subject "${params.subject}"`);
+export async function sendEmailStep({ to, subject, body }: { to: string; subject: string; body: string }) {
+  console.log(`Simulating email send to ${to} with subject "${subject}"`);
   // In a real implementation, this would use an email service.
   return { status: "Email sent successfully (simulated)." };
 }
 
 // Simulates sending an SMS
-export async function sendSmsStep(to: string, message: string) {
+export async function sendSmsStep({ to, message }: { to: string, message: string }) {
   console.log(`Simulating SMS to ${to}: "${message}"`);
   // In a real implementation, this would use an SMS service like Twilio.
   return { status: "SMS sent successfully (simulated)." };
 }
 
 // Simulates creating a PDF
-export async function createPdfStep(content: string) {
+export async function createPdfStep({ content }: { content: string }) {
     console.log('Creating PDF with content:', content.substring(0, 50) + '...');
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage();
@@ -82,7 +81,11 @@ export async function createPdfStep(content: string) {
 
 // This step's main purpose is to be used within the orchestrator to manage state.
 // It returns the value to be stored in the context.
-export async function setVariableStep(variableName: string, value: any) {
+export async function setVariableStep({ variableName, value }: { variableName: string, value: any }, context: any) {
     console.log(`Setting variable '${variableName}' to:`, value);
-    return value;
+    // Directly modify context for subsequent steps in the same run
+    context[variableName] = value;
+    return value; // This will be stored under the block's ID
 }
+
+    
