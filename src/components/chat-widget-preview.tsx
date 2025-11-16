@@ -27,7 +27,6 @@ import { getAgentResponse } from '@/app/actions/agents';
 import { runOrResumeWorkflow } from '@/app/actions/workflow';
 import { useToast } from '@/hooks/use-toast';
 import { useLiveAgent } from '@/hooks/use-live-agent';
-import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useUser, useFirestore, useCollection, query, collection, where } from '@/firebase';
 
 
@@ -58,8 +57,7 @@ export function ChatWidgetPreview({
 }: ChatWidgetPreviewProps) {
   const { user } = useUser();
   const firestore = useFirestore();
-  const storageKey = `chat-preview-history-${agentData?.id}`;
-  const [messages, setMessages] = useLocalStorage<Message[]>(storageKey, []);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState('');
   const [isResponding, startResponding] = useTransition();
   const [currentWorkflowRunId, setCurrentWorkflowRunId] = useState<string | null>(null);
@@ -122,6 +120,8 @@ export function ChatWidgetPreview({
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages([welcomeMsg]);
+    } else if (!isWelcomeMessageEnabled) {
+      setMessages([]);
     }
     // Also reset workflow run ID on agent change
     setCurrentWorkflowRunId(null);
@@ -157,14 +157,18 @@ export function ChatWidgetPreview({
     setMessages(prev => [...prev, newUserMessage]);
     
     startResponding(async () => {
-        if (!agentData || !agentData.id) return;
-        
+      const workflows = enabledWorkflows || [];
+      const workflowResponse = workflows.length > 0 
+        ? await selectWorkflow({ userInput: messageText, workflows: workflows.map(w => ({ id: w.id!, triggerDescription: w.blocks?.[0]?.params.description || '' }))})
+        : { workflowId: null };
+
+      if (workflowResponse && workflowResponse.workflowId) {
         const workflowResult = await runOrResumeWorkflow({
-            userId: 'user', // This should be replaced with actual user ID
-            agentId: agentData.id,
-            workflowId: 'customer-onboarding', // This should be dynamically selected
-            runId: currentWorkflowRunId,
-            userInput: messageText,
+          userId: user!.uid,
+          agentId: agentData!.id!,
+          workflowId: workflowResponse.workflowId,
+          runId: currentWorkflowRunId,
+          userInput: messageText,
         });
 
         if (workflowResult && 'id' in workflowResult) {
@@ -199,31 +203,30 @@ export function ChatWidgetPreview({
                 setMessages(prev => [...prev, agentMessage]);
                 setCurrentWorkflowRunId(null);
             }
-        } else if (workflowResult && 'error' in workflowResult && workflowResult.error.includes("not found")) {
-            // Workflow doesn't exist or not triggered, fallback to default agent response
-            const plainTextSources = textSources.map(ts => ({ title: ts.title, content: ts.content }));
-            const plainFileSources = fileSources.map(fs => ({ name: fs.name, extractedText: fs.extractedText || '' }));
-            const result = await getAgentResponse({ 
-                message: messageText, 
-                instructions, 
-                temperature, 
-                textSources: plainTextSources, 
-                fileSources: plainFileSources,
-                enabledWorkflows: enabledWorkflows || [], 
-            });
-            
-            if ('error' in result) {
-                const errorMessage: Message = { id: (Date.now() + 1).toString(), sender: 'agent', text: 'Sorry, I encountered an error.', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-                setMessages(prev => [...prev, errorMessage]);
-            } else {
-                const agentMessage: Message = { id: (Date.now() + 1).toString(), sender: 'agent', text: result.response, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-                setMessages(prev => [...prev, agentMessage]);
-            }
-        } else if (workflowResult && 'error' in workflowResult) {
-            // Handle other workflow errors
-             const agentMessage: Message = { id: (Date.now() + 1).toString(), sender: 'agent', text: `Workflow error: ${workflowResult.error}`, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+        } else {
+             const agentMessage: Message = { id: (Date.now() + 1).toString(), sender: 'agent', text: `Workflow error: ${(workflowResult as any).error}`, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+             setMessages(prev => [...prev, agentMessage]);
+        }
+      } else {
+        const plainTextSources = textSources.map(ts => ({ title: ts.title, content: ts.content }));
+        const plainFileSources = fileSources.map(fs => ({ name: fs.name, extractedText: fs.extractedText || '' }));
+        
+        const result = await getAgentResponse({ 
+            message: messageText, 
+            instructions, 
+            temperature, 
+            textSources: plainTextSources, 
+            fileSources: plainFileSources,
+        });
+        
+        if ('error' in result) {
+            const errorMessage: Message = { id: (Date.now() + 1).toString(), sender: 'agent', text: 'Sorry, I encountered an error.', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+            setMessages(prev => [...prev, errorMessage]);
+        } else {
+            const agentMessage: Message = { id: (Date.now() + 1).toString(), sender: 'agent', text: result.response, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
             setMessages(prev => [...prev, agentMessage]);
         }
+      }
     });
   };
   
@@ -547,5 +550,3 @@ export function ChatWidgetPreview({
     </div>
   );
 }
-
-    
