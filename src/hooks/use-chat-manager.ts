@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, useMemo, useEffect } from 'react';
-import type { Agent, Message, Workflow, TextSource, AgentFile } from '@/lib/types';
+import type { Agent, Message, Workflow } from '@/lib/types';
 import { useUser, useFirestore, useCollection, query, collection, where } from '@/firebase';
 import { selectWorkflow } from '@/ai/flows/workflow-selector';
 import { runOrResumeWorkflow } from '@/app/actions/workflow';
@@ -9,10 +9,7 @@ import { getAgentResponse } from '@/app/actions/agents';
 
 // Define the shape of the data the hook will manage and return
 export interface UseChatManagerProps {
-  agentData?: Partial<Agent> & {
-    textSources?: TextSource[];
-    fileSources?: AgentFile[];
-  };
+  agentData?: Partial<Agent>;
 }
 
 export function useChatManager({ agentData }: UseChatManagerProps) {

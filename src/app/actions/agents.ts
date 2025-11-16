@@ -109,6 +109,10 @@ interface AgentResponseInput {
 }
 
 export async function getAgentResponse(input: AgentResponseInput): Promise<{ response: string } | { error: string }> {
+  if (!input.userId || !input.agentId) {
+    return { error: 'Sorry, I cannot respond without an agent context.' };
+  }
+  
   try {
     const firestore = firebaseAdmin.firestore();
     const agentRef = firestore.collection('users').doc(input.userId).collection('agents').doc(input.agentId);
