@@ -24,7 +24,7 @@ import { AddStarterDialog } from '@/components/add-starter-dialog';
 import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { updateAgent } from '@/app/actions/agents';
-import type { TextSource, AgentFile } from '@/lib/types';
+import type { Agent, TextSource, AgentFile } from '@/lib/types';
 import { deleteAgentText } from '@/app/actions/texts';
 import { deleteAgentFile } from '@/app/actions/files';
 import { Switch } from '@/components/ui/switch';
@@ -168,20 +168,18 @@ export default function TrainingPage() {
     );
   }
 
-  const currentAgentData = {
-    name: activeAgent.name,
+  const agentForPreview: Agent = {
+    ...activeAgent,
     instructions: instructions,
-    welcomeMessage: activeAgent.welcomeMessage,
-    isWelcomeMessageEnabled: activeAgent.isWelcomeMessageEnabled,
     temperature: temperature,
     conversationStarters: starters,
-    textSources: textSources || [],
-    fileSources: fileSources || [],
     rateLimiting: {
         maxMessages: maxMessages,
         timeframe: timeframe,
         limitExceededMessage: limitExceededMessage,
-    }
+    },
+    textSources: textSources || [],
+    fileSources: fileSources || [],
   };
 
   return (
@@ -452,7 +450,7 @@ export default function TrainingPage() {
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="flex h-full items-center justify-center p-8 bg-muted/30">
             <ChatWidgetPreview 
-              agentData={currentAgentData}
+              agent={agentForPreview}
               mode="chat" 
             />
           </div>
