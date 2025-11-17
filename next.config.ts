@@ -15,8 +15,12 @@ const nextConfig: NextConfig = {
         source: '/widget/:path*',
         headers: [
           {
-            key: 'X-Frame-Options',
-            value: 'ALLOW-FROM *',
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors *",
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
           },
         ],
       },
