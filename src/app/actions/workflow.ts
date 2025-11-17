@@ -131,7 +131,7 @@ export async function runOrResumeWorkflow(
       break;
     }
     
-    // THE FIX: If the block is a Trigger, just skip to the next one.
+    // If the block is a Trigger, just skip to the next one.
     if (currentBlock.type === 'Trigger') {
       run.currentStepIndex++;
       continue;
@@ -152,7 +152,14 @@ export async function runOrResumeWorkflow(
         if (stepResult && stepResult._type === 'pause') {
             run.status = 'awaiting_input';
             run.promptForUser = stepResult.metadata.prompt;
-            run.context.options = stepResult.metadata.options;
+            
+            // THE FIX: Only assign options if they exist, otherwise remove them
+            if (stepResult.metadata.options) {
+                run.context.options = stepResult.metadata.options;
+            } else {
+                delete run.context.options;
+            }
+
             // IMPORTANT: Increment step index BEFORE pausing, so we resume at the next step.
             run.currentStepIndex++;
             break; // Exit the loop to wait for user input
