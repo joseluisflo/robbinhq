@@ -80,37 +80,40 @@ export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
   };
 
   return (
-    <div className={cn("h-full w-full flex flex-col bg-card overflow-hidden", window.self !== window.top && "rounded-2xl shadow-2xl")}>
+    <div className={cn(
+      "h-full w-full flex flex-col bg-card overflow-hidden",
+      window.self !== window.top && "rounded-2xl shadow-2xl"
+    )}>
       <ChatHeader 
         agentName={agentName}
         isDisplayNameEnabled={isDisplayNameEnabled}
         logoUrl={logoUrl}
       />
-      <div className="flex-1 flex flex-col bg-background overflow-hidden">
+      <div className="flex-1 flex flex-col bg-background overflow-hidden min-h-0">
         <ChatMessages 
-            messages={messages}
-            liveTranscripts={liveTranscripts}
-            isResponding={isResponding}
-            isThinking={isThinking}
-            currentInput={currentInput}
-            currentOutput={currentOutput}
-            isCallActive={isCallActive}
-            agentName={agentName}
-            isFeedbackEnabled={isFeedbackEnabled}
-            themeColor={themeColor}
-            onOptionClick={handleOptionClick}
+          messages={messages}
+          liveTranscripts={liveTranscripts}
+          isResponding={isResponding}
+          isThinking={isThinking}
+          currentInput={currentInput}
+          currentOutput={currentOutput}
+          isCallActive={isCallActive}
+          agentName={agentName}
+          isFeedbackEnabled={isFeedbackEnabled}
+          themeColor={themeColor}
+          onOptionClick={handleOptionClick}
         />
         <ChatInput 
-            prompt={prompt}
-            setPrompt={setPrompt}
-            handleSendMessage={handleSendMessage}
-            isResponding={isResponding}
-            isCallActive={isCallActive}
-            placeholder={chatInputPlaceholder}
-            themeColor={themeColor}
-            conversationStarters={conversationStarters}
-            onToggleCall={handleToggleCall}
-            isBrandingEnabled={isBrandingEnabled}
+          prompt={prompt}
+          setPrompt={setPrompt}
+          handleSendMessage={handleSendMessage}
+          isResponding={isResponding}
+          isCallActive={isCallActive}
+          placeholder={chatInputPlaceholder}
+          themeColor={themeColor}
+          conversationStarters={conversationStarters}
+          onToggleCall={handleToggleCall}
+          isBrandingEnabled={isBrandingEnabled}
         />
       </div>
     </div>
