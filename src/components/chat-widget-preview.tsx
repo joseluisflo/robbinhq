@@ -1,5 +1,7 @@
+
 'use client';
 
+import { useEffect } from 'react';
 import type { Agent, AgentFile, TextSource } from '@/lib/types';
 import { useLiveAgent } from '@/hooks/use-live-agent';
 import { useChatManager } from '@/hooks/use-chat-manager';
@@ -68,6 +70,62 @@ export function ChatWidgetPreview({
     }
   };
 
+  useEffect(() => {
+    // Send config to parent window if inside an iframe
+    if (window.self !== window.top) {
+      window.parent.postMessage({
+        type: 'WIDGET_CONFIG',
+        payload: {
+          chatButtonColor,
+        }
+      }, '*');
+    }
+  }, [chatButtonColor]);
+
+
+  // Logic for handling widget in iframe vs preview
+  if (typeof window !== 'undefined' && window.self !== window.top) {
+     // This is running inside an iframe, render the full chat window
+      return (
+        <div className="h-full w-full flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden">
+          <ChatHeader 
+            agentName={agentName}
+            isDisplayNameEnabled={isDisplayNameEnabled}
+            logoUrl={logoUrl}
+          />
+           <div className="flex-1 flex flex-col bg-background overflow-hidden">
+              <ChatMessages 
+                  messages={messages}
+                  liveTranscripts={liveTranscripts}
+                  isResponding={isResponding}
+                  isThinking={isThinking}
+                  currentInput={currentInput}
+                  currentOutput={currentOutput}
+                  isCallActive={isCallActive}
+                  agentName={agentName}
+                  isFeedbackEnabled={isFeedbackEnabled}
+                  themeColor={themeColor}
+                  onOptionClick={handleOptionClick}
+              />
+              <ChatInput 
+                  prompt={prompt}
+                  setPrompt={setPrompt}
+                  handleSendMessage={handleSendMessage}
+                  isResponding={isResponding}
+                  isCallActive={isCallActive}
+                  placeholder={chatInputPlaceholder}
+                  themeColor={themeColor}
+                  conversationStarters={conversationStarters}
+                  onToggleCall={handleToggleCall}
+                  isBrandingEnabled={isBrandingEnabled}
+              />
+            </div>
+        </div>
+      );
+  }
+
+
+  // This is the preview mode for the design page
   return (
     <div
       className={`flex flex-col ${

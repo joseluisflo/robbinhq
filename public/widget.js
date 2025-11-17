@@ -1,102 +1,129 @@
 
-document.addEventListener('DOMContentLoaded', function() {
-    const scriptTag = document.currentScript;
-    if (!scriptTag) {
-        console.error("AgentVerse Widget: Script tag not found.");
+(function() {
+    // Use a unique name to avoid conflicts
+    const WIDGET_NAMESPACE = 'AgentVerseWidget';
+
+    if (window[WIDGET_NAMESPACE]) {
+        console.warn('AgentVerse widget is already loaded.');
         return;
     }
 
-    const agentId = scriptTag.getAttribute('data-agent-id');
-    const userId = scriptTag.getAttribute('data-user-id');
-    const themeColor = scriptTag.getAttribute('data-theme-color') || '#16a34a';
+    class AgentVerseWidget {
+        constructor() {
+            this.iframe = null;
+            this.chatButton = null;
+            this.isOpen = false;
+            this.init();
+        }
 
-    if (!agentId || !userId) {
-        console.error("AgentVerse Widget: 'data-agent-id' and 'data-user-id' are required.");
-        return;
-    }
+        init() {
+            const scriptTag = document.currentScript;
+            if (!scriptTag) {
+                console.error('AgentVerse widget: Could not find the script tag.');
+                return;
+            }
 
-    // Create a container for our widget elements
-    const widgetContainer = document.createElement('div');
-    widgetContainer.id = 'agentverse-widget-container';
-    document.body.appendChild(widgetContainer);
+            const agentId = scriptTag.getAttribute('data-agent-id');
+            const userId = scriptTag.getAttribute('data-user-id');
 
-    // Create the iframe
-    const iframe = document.createElement('iframe');
-    iframe.id = 'agentverse-iframe';
-    iframe.src = `${scriptTag.src.substring(0, scriptTag.src.indexOf('/widget.js'))}/widget/${userId}/${agentId}`;
-    iframe.style.display = 'none';
-    iframe.style.position = 'fixed';
-    iframe.style.bottom = '100px';
-    iframe.style.right = '20px';
-    iframe.style.width = '400px';
-    iframe.style.height = '650px';
-    iframe.style.border = 'none';
-    iframe.style.borderRadius = '16px';
-    iframe.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)';
-    iframe.style.zIndex = '9998';
-    iframe.style.opacity = '0';
-    iframe.style.transform = 'translateY(20px)';
-    iframe.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            if (!agentId || !userId) {
+                console.error('AgentVerse widget: data-agent-id and data-user-id are required.');
+                return;
+            }
+            
+            const baseUrl = scriptTag.src.replace('/widget.js', '');
 
-    // Create the chat button
-    const chatButton = document.createElement('button');
-    chatButton.id = 'agentverse-chat-button';
-    chatButton.style.position = 'fixed';
-    chatButton.style.bottom = '20px';
-    chatButton.style.right = '20px';
-    chatButton.style.width = '60px';
-    chatButton.style.height = '60px';
-    chatButton.style.borderRadius = '50%';
-    chatButton.style.backgroundColor = themeColor;
-    chatButton.style.border = 'none';
-    chatButton.style.color = 'white';
-    chatButton.style.cursor = 'pointer';
-    chatButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-    chatButton.style.display = 'flex';
-    chatButton.style.alignItems = 'center';
-    chatButton.style.justifyContent = 'center';
-    chatButton.style.zIndex = '9999';
-    chatButton.style.transition = 'transform 0.2s ease';
+            this.createChatButton();
+            this.createIframe(baseUrl, userId, agentId);
 
-    const chatIconSVG = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 1.75C13.4892 1.75 14.9255 1.78112 16.2754 1.83887L16.3418 1.8418C17.509 1.89169 18.4719 1.93277 19.2588 2.0918C20.0995 2.26171 20.7921 2.57464 21.4023 3.18945C22.6167 4.41312 22.6298 5.95045 22.71 8.22363C22.7359 8.95905 22.75 9.72053 22.75 10.5C22.75 11.2795 22.7359 12.0409 22.71 12.7764C22.6298 15.0495 22.6167 16.5869 21.4023 17.8105C20.7921 18.4254 20.0995 18.7383 19.2588 18.9082C18.4718 19.0672 17.5091 19.1083 16.3418 19.1582L16.2754 19.1611C15.5355 19.1928 14.7696 19.2165 13.9834 19.2314C13.1863 19.2466 12.9733 19.2607 12.7988 19.3271C12.6239 19.3938 12.4615 19.5198 11.873 20.0244L9.69336 21.8936C9.4251 22.1236 9.08286 22.25 8.72949 22.25C7.91249 22.2498 7.25022 21.5875 7.25 20.7705V19.1396C6.26419 19.0959 5.43456 19.0483 4.74121 18.9082C3.90049 18.7383 3.20788 18.4254 2.59766 17.8105C1.38331 16.5869 1.37023 15.0495 1.29004 12.7764C1.26409 12.0409 1.25 11.2795 1.25 10.5C1.25 9.72053 1.26409 8.95905 1.29004 8.22363C1.37023 5.95046 1.38331 4.41312 2.59766 3.18945C3.20788 2.57464 3.90049 2.26171 4.74121 2.0918C5.52815 1.93277 6.49097 1.89169 7.6582 1.8418L7.72461 1.83887C9.0745 1.78112 10.5108 1.75 12 1.75Z" fill="currentColor"></path>
-        </svg>
-    `;
-    const closeIconSVG = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-    `;
-    chatButton.innerHTML = chatIconSVG;
+            document.body.appendChild(this.chatButton);
+            document.body.appendChild(this.iframe);
 
-    // Append to container
-    widgetContainer.appendChild(iframe);
-    widgetContainer.appendChild(chatButton);
+            window.addEventListener('message', this.handleMessage.bind(this));
+        }
 
-    let isOpen = false;
+        createChatButton() {
+            this.chatButton = document.createElement('button');
+            this.chatButton.setAttribute('id', 'agentverse-chat-button');
+            this.chatButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12.0045 10.5H12.0135M16 10.5H16.009M8.009 10.5H8.01797"></path>
+                    <path d="M2 10.5C2 9.72921 2.01346 8.97679 2.03909 8.2503C2.12282 5.87683 2.16469 4.69009 3.13007 3.71745C4.09545 2.74481 5.3157 2.6926 7.7562 2.58819C9.09517 2.5309 10.5209 2.5 12 2.5C13.4791 2.5 14.9048 2.5309 16.2438 2.58819C18.6843 2.6926 19.9046 2.74481 20.8699 3.71745C21.8353 4.69009 21.8772 5.87683 21.9609 8.2503C21.9865 8.97679 22 9.72921 22 10.5C22 11.2708 21.9865 12.0232 21.9609 12.7497C21.8772 15.1232 21.8353 16.3099 20.8699 17.2826C19.9046 18.2552 18.6843 18.3074 16.2437 18.4118C15.5098 18.4432 14.7498 18.4667 13.9693 18.4815C13.2282 18.4955 12.8576 18.5026 12.532 18.6266C12.2064 18.7506 11.9325 18.9855 11.3845 19.4553L9.20503 21.3242C9.07273 21.4376 8.90419 21.5 8.72991 21.5C8.32679 21.5 8 21.1732 8 20.7701V18.4219C7.91842 18.4186 7.83715 18.4153 7.75619 18.4118C5.31569 18.3074 4.09545 18.2552 3.13007 17.2825C2.16469 16.3099 2.12282 15.1232 2.03909 12.7497C2.01346 12.0232 2 11.2708 2 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            `;
+            this.chatButton.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                background-color: #16a34a; /* Default color */
+                color: white;
+                border: none;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                z-index: 9998;
+                transition: transform 0.2s ease-in-out, background-color 0.3s;
+            `;
+            this.chatButton.addEventListener('click', this.toggleChat.bind(this));
+        }
 
-    function toggleChat() {
-        isOpen = !isOpen;
-        if (isOpen) {
-            iframe.style.display = 'block';
-            setTimeout(() => {
-                iframe.style.opacity = '1';
-                iframe.style.transform = 'translateY(0)';
-            }, 10);
-            chatButton.innerHTML = closeIconSVG;
-            chatButton.style.transform = 'rotate(90deg)';
-        } else {
-            iframe.style.opacity = '0';
-            iframe.style.transform = 'translateY(20px)';
-            setTimeout(() => {
-                iframe.style.display = 'none';
-            }, 300);
-            chatButton.innerHTML = chatIconSVG;
-            chatButton.style.transform = 'rotate(0deg)';
+        createIframe(baseUrl, userId, agentId) {
+            this.iframe = document.createElement('iframe');
+            this.iframe.setAttribute('id', 'agentverse-chat-iframe');
+            this.iframe.src = `${baseUrl}/widget/${userId}/${agentId}`;
+            this.iframe.style.cssText = `
+                position: fixed;
+                bottom: 90px;
+                right: 20px;
+                width: 400px;
+                height: 650px;
+                border: none;
+                border-radius: 1rem;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                display: none;
+                z-index: 9999;
+                overflow: hidden;
+                transition: opacity 0.3s ease, transform 0.3s ease;
+                opacity: 0;
+                transform: translateY(20px);
+            `;
+        }
+
+        toggleChat() {
+            this.isOpen = !this.isOpen;
+            if (this.isOpen) {
+                this.iframe.style.display = 'block';
+                setTimeout(() => {
+                    this.iframe.style.opacity = '1';
+                    this.iframe.style.transform = 'translateY(0)';
+                }, 10);
+            } else {
+                this.iframe.style.opacity = '0';
+                this.iframe.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    this.iframe.style.display = 'none';
+                }, 300);
+            }
+        }
+        
+        handleMessage(event) {
+            if (!this.iframe || event.source !== this.iframe.contentWindow) {
+                return;
+            }
+
+            if (event.data.type === 'WIDGET_CONFIG') {
+                const { chatButtonColor } = event.data.payload;
+                if (chatButtonColor) {
+                    this.chatButton.style.backgroundColor = chatButtonColor;
+                }
+            }
         }
     }
 
-    chatButton.addEventListener('click', toggleChat);
-});
+    window[WIDGET_NAMESPACE] = new AgentVerseWidget();
+})();

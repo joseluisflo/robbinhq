@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardHeader,
@@ -12,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Info, Copy, ChevronsUpDown } from 'lucide-react';
+import { Info, Copy } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
@@ -22,19 +23,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
-
-const codeSnippet = `
-<script>
-  (function() {
-    if (!window.chatbase || window.chatbase("getState") !== "open") {
-      // Your chatbase initialization code
-    }
-  })();
-</script>
-`.trim();
+import { useActiveAgent } from '@/app/(main)/layout';
+import { useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DeployChatPage() {
+  const { activeAgent } = useActiveAgent();
+  const { user } = useUser();
+  const { toast } = useToast();
+  const [baseUrl, setBaseUrl] = useState('');
+  const [snippet, setSnippet] = useState('');
+
+  useEffect(() => {
+    // This ensures window is defined, as it's only available on the client
+    setBaseUrl(window.location.origin);
+  }, []);
+
+  useEffect(() => {
+    if (baseUrl && activeAgent && user) {
+      const script = `<script src="${baseUrl}/widget.js" data-user-id="${user.uid}" data-agent-id="${activeAgent.id}" defer></script>`;
+      setSnippet(script);
+    } else {
+      setSnippet('');
+    }
+  }, [baseUrl, activeAgent, user]);
+
+
+  const handleCopy = () => {
+    if (!snippet) return;
+    navigator.clipboard.writeText(snippet);
+    toast({
+      title: 'Copied to clipboard!',
+      description: 'You can now paste the script into your website\'s HTML.',
+    });
+  };
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
@@ -112,31 +136,27 @@ export default function DeployChatPage() {
         <CardHeader>
           <CardTitle>Widget setup</CardTitle>
           <CardDescription>
-            Paste this code on your site (e.g., www.chatbase.co) to install the
-            chat widget and enable AI-powered support.
+            Paste this code right before the closing `&lt;/body&gt;` tag on any page you want the widget to appear.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Select defaultValue="chatbase">
-            <SelectTrigger>
-              <SelectValue placeholder="Select a website" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="chatbase">www.chatbase.co</SelectItem>
-              <SelectItem value="example">www.example.com</SelectItem>
-            </SelectContent>
-          </Select>
+           <p className="text-sm text-muted-foreground mb-2">Your widget is configured for agent: <span className="font-semibold text-foreground">{activeAgent?.name || 'Loading...'}</span></p>
         </CardContent>
         <CardFooter className="flex-col items-start gap-4 p-4 border-t bg-muted/50 rounded-b-lg">
           <div className="relative w-full">
             <pre className="text-sm p-4 bg-background rounded-md overflow-x-auto font-mono">
-              <code>{codeSnippet}</code>
+              {snippet ? (
+                <code>{snippet}</code>
+              ) : (
+                <Skeleton className="h-6 w-full" />
+              )}
             </pre>
             <Button
               variant="ghost"
               size="icon"
               className="absolute top-2 right-2 h-8 w-8"
-              onClick={() => navigator.clipboard.writeText(codeSnippet)}
+              onClick={handleCopy}
+              disabled={!snippet}
             >
               <Copy className="h-4 w-4" />
             </Button>
