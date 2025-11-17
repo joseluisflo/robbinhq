@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Agent, AgentFile, TextSource } from '@/lib/types';
 import { useChatManager } from '@/hooks/use-chat-manager';
@@ -99,8 +99,7 @@ export default function WidgetPage({ params }: { params: { userId: string, agent
         setLoading(false);
       }
     };
-    // Re-importing getDocs and collection as they are not available in the hook
-    const { getDocs, collection } = require("firebase/firestore");
+
     fetchAgent();
   }, [firestore, userId, agentId]);
 
