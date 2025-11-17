@@ -28,12 +28,15 @@ import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
+type EmbedType = 'chat-widget' | 'iframe';
+
 export default function DeployChatPage() {
   const { activeAgent } = useActiveAgent();
   const { user } = useUser();
   const { toast } = useToast();
   const [baseUrl, setBaseUrl] = useState('');
   const [snippet, setSnippet] = useState('');
+  const [embedType, setEmbedType] = useState<EmbedType>('chat-widget');
 
   useEffect(() => {
     // This ensures window is defined, as it's only available on the client
@@ -41,13 +44,20 @@ export default function DeployChatPage() {
   }, []);
 
   useEffect(() => {
-    if (baseUrl && activeAgent && user) {
+    if (!baseUrl || !activeAgent || !user) {
+      setSnippet('');
+      return;
+    }
+
+    if (embedType === 'chat-widget') {
       const script = `<script src="${baseUrl}/widget.js" data-user-id="${user.uid}" data-agent-id="${activeAgent.id}" defer></script>`;
       setSnippet(script);
     } else {
-      setSnippet('');
+      const iframeSrc = `${baseUrl}/widget/${user.uid}/${activeAgent.id}`;
+      const iframeTag = `<iframe\n  src="${iframeSrc}"\n  width="400"\n  height="600"\n  style="border:none; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);"\n></iframe>`;
+      setSnippet(iframeTag);
     }
-  }, [baseUrl, activeAgent, user]);
+  }, [baseUrl, activeAgent, user, embedType]);
 
 
   const handleCopy = () => {
@@ -55,7 +65,7 @@ export default function DeployChatPage() {
     navigator.clipboard.writeText(snippet);
     toast({
       title: 'Copied to clipboard!',
-      description: 'You can now paste the script into your website\'s HTML.',
+      description: 'You can now paste the code into your website\'s HTML.',
     });
   };
 
@@ -96,7 +106,11 @@ export default function DeployChatPage() {
       {/* Embed Type Section */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Embed type</h3>
-        <RadioGroup defaultValue="chat-widget" className="space-y-4">
+        <RadioGroup
+          value={embedType}
+          onValueChange={(value: EmbedType) => setEmbedType(value)}
+          className="space-y-4"
+        >
           <Label
             htmlFor="chat-widget"
             className="flex items-start space-x-4 rounded-md border p-4 cursor-pointer has-[:checked]:border-primary"
@@ -106,11 +120,7 @@ export default function DeployChatPage() {
               <span className="font-semibold">Chat widget</span>
               <span className="text-sm text-muted-foreground">
                 Embed a chat bubble on your website. Allows you to use all the
-                advanced features of the agent. Explore the{' '}
-                <a href="#" className="underline">
-                  docs
-                </a>
-                .
+                advanced features of the agent.
               </span>
             </div>
           </Label>
@@ -122,8 +132,8 @@ export default function DeployChatPage() {
             <div className="grid gap-1.5">
               <span className="font-semibold">Iframe</span>
               <span className="text-sm text-muted-foreground">
-                Embed the chat interface directly using an iframe. Note: Advanced
-                features are not supported.
+                Embed the chat interface directly using an iframe. Note: The chat
+                will be always visible.
               </span>
             </div>
           </Label>
@@ -131,16 +141,19 @@ export default function DeployChatPage() {
       </div>
 
 
-      {/* Widget Setup Card */}
+      {/* Setup Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Widget setup</CardTitle>
+          <CardTitle>{embedType === 'chat-widget' ? 'Widget setup' : 'Iframe setup'}</CardTitle>
           <CardDescription>
-            Paste this code right before the closing `&lt;/body&gt;` tag on any page you want the widget to appear.
+            {embedType === 'chat-widget'
+              ? "Paste this code right before the closing `</body>` tag on any page you want the widget to appear."
+              : "Paste this code where you want the chat iframe to appear in your website's HTML."
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
-           <p className="text-sm text-muted-foreground mb-2">Your widget is configured for agent: <span className="font-semibold text-foreground">{activeAgent?.name || 'Loading...'}</span></p>
+           <p className="text-sm text-muted-foreground mb-2">Your embed is configured for agent: <span className="font-semibold text-foreground">{activeAgent?.name || 'Loading...'}</span></p>
         </CardContent>
         <CardFooter className="flex-col items-start gap-4 p-4 border-t bg-muted/50 rounded-b-lg">
           <div className="relative w-full">
