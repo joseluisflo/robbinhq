@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { Agent, AgentFile, TextSource } from '@/lib/types';
 import { useLiveAgent } from '@/hooks/use-live-agent';
 import { useChatManager } from '@/hooks/use-chat-manager';
@@ -26,6 +26,7 @@ export function ChatWidgetPreview({
   agent,
   mode = 'chat',
 }: ChatWidgetPreviewProps) {
+  const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const { 
     messages, 
     setMessages,
@@ -74,18 +75,31 @@ export function ChatWidgetPreview({
     // Send config to parent window if inside an iframe
     if (window.self !== window.top) {
       window.parent.postMessage({
-        type: 'WIDGET_CONFIG',
+        type: 'AV_WIDGET_CONFIG',
         payload: {
           chatButtonColor,
         }
       }, '*');
+
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data.type === 'AV_WIDGET_OPEN') {
+          setIsWidgetOpen(true);
+        }
+      }
+      window.addEventListener('message', handleMessage);
+      return () => window.removeEventListener('message', handleMessage);
+    } else {
+        // If not in an iframe, it's a preview, so it should be open.
+        setIsWidgetOpen(true);
     }
   }, [chatButtonColor]);
 
 
   // Logic for handling widget in iframe vs preview
   if (typeof window !== 'undefined' && window.self !== window.top) {
-     // This is running inside an iframe, render the full chat window
+     // This is running inside an iframe. Only render if open.
+      if (!isWidgetOpen) return null;
+      
       return (
         <div className="h-full w-full flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden">
           <ChatHeader 

@@ -21,6 +21,13 @@ export function ChatHeader({ agentName, isDisplayNameEnabled, logoUrl }: ChatHea
     }
     return name.substring(0, 2).toUpperCase();
   };
+  
+  const handleClose = () => {
+    // If in an iframe, send a message to the parent to close.
+    if (window.self !== window.top) {
+        window.parent.postMessage({ type: 'AV_WIDGET_CLOSE' }, '*');
+    }
+  }
 
   return (
     <div className="p-4 border-b flex items-center justify-between bg-card">
@@ -40,12 +47,10 @@ export function ChatHeader({ agentName, isDisplayNameEnabled, logoUrl }: ChatHea
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <MoreHorizontal className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
     </div>
   );
 }
-
-    
