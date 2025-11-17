@@ -54,13 +54,13 @@ export default function DeployPage() {
                   </p>
                 </Link>
               </CardContent>
-            <CardFooter className="p-4 flex items-center justify-between">
-               <Button variant="outline" asChild>
+            <CardFooter className="p-4 flex items-center justify-between gap-2">
+               <Button variant="outline" asChild className="flex-1">
                  <Link href={channel.href}>Setup</Link>
                </Button>
                <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
