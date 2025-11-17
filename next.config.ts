@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'X-Frame-Options',
-            value: 'ALLOWALL',
+            value: 'ALLOW-FROM *',
           },
         ],
       },
