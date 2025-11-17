@@ -15,19 +15,25 @@ interface ChatWidgetPublicProps {
 }
 
 export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
-  const [isWidgetOpen, setIsWidgetOpen] = useState(false);
+  // If we are in an iframe, we are open by default.
+  // The parent window (widget.js) will be responsible for hiding/showing the iframe itself.
+  const [isWidgetOpen, setIsWidgetOpen] = useState(typeof window !== 'undefined' && window.self !== window.top);
 
   useEffect(() => {
-    if (window.self === window.top) {
+    // If it's not in an iframe, it's a direct page load, so it should be "open".
+    if (typeof window !== 'undefined' && window.self === window.top) {
       setIsWidgetOpen(true);
     } else {
+      // If in an iframe, let the parent know it's ready.
+      // This is for the bubble widget scenario.
+      window.parent.postMessage({ type: 'AV_WIDGET_READY' }, '*');
+
       const handleMessage = (event: MessageEvent) => {
         if (event.data?.type === 'AV_WIDGET_OPEN') {
           setIsWidgetOpen(true);
         }
       };
       window.addEventListener('message', handleMessage);
-      window.parent.postMessage({ type: 'AV_WIDGET_READY' }, '*');
       return () => window.removeEventListener('message', handleMessage);
     }
   }, []);
@@ -51,7 +57,9 @@ export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
     currentOutput 
   } = useLiveAgent(setMessages);
 
-  if (window.self !== window.top && !isWidgetOpen) {
+  // If it's used in the bubble widget context, it might be initially hidden.
+  // The direct iframe embed will always have this as true.
+  if (!isWidgetOpen) {
     return null;
   }
 
