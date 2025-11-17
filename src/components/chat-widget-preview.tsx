@@ -26,7 +26,6 @@ export function ChatWidgetPreview({
   agent,
   mode = 'chat',
 }: ChatWidgetPreviewProps) {
-  const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const { 
     messages, 
     setMessages,
@@ -72,135 +71,89 @@ export function ChatWidgetPreview({
   };
 
   useEffect(() => {
-    // Send config to parent window if inside an iframe
-    if (window.self !== window.top) {
-      window.parent.postMessage({
-        type: 'AV_WIDGET_CONFIG',
-        payload: {
-          chatButtonColor,
+    // This effect is only relevant for the design page preview
+    if (typeof window !== 'undefined' && window.self === window.top) {
+        // Send config to parent window if inside an iframe
+        if (window.self !== window.top) {
+        window.parent.postMessage({
+            type: 'AV_WIDGET_CONFIG',
+            payload: {
+            chatButtonColor,
+            }
+        }, '*');
         }
-      }, '*');
-
-      const handleMessage = (event: MessageEvent) => {
-        if (event.data.type === 'AV_WIDGET_OPEN') {
-          setIsWidgetOpen(true);
-        }
-      }
-      window.addEventListener('message', handleMessage);
-      return () => window.removeEventListener('message', handleMessage);
-    } else {
-        // If not in an iframe, it's a preview, so it should be open.
-        setIsWidgetOpen(true);
     }
   }, [chatButtonColor]);
 
 
-  // Logic for handling widget in iframe vs preview
-  if (typeof window !== 'undefined' && window.self !== window.top) {
-     // This is running inside an iframe. Only render if open.
-      if (!isWidgetOpen) return null;
-      
+  // This is the preview mode for the design page, which includes the bubble
+  if (typeof window !== 'undefined' && window.self === window.top) {
       return (
-        <div className="h-full w-full flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden">
-          <ChatHeader 
+        <div
+        className={`flex flex-col ${
+            chatBubbleAlignment === 'right' ? 'items-end' : 'items-start'
+        }`}
+        >
+        <div
+            className="flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden"
+            style={{ width: '400px', height: '650px' }}
+        >
+            <ChatHeader 
             agentName={agentName}
             isDisplayNameEnabled={isDisplayNameEnabled}
             logoUrl={logoUrl}
-          />
-           <div className="flex-1 flex flex-col bg-background overflow-hidden">
-              <ChatMessages 
-                  messages={messages}
-                  liveTranscripts={liveTranscripts}
-                  isResponding={isResponding}
-                  isThinking={isThinking}
-                  currentInput={currentInput}
-                  currentOutput={currentOutput}
-                  isCallActive={isCallActive}
-                  agentName={agentName}
-                  isFeedbackEnabled={isFeedbackEnabled}
-                  themeColor={themeColor}
-                  onOptionClick={handleOptionClick}
-              />
-              <ChatInput 
-                  prompt={prompt}
-                  setPrompt={setPrompt}
-                  handleSendMessage={handleSendMessage}
-                  isResponding={isResponding}
-                  isCallActive={isCallActive}
-                  placeholder={chatInputPlaceholder}
-                  themeColor={themeColor}
-                  conversationStarters={conversationStarters}
-                  onToggleCall={handleToggleCall}
-                  isBrandingEnabled={isBrandingEnabled}
-              />
+            />
+
+            {mode === 'chat' && (
+            <div className="flex-1 flex flex-col bg-background overflow-hidden">
+                <ChatMessages 
+                    messages={messages}
+                    liveTranscripts={liveTranscripts}
+                    isResponding={isResponding}
+                    isThinking={isThinking}
+                    currentInput={currentInput}
+                    currentOutput={currentOutput}
+                    isCallActive={isCallActive}
+                    agentName={agentName}
+                    isFeedbackEnabled={isFeedbackEnabled}
+                    themeColor={themeColor}
+                    onOptionClick={handleOptionClick}
+                />
+                <ChatInput 
+                    prompt={prompt}
+                    setPrompt={setPrompt}
+                    handleSendMessage={handleSendMessage}
+                    isResponding={isResponding}
+                    isCallActive={isCallActive}
+                    placeholder={chatInputPlaceholder}
+                    themeColor={themeColor}
+                    conversationStarters={conversationStarters}
+                    onToggleCall={handleToggleCall}
+                    isBrandingEnabled={isBrandingEnabled}
+                />
             </div>
+            )}
+
+            {mode === 'in-call' && (
+            <InCallView
+                connectionState={connectionState}
+                toggleCall={handleToggleCall}
+                orbColors={orbColors}
+            />
+            )}
         </div>
-      );
+        <Button
+            size="icon"
+            className="rounded-full h-14 w-14 mt-4 [&_svg]:size-8"
+            style={{ backgroundColor: chatButtonColor }}
+        >
+            <Chat02Icon variant="filled" />
+        </Button>
+        </div>
+    );
   }
-
-
-  // This is the preview mode for the design page
-  return (
-    <div
-      className={`flex flex-col ${
-        chatBubbleAlignment === 'right' ? 'items-end' : 'items-start'
-      }`}
-    >
-      <div
-        className="flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden"
-        style={{ width: '400px', height: '650px' }}
-      >
-        <ChatHeader 
-          agentName={agentName}
-          isDisplayNameEnabled={isDisplayNameEnabled}
-          logoUrl={logoUrl}
-        />
-
-        {mode === 'chat' && (
-          <div className="flex-1 flex flex-col bg-background overflow-hidden">
-            <ChatMessages 
-                messages={messages}
-                liveTranscripts={liveTranscripts}
-                isResponding={isResponding}
-                isThinking={isThinking}
-                currentInput={currentInput}
-                currentOutput={currentOutput}
-                isCallActive={isCallActive}
-                agentName={agentName}
-                isFeedbackEnabled={isFeedbackEnabled}
-                themeColor={themeColor}
-                onOptionClick={handleOptionClick}
-            />
-            <ChatInput 
-                prompt={prompt}
-                setPrompt={setPrompt}
-                handleSendMessage={handleSendMessage}
-                isResponding={isResponding}
-                isCallActive={isCallActive}
-                placeholder={chatInputPlaceholder}
-                themeColor={themeColor}
-                conversationStarters={conversationStarters}
-                onToggleCall={handleToggleCall}
-                isBrandingEnabled={isBrandingEnabled}
-            />
-          </div>
-        )}
-
-        {mode === 'in-call' && (
-          <InCallView
-            connectionState={connectionState}
-            toggleCall={handleToggleCall}
-            orbColors={orbColors}
-          />
-        )}
-      </div>
-       <Button
-        size="icon"
-        className="rounded-full h-14 w-14 mt-4 [&_svg]:size-8"
-        style={{ backgroundColor: chatButtonColor }}
-      >
-        <Chat02Icon variant="filled" />
-      </Button>
-    </div>
-  );
+  
+  // This should not be reached if the logic in widget/[...]/page.tsx is correct.
+  // The widget page itself now handles its open/closed state.
+  return null;
 }
