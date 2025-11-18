@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -19,6 +19,8 @@ import {
   ChevronRightIcon,
   ChevronUpIcon,
   MoreHorizontal,
+  Loader2,
+  Sparkles,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -51,9 +53,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { mockLeads } from '@/lib/data';
 import type { Lead } from '@/lib/types';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useActiveAgent } from '../layout';
+import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { analyzeSessionsForLeads } from '@/app/actions/leads';
+import { Timestamp } from 'firebase/firestore';
+import { format } from 'date-fns';
 
 const columns: ColumnDef<Lead>[] = [
   {
@@ -81,19 +87,32 @@ const columns: ColumnDef<Lead>[] = [
   {
     header: 'Name',
     accessorKey: 'name',
-    cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
+    cell: ({ row }) => <div className="font-medium">{row.getValue('name') || 'N/A'}</div>,
   },
   {
     header: 'Email',
     accessorKey: 'email',
+    cell: ({ row }) => row.getValue('email') || 'N/A',
   },
   {
-    header: 'Phone Number',
-    accessorKey: 'phoneNumber',
+    header: 'Phone',
+    accessorKey: 'phone',
+     cell: ({ row }) => row.getValue('phone') || 'N/A',
   },
   {
-    header: 'Chat',
-    accessorKey: 'chat',
+    header: 'Summary',
+    accessorKey: 'summary',
+    cell: ({ row }) => <div className="max-w-xs truncate">{row.getValue('summary')}</div>
+  },
+  {
+    header: 'Captured At',
+    accessorKey: 'createdAt',
+     cell: ({ row }) => {
+      const createdAt = row.getValue('createdAt');
+      if (!createdAt) return 'N/A';
+      const date = (createdAt as Timestamp).toDate();
+      return format(date, 'MMM d, yyyy');
+    },
   },
   {
     id: 'actions',
@@ -106,8 +125,8 @@ const columns: ColumnDef<Lead>[] = [
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>View</DropdownMenuItem>
-            <DropdownMenuItem>Delete</DropdownMenuItem>
+            <DropdownMenuItem>View Chat</DropdownMenuItem>
+            <DropdownMenuItem className="text-red-600">Delete Lead</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -118,7 +137,6 @@ const columns: ColumnDef<Lead>[] = [
 ];
 
 export default function LeadsPage() {
-  const id = useId();
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -126,13 +144,26 @@ export default function LeadsPage() {
 
   const [sorting, setSorting] = useState<SortingState>([
     {
-      id: 'name',
-      desc: false,
+      id: 'createdAt',
+      desc: true,
     },
   ]);
+  
+  const [isAnalyzing, startAnalysis] = useTransition();
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { activeAgent } = useActiveAgent();
+  const { toast } = useToast();
+
+  const leadsQuery = useMemo(() => {
+    if (!user || !activeAgent?.id) return null;
+    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'leads'));
+  }, [user, firestore, activeAgent?.id]);
+  
+  const { data: leads, loading } = useCollection<Lead>(leadsQuery);
 
   const table = useReactTable({
-    data: mockLeads,
+    data: leads || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -146,6 +177,20 @@ export default function LeadsPage() {
     },
   });
 
+  const handleAnalyze = () => {
+    if (!user || !activeAgent?.id) return;
+    
+    startAnalysis(async () => {
+        toast({ title: 'Starting analysis...', description: 'Searching for new leads in your chat logs.' });
+        const result = await analyzeSessionsForLeads(user.uid, activeAgent.id!);
+        if (result.success) {
+            toast({ title: 'Analysis Complete!', description: `${result.leadsFound} new lead(s) found.` });
+        } else {
+            toast({ title: 'Analysis Failed', description: result.error, variant: 'destructive' });
+        }
+    });
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -153,6 +198,10 @@ export default function LeadsPage() {
           <h2 className="text-3xl font-bold tracking-tight">Leads</h2>
           <p className="text-muted-foreground">View and manage leads captured by your agents.</p>
         </div>
+         <Button onClick={handleAnalyze} disabled={isAnalyzing}>
+            {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            Analyze conversations
+        </Button>
       </div>
       <div className="space-y-4">
         <div className="overflow-hidden rounded-md border bg-background">
@@ -209,7 +258,13 @@ export default function LeadsPage() {
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows?.length ? (
+              {loading ? (
+                 <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
@@ -231,7 +286,7 @@ export default function LeadsPage() {
                     colSpan={columns.length}
                     className="h-24 text-center"
                   >
-                    No results.
+                    No leads found. Click "Analyze conversations" to get started.
                   </TableCell>
                 </TableRow>
               )}
@@ -242,7 +297,7 @@ export default function LeadsPage() {
         {/* Pagination */}
         <div className="flex items-center justify-between gap-8">
           <div className="flex items-center gap-3">
-            <Label htmlFor={id} className="max-sm:sr-only">
+            <Label htmlFor="rows-per-page" className="max-sm:sr-only">
               Rows per page
             </Label>
             <Select
@@ -251,7 +306,7 @@ export default function LeadsPage() {
                 table.setPageSize(Number(value));
               }}
             >
-              <SelectTrigger id={id} className="w-fit whitespace-nowrap h-9 px-3 py-2">
+              <SelectTrigger id="rows-per-page" className="w-fit whitespace-nowrap h-9 px-3 py-2">
                 <SelectValue placeholder="Select number of results" />
               </SelectTrigger>
               <SelectContent>

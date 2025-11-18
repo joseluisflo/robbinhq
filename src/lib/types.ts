@@ -8,6 +8,7 @@
 
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -89,11 +90,13 @@ export type Workflow = {
 };
 
 export type Lead = {
-  id: string;
-  name: string;
-  email: string;
-  phoneNumber: string;
-  chat: string;
+  id?: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  summary?: string;
+  sessionId?: string;
+  createdAt?: any;
 };
 
 export type TextSource = {
@@ -122,6 +125,7 @@ export type ChatSession = {
   lastMessageSnippet: string;
   createdAt: any;
   lastActivity: any;
+  leadAnalyzed?: boolean;
   visitorInfo?: {
     ip: string;
     userAgent: string;
