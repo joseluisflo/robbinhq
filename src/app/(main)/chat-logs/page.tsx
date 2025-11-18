@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Info, Loader2, Globe, Monitor, Smartphone, Building, Workflow } from 'lucide-react';
+import { Info, Loader2, Globe, Monitor, Smartphone } from 'lucide-react';
 import { useActiveAgent } from '../layout';
 import { useUser, useFirestore, useCollection, query, collection, orderBy } from '@/firebase';
 import type { ChatMessage, ChatSession } from '@/lib/types';
@@ -58,7 +58,7 @@ function ConversationList() {
   }, [sessions, selectedSession]);
 
   const visitorInfo = selectedSession?.visitorInfo;
-  const DeviceIcon = visitorInfo?.device?.type === 'mobile' ? Smartphone : visitorInfo?.device?.type === 'tablet' ? 'TabletIcon' : Monitor;
+  const DeviceIcon = visitorInfo?.device?.type === 'mobile' ? Smartphone : Monitor;
 
 
   return (
