@@ -78,5 +78,9 @@ export default function WidgetPage({ params }: { params: { userId: string, agent
     return null; // Should be covered by error state, but for safety
   }
 
-  return <ChatWidgetPublic agent={agent} />;
+  return (
+    <div className="h-screen">
+        <ChatWidgetPublic agent={agent} />
+    </div>
+  )
 }
