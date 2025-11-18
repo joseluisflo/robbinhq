@@ -21,6 +21,7 @@ import {
   MoreHorizontal,
   Loader2,
   Sparkles,
+  Download,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -191,6 +192,41 @@ export default function LeadsPage() {
     });
   }
 
+  const handleExport = () => {
+    if (!leads || leads.length === 0) {
+      toast({
+        title: 'No leads to export',
+        description: 'There is no data to export to a CSV file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    const headers = ['Name', 'Email', 'Phone', 'Summary', 'Captured At'];
+    const rows = leads.map(lead => {
+      const name = lead.name || 'N/A';
+      const email = lead.email || 'N/A';
+      const phone = lead.phone || 'N/A';
+      const summary = `"${(lead.summary || 'N/A').replace(/"/g, '""')}"`;
+      const createdAt = lead.createdAt ? format((lead.createdAt as Timestamp).toDate(), 'yyyy-MM-dd HH:mm:ss') : 'N/A';
+      return [name, email, phone, summary, createdAt].join(',');
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(",") + "\n" 
+      + rows.join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "leads.csv");
+    document.body.appendChild(link);
+
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Export successful!', description: 'Your leads have been downloaded as leads.csv.' });
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -198,10 +234,16 @@ export default function LeadsPage() {
           <h2 className="text-3xl font-bold tracking-tight">Leads</h2>
           <p className="text-muted-foreground">View and manage leads captured by your agents.</p>
         </div>
-         <Button onClick={handleAnalyze} disabled={isAnalyzing}>
-            {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            Analyze conversations
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExport} disabled={!leads || leads.length === 0}>
+                <Download className="mr-2 h-4 w-4" />
+                Export
+            </Button>
+            <Button onClick={handleAnalyze} disabled={isAnalyzing}>
+                {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Analyze conversations
+            </Button>
+        </div>
       </div>
       <div className="space-y-4">
         <div className="overflow-hidden rounded-md border bg-background">
