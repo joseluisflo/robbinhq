@@ -1,26 +1,34 @@
 import { NextResponse } from 'next/server';
+import { processInboundEmail } from '@/app/actions/email';
 
 export async function POST(request: Request) {
   try {
     const payload = await request.json();
 
     // Extraer datos clave del webhook de Plunk.
-    // La estructura exacta puede variar, pero nos basamos en campos comunes.
     const from = payload.from;
-    const to = payload.to; // Esto contendrá la dirección única del agente
+    const to = payload.to;
     const subject = payload.subject;
-    const body = payload.text || payload.html; // Preferir texto plano, si no, usar HTML
+    const body = payload.text || payload.html || 'No content';
 
-    // Por ahora, solo registramos los datos para verificar que los recibimos.
-    console.log('--- Email Ingest Webhook Recibido ---');
-    console.log('De:', from);
-    console.log('Para:', to);
-    console.log('Asunto:', subject);
-    console.log('Cuerpo (extracto):', body ? body.substring(0, 150) + '...' : 'Sin contenido en el cuerpo');
-    console.log('------------------------------------');
+    console.log('--- Email Ingest Webhook Received ---');
+    console.log('From:', from);
+    console.log('To:', to);
+    
+    // Llamar a la Server Action para procesar el correo
+    const result = await processInboundEmail({ from, to, subject, body });
+
+    if ('error' in result) {
+        console.error('Failed to process email:', result.error);
+        // Aún así respondemos 200 OK a Plunk para evitar reintentos.
+        // El error ya se registró en nuestro lado.
+        return NextResponse.json({ success: true, message: 'Webhook received, but processing failed internally.' });
+    }
+    
+    console.log('--- Agent processing complete ---');
 
     // Responder a Plunk con un 200 OK para confirmar la recepción.
-    return NextResponse.json({ success: true, message: 'Email recibido' });
+    return NextResponse.json({ success: true, message: 'Email received and processed' });
 
   } catch (error: any) {
     console.error('Error al procesar el webhook de email-ingest:', error);
