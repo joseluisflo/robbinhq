@@ -26,6 +26,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
   const { from, to, subject, body } = emailData;
 
   if (!ingestDomain) {
+    console.error('Email ingest domain is not configured.');
     return { error: 'Email ingest domain is not configured.' };
   }
 
