@@ -1,18 +1,15 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, Info, Loader2 } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
 import { useActiveAgent } from '../layout';
-import { useUser, useFirestore, useCollection, query, collection, doc, orderBy } from '@/firebase';
+import { useUser, useFirestore, useCollection, query, collection, orderBy } from '@/firebase';
 import type { ChatMessage, ChatSession } from '@/lib/types';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
@@ -51,7 +48,6 @@ function ConversationList() {
 
   const { data: messages, loading: messagesLoading } = useCollection<ChatMessage>(messagesQuery);
   
-  // Set the first session as selected by default
   useEffect(() => {
     if (sessions && sessions.length > 0 && !selectedSession) {
       setSelectedSession(sessions[0]);
@@ -62,24 +58,27 @@ function ConversationList() {
   return (
     <div className="grid h-full w-full grid-cols-[350px_1fr] overflow-hidden">
       {/* Left Panel: Conversation List */}
-      <div className="flex flex-col border-r bg-card text-card-foreground">
-        <div className="p-4 space-y-4 border-b">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Chat logs</h2>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="unreads" className="text-sm">
-                Unreads
-              </Label>
-              <Switch id="unreads" />
-            </div>
-          </div>
-          <Input placeholder="Type to search..." />
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {sessionsLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
+      <div className="flex flex-col border-r bg-card text-card-foreground overflow-hidden">
+  {/* Header fijo */}
+  <div className="flex-shrink-0 p-4 space-y-4 border-b">
+    <div className="flex items-center justify-between">
+      <h2 className="text-xl font-bold">Chat logs</h2>
+      <div className="flex items-center gap-2">
+        <Label htmlFor="unreads" className="text-sm">
+          Unreads
+        </Label>
+        <Switch id="unreads" />
+      </div>
+    </div>
+    <Input placeholder="Type to search..." />
+  </div>
+  
+  {/* Lista con scroll */}
+  <div className="flex-1 overflow-y-auto">
+    {sessionsLoading ? (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
           ) : sessions && sessions.length > 0 ? (
             sessions.map((session) => (
               <button
@@ -110,18 +109,20 @@ function ConversationList() {
       </div>
 
       {/* Right Panel: Conversation View */}
-      <div className="flex flex-col h-full bg-background">
+      <div className="flex flex-col h-full bg-background overflow-hidden">
         {selectedSession ? (
-          <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-            <div className="px-4 py-2 border-b">
+          <Tabs defaultValue="chat" className="flex flex-col h-full">
+            {/* TabsList fijo - NO está dentro de TabsContent */}
+            <div className="flex-shrink-0 px-4 py-2 border-b">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="chat">Chat</TabsTrigger>
                 <TabsTrigger value="details">Details</TabsTrigger>
               </TabsList>
             </div>
 
-            <TabsContent value="chat" className="flex-1 flex flex-col mt-0 min-h-0">
-              <div className="overflow-y-auto p-6 space-y-6">
+            {/* TabsContent con scroll */}
+            <TabsContent value="chat" className="flex-1 overflow-y-auto mt-0 data-[state=inactive]:hidden min-h-0">
+              <div className="p-6 space-y-6">
                 {messagesLoading ? (
                     <div className="flex items-center justify-center h-full">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -165,22 +166,25 @@ function ConversationList() {
               </div>
             </TabsContent>
 
-            <TabsContent value="details" className="flex-1 overflow-y-auto p-6 mt-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                    GENERAL DETAILS
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <DetailRow label="Source" value={'Widget'} />
-                  <DetailRow label="Status" value={'Ongoing'} />
-                  <DetailRow label="Messages" value={messages?.length || 0} />
-                  <DetailRow label="Created" value={selectedSession.createdAt ? format((selectedSession.createdAt as Timestamp).toDate(), 'MMM d, yyyy, p') : 'N/A'} />
-                  <DetailRow label="Last activity" value={selectedSession.lastActivity ? formatDistanceToNow((selectedSession.lastActivity as Timestamp).toDate(), { addSuffix: true }) : 'N/A'} />
-                </CardContent>
-              </Card>
+            <TabsContent value="details" className="flex-1 overflow-y-auto mt-0 data-[state=inactive]:hidden min-h-0">
+              <div className="p-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                      GENERAL DETAILS
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <DetailRow label="Session ID" value={selectedSession.id || 'N/A'} />
+                    <DetailRow label="Source" value={'Widget'} />
+                    <DetailRow label="Status" value={'Ongoing'} />
+                    <DetailRow label="Messages" value={messages?.length || 0} />
+                    <DetailRow label="Created" value={selectedSession.createdAt ? format((selectedSession.createdAt as Timestamp).toDate(), 'MMM d, yyyy, p') : 'N/A'} />
+                    <DetailRow label="Last activity" value={selectedSession.lastActivity ? formatDistanceToNow((selectedSession.lastActivity as Timestamp).toDate(), { addSuffix: true }) : 'N/A'} />
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         ) : (
