@@ -54,13 +54,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { Lead } from '@/lib/types';
+import type { Lead, ChatSession } from '@/lib/types';
 import { useActiveAgent } from '../layout';
 import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeSessionsForLeads } from '@/app/actions/leads';
 import { Timestamp } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 
 const columns: ColumnDef<Lead>[] = [
   {
@@ -163,6 +163,13 @@ export default function LeadsPage() {
   
   const { data: leads, loading } = useCollection<Lead>(leadsQuery);
 
+  const sessionsQuery = useMemo(() => {
+    if (!user || !activeAgent?.id) return null;
+    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'sessions'));
+  }, [user, firestore, activeAgent?.id]);
+  
+  const { data: sessions } = useCollection<ChatSession>(sessionsQuery);
+
   const table = useReactTable({
     data: leads || [],
     columns,
@@ -202,14 +209,40 @@ export default function LeadsPage() {
       return;
     }
     
-    const headers = ['Name', 'Email', 'Phone', 'Summary', 'Captured At'];
+    const sessionsMap = new Map(sessions?.map(session => [session.id, session]));
+
+    const headers = [
+        'Lead Name', 'Lead Email', 'Lead Phone', 'Lead Summary', 'Lead Captured At',
+        'Session ID', 'Session Title', 'Source', 'Last Activity',
+        'Visitor IP', 'Visitor City', 'Visitor Country', 
+        'Browser', 'OS', 'Device Type'
+    ];
+
     const rows = leads.map(lead => {
-      const name = lead.name || 'N/A';
-      const email = lead.email || 'N/A';
-      const phone = lead.phone || 'N/A';
-      const summary = `"${(lead.summary || 'N/A').replace(/"/g, '""')}"`;
-      const createdAt = lead.createdAt ? format((lead.createdAt as Timestamp).toDate(), 'yyyy-MM-dd HH:mm:ss') : 'N/A';
-      return [name, email, phone, summary, createdAt].join(',');
+        const session = lead.sessionId ? sessionsMap.get(lead.sessionId) : undefined;
+        
+        const leadData = [
+            lead.name || 'N/A',
+            lead.email || 'N/A',
+            lead.phone || 'N/A',
+            `"${(lead.summary || 'N/A').replace(/"/g, '""')}"`,
+            lead.createdAt ? format((lead.createdAt as Timestamp).toDate(), 'yyyy-MM-dd HH:mm:ss') : 'N/A',
+        ];
+
+        const sessionData = [
+            lead.sessionId || 'N/A',
+            session?.title || 'N/A',
+            'Widget', // Source is static for now
+            session?.lastActivity ? format((session.lastActivity as Timestamp).toDate(), 'yyyy-MM-dd HH:mm:ss') : 'N/A',
+            session?.visitorInfo?.ip || 'N/A',
+            session?.visitorInfo?.location?.city || 'N/A',
+            session?.visitorInfo?.location?.country || 'N/A',
+            `${session?.visitorInfo?.browser?.name || ''} ${session?.visitorInfo?.browser?.version || ''}`.trim() || 'N/A',
+            `${session?.visitorInfo?.os?.name || ''} ${session?.visitorInfo?.os?.version || ''}`.trim() || 'N/A',
+            session?.visitorInfo?.device?.type || 'Desktop'
+        ];
+
+        return [...leadData, ...sessionData].join(',');
     });
 
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -219,12 +252,12 @@ export default function LeadsPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "leads.csv");
+    link.setAttribute("download", "leads_with_details.csv");
     document.body.appendChild(link);
 
     link.click();
     document.body.removeChild(link);
-    toast({ title: 'Export successful!', description: 'Your leads have been downloaded as leads.csv.' });
+    toast({ title: 'Export successful!', description: 'Your leads have been downloaded as leads_with_details.csv.' });
   };
 
   return (
