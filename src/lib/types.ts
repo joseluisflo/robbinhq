@@ -7,6 +7,7 @@
 
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -121,11 +122,33 @@ export type ChatSession = {
   lastMessageSnippet: string;
   createdAt: any;
   lastActivity: any;
+  visitorInfo?: {
+    ip: string;
+    userAgent: string;
+    location?: {
+      city: string;
+      region: string;
+      country: string;
+    };
+    browser?: {
+      name: string;
+      version: string;
+    };
+    os?: {
+      name: string;
+      version: string;
+    };
+    device?: {
+      vendor: string;
+      model: string;
+      type: string;
+    }
+  }
 }
 
 export type ChatMessage = {
   id?: string;
-  sender: 'user' | 'agent';
+  sender: 'user' | 'agent' | 'system';
   text: string;
   timestamp: any;
   options?: string[];

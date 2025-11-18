@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Info, Loader2 } from 'lucide-react';
+import { Info, Loader2, Globe, Monitor, Smartphone, Building, Workflow } from 'lucide-react';
 import { useActiveAgent } from '../layout';
 import { useUser, useFirestore, useCollection, query, collection, orderBy } from '@/firebase';
 import type { ChatMessage, ChatSession } from '@/lib/types';
@@ -15,12 +15,15 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 
 
-const DetailRow = ({ label, value }: { label: string; value: string | number }) => (
-  <div className="flex justify-between items-center text-sm">
-    <p className="text-muted-foreground">{label}:</p>
-    <p className="font-medium text-right">{value}</p>
-  </div>
-);
+const DetailRow = ({ label, value }: { label: string; value: string | number | undefined }) => {
+    if (!value) return null;
+    return (
+        <div className="flex justify-between items-center text-sm">
+            <p className="text-muted-foreground">{label}:</p>
+            <p className="font-medium text-right">{value}</p>
+        </div>
+    );
+};
 
 function ConversationList() {
   const { user } = useUser();
@@ -53,6 +56,9 @@ function ConversationList() {
       setSelectedSession(sessions[0]);
     }
   }, [sessions, selectedSession]);
+
+  const visitorInfo = selectedSession?.visitorInfo;
+  const DeviceIcon = visitorInfo?.device?.type === 'mobile' ? Smartphone : visitorInfo?.device?.type === 'tablet' ? 'TabletIcon' : Monitor;
 
 
   return (
@@ -167,7 +173,7 @@ function ConversationList() {
             </TabsContent>
 
             <TabsContent value="details" className="flex-1 overflow-y-auto mt-0 data-[state=inactive]:hidden min-h-0">
-              <div className="p-6">
+              <div className="p-6 space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base font-semibold">
@@ -184,6 +190,36 @@ function ConversationList() {
                     <DetailRow label="Last activity" value={selectedSession.lastActivity ? formatDistanceToNow((selectedSession.lastActivity as Timestamp).toDate(), { addSuffix: true }) : 'N/A'} />
                   </CardContent>
                 </Card>
+                 {visitorInfo && (
+                  <>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                                <Globe className="h-4 w-4 text-muted-foreground" />
+                                VISITOR LOCATION
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <DetailRow label="IP Address" value={visitorInfo.ip} />
+                            <DetailRow label="City" value={visitorInfo.location?.city} />
+                            <DetailRow label="Country" value={visitorInfo.location?.country} />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                                <DeviceIcon className="h-4 w-4 text-muted-foreground" />
+                                VISITOR DEVICE
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <DetailRow label="Browser" value={`${visitorInfo.browser?.name || ''} ${visitorInfo.browser?.version || ''}`} />
+                            <DetailRow label="Operating System" value={`${visitorInfo.os?.name || ''} ${visitorInfo.os?.version || ''}`} />
+                             <DetailRow label="Device Type" value={visitorInfo.device?.type || 'Desktop'} />
+                        </CardContent>
+                    </Card>
+                  </>
+                )}
               </div>
             </TabsContent>
           </Tabs>

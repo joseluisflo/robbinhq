@@ -10,7 +10,8 @@ import type { Agent, TextSource, AgentFile, Workflow, WorkflowRun } from '@/lib/
 import { runOrResumeWorkflow } from './workflow';
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-
+import { headers } from 'next/headers';
+import UAParser from 'ua-parser-js';
 
 export async function getTasksSummary(taskResults: string): Promise<string | { error: string }> {
   try {
@@ -203,11 +204,44 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
     const sessionDoc = await sessionRef.get();
     if (!sessionDoc.exists) {
         const { output } = await titleGeneratorPrompt({ message });
+        const headerList = headers();
+        const ip = headerList.get('x-forwarded-for')?.split(',')[0].trim() || 'Unknown';
+        const userAgent = headerList.get('user-agent') || 'Unknown';
+        
+        let visitorInfo: Record<string, any> = { ip, userAgent };
+
+        try {
+            if (ip !== 'Unknown') {
+                const geoResponse = await fetch(`https://get.geojs.io/v1/ip/geo/${ip}.json`);
+                const geoData = await geoResponse.json();
+                visitorInfo.location = {
+                    city: geoData.city,
+                    region: geoData.region,
+                    country: geoData.country,
+                };
+            }
+        } catch (e) {
+            console.warn("Could not fetch geolocation for IP:", ip, e);
+        }
+
+        try {
+            if (userAgent !== 'Unknown') {
+                const parser = new UAParser(userAgent);
+                visitorInfo.browser = parser.getBrowser();
+                visitorInfo.os = parser.getOS();
+                visitorInfo.device = parser.getDevice();
+            }
+        } catch (e) {
+             console.warn("Could not parse User Agent:", userAgent, e);
+        }
+
+
         await sessionRef.set({
             title: output?.title || message.substring(0, 40),
             createdAt: FieldValue.serverTimestamp(),
             lastActivity: FieldValue.serverTimestamp(),
             lastMessageSnippet: message,
+            visitorInfo,
         });
     } else {
         await sessionRef.update({
@@ -294,5 +328,3 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
     return { error: e.message || 'Failed to get agent response.' };
   }
 }
-
-    
