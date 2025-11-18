@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,11 +52,12 @@ function ConversationList() {
   const { data: messages, loading: messagesLoading } = useCollection<ChatMessage>(messagesQuery);
   
   // Set the first session as selected by default
-  useState(() => {
+  useEffect(() => {
     if (sessions && sessions.length > 0 && !selectedSession) {
       setSelectedSession(sessions[0]);
     }
-  });
+  }, [sessions, selectedSession]);
+
 
   return (
     <div className="grid h-full w-full grid-cols-[350px_1fr] overflow-hidden">
