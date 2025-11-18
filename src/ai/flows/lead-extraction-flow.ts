@@ -11,12 +11,12 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const LeadExtractionInputSchema = z.object({
+const LeadExtractionInputSchema = z.object({
   chatHistory: z.string().describe('The full transcript of the conversation between the user and the agent.'),
 });
 export type LeadExtractionInput = z.infer<typeof LeadExtractionInputSchema>;
 
-export const LeadExtractionOutputSchema = z.object({
+const LeadExtractionOutputSchema = z.object({
   isLead: z
     .boolean()
     .describe('Set to true if you are confident that you have extracted an email address or a phone number. Otherwise, set to false.'),
