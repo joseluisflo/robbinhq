@@ -243,6 +243,10 @@
           "type": "string",
           "format": "date-time",
           "description": "Timestamp of the last message in the session."
+        },
+        "leadAnalyzed": {
+            "type": "boolean",
+            "description": "Whether this chat session has been analyzed for lead generation."
         }
       },
       "required": ["title", "createdAt", "lastActivity"]
@@ -266,6 +270,39 @@
         }
       },
       "required": ["sender", "text", "timestamp"]
+    },
+    "lead": {
+      "title": "Lead",
+      "description": "Represents a potential customer lead captured from a conversation.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the lead."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email address of the lead."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The phone number of the lead."
+        },
+        "summary": {
+          "type": "string",
+          "description": "A brief summary of the lead's inquiry."
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "The ID of the chat session where the lead was captured."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the lead was created."
+        }
+      }
     }
   },
   "auth": {
@@ -313,6 +350,12 @@
             "$ref": "#/entities/chatMessage"
         },
         "description": "Stores all messages for a specific chat session."
+    },
+    "/users/{userId}/agents/{agentId}/leads/{leadId}": {
+        "schema": {
+            "$ref": "#/entities/lead"
+        },
+        "description": "Stores the leads captured for a specific agent."
     }
   }
 }
