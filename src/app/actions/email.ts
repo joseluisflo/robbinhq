@@ -1,3 +1,4 @@
+
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
@@ -12,6 +13,9 @@ interface EmailData {
   body: string;
 }
 
+const ingestDomain = process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN;
+
+
 /**
  * Procesa un correo electrónico entrante, encuentra el agente correspondiente,
  * y genera una respuesta de la IA.
@@ -21,7 +25,11 @@ interface EmailData {
 export async function processInboundEmail(emailData: EmailData): Promise<{ success: boolean } | { error: string }> {
   const { from, to, subject, body } = emailData;
 
-  const agentIdMatch = to.match(/agent-([a-zA-Z0-9_-]+)@/);
+  if (!ingestDomain) {
+    return { error: 'Email ingest domain is not configured.' };
+  }
+
+  const agentIdMatch = to.match(new RegExp(`^agent-([a-zA-Z0-9_-]+)@${ingestDomain}$`));
   if (!agentIdMatch || !agentIdMatch[1]) {
     return { error: `Could not parse agentId from email address: ${to}` };
   }
@@ -30,20 +38,28 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
   try {
     const firestore = firebaseAdmin.firestore();
     
-    // Query the agents subcollection across all users to find the matching agentId.
-    const agentsCollectionGroup = firestore.collectionGroup('agents');
-    const agentQuerySnapshot = await agentsCollectionGroup.where('__name__', '==', agentId).get();
+    // This is an inefficient query. In a production scenario, you would likely have a separate
+    // top-level collection to map agentIds to their userIds for a direct lookup.
+    const querySnapshot = await firestore.collectionGroup('agents').get();
+    
+    let agentDoc: FirebaseFirestore.QueryDocumentSnapshot | null = null;
+    querySnapshot.forEach(doc => {
+      if (doc.id === agentId) {
+        agentDoc = doc;
+      }
+    });
 
-    if (agentQuerySnapshot.empty) {
+    if (!agentDoc) {
         return { error: `Agent with ID ${agentId} not found.` };
     }
     
-    const agentDoc = agentQuerySnapshot.docs[0];
-    if (!agentDoc) {
-        return { error: `Could not retrieve document for agent ${agentId}.`};
-    }
-    
     const agent = agentDoc.data() as Agent;
+
+    // Check if the agent is allowed to reply to emails (if auto-reply is enabled)
+    // This logic needs to be implemented based on agent settings. For now, we assume it's on.
+
+    // Check if the sender's domain is allowed.
+    // This logic also needs to be implemented.
 
     const textsSnapshot = await agentDoc.ref.collection('texts').get();
     const filesSnapshot = await agentDoc.ref.collection('files').get();
@@ -57,7 +73,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     ].join('\n\n---\n\n');
 
     const chatResult = await agentChat({
-      message: body,
+      message: `The user sent the following email with the subject "${subject}":\n\n${body}`,
       instructions: agent.instructions || 'You are a helpful assistant responding to an email.',
       knowledge: knowledge,
     });

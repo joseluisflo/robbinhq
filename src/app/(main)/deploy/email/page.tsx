@@ -17,20 +17,28 @@ import { Mail, Info, Copy } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useActiveAgent } from '@/app/(main)/layout';
 import { useToast } from '@/hooks/use-toast';
+import { useMemo } from 'react';
 
 export default function DeployEmailPage() {
     const { activeAgent } = useActiveAgent();
     const { toast } = useToast();
 
-    // Placeholder for the unique email address generation
-    const uniqueAgentEmail = `agent-${activeAgent?.id || 'loading'}@your-domain.com`;
+    const ingestDomain = process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN || 'your-domain.com';
+
+    const uniqueAgentEmail = useMemo(() => {
+        if (!activeAgent?.id) return 'loading...';
+        if (ingestDomain === 'your-domain.com') return 'Domain not configured.';
+        return `agent-${activeAgent.id}@${ingestDomain}`;
+    }, [activeAgent?.id, ingestDomain]);
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(uniqueAgentEmail);
-        toast({
-            title: 'Copied to clipboard!',
-            description: 'You can now set up forwarding in your email client.',
-        });
+        if (uniqueAgentEmail.includes('@')) {
+            navigator.clipboard.writeText(uniqueAgentEmail);
+            toast({
+                title: 'Copied to clipboard!',
+                description: 'You can now set up forwarding in your email client.',
+            });
+        }
     };
 
   return (
@@ -51,7 +59,7 @@ export default function DeployEmailPage() {
         <div className="space-y-4">
              <div className="flex items-center gap-2">
                 <Input id="agent-email" readOnly value={uniqueAgentEmail} />
-                <Button variant="outline" size="icon" onClick={handleCopy}>
+                <Button variant="outline" size="icon" onClick={handleCopy} disabled={!uniqueAgentEmail.includes('@')}>
                     <Copy className="h-4 w-4" />
                 </Button>
             </div>

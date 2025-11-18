@@ -10,6 +10,7 @@
 
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -53,6 +54,7 @@ export type Agent = {
     c2: string;
     c3: string;
   };
+  emailSignature?: string;
   // For passing to live agent
   textSources?: TextSource[];
   fileSources?: AgentFile[];
@@ -168,3 +170,4 @@ export type WorkflowRun = {
   currentStepIndex: number;
   promptForUser?: string;
 };
+
