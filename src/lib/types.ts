@@ -6,6 +6,7 @@
 
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -114,13 +115,22 @@ export type AgentFile = {
 
 export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'closing' | 'error';
 
-export type Message = {
-  id: string;
-  sender: 'user' | 'agent' | 'system';
+export type ChatSession = {
+  id?: string;
+  title: string;
+  lastMessageSnippet: string;
+  createdAt: any;
+  lastActivity: any;
+}
+
+export type ChatMessage = {
+  id?: string;
+  sender: 'user' | 'agent';
   text: string;
-  timestamp: string;
+  timestamp: any;
   options?: string[];
 };
+
 
 export type WorkflowRun = {
   id: string;
