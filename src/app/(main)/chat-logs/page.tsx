@@ -120,8 +120,8 @@ function ConversationList() {
               </TabsList>
             </div>
 
-            <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <TabsContent value="chat" className="flex-1 flex flex-col mt-0 min-h-0">
+              <div className="overflow-y-auto p-6 space-y-6">
                 {messagesLoading ? (
                     <div className="flex items-center justify-center h-full">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
