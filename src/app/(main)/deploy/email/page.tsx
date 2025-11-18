@@ -7,17 +7,32 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Mail, AlertTriangle, Info } from 'lucide-react';
+import { Mail, Info, Copy } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useActiveAgent } from '@/app/(main)/layout';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DeployEmailPage() {
+    const { activeAgent } = useActiveAgent();
+    const { toast } = useToast();
+
+    // Placeholder for the unique email address generation
+    const uniqueAgentEmail = `agent-${activeAgent?.id || 'loading'}@your-domain.com`;
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(uniqueAgentEmail);
+        toast({
+            title: 'Copied to clipboard!',
+            description: 'You can now set up forwarding in your email client.',
+        });
+    };
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
@@ -25,30 +40,26 @@ export default function DeployEmailPage() {
         <Button>Save changes</Button>
       </div>
 
-      {/* Connection Section */}
+      {/* Agent Email Address Section */}
       <div className="space-y-4">
         <div>
-            <h3 className="text-lg font-semibold">Email Account Connection</h3>
+            <h3 className="text-lg font-semibold">Agent Email Address</h3>
             <p className="text-sm text-muted-foreground">
-                Connect a Google or Microsoft account to allow the agent to read and send emails.
+                Forward emails from your existing account to this unique address.
             </p>
         </div>
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                <Mail className="h-6 w-6 text-muted-foreground" />
-                <div>
-                    <p className="font-semibold">Not Connected</p>
-                    <p className="text-sm text-muted-foreground">Connect an email account to get started.</p>
-                </div>
-                </div>
-                <Button variant="outline">Connect</Button>
+             <div className="flex items-center gap-2">
+                <Input id="agent-email" readOnly value={uniqueAgentEmail} />
+                <Button variant="outline" size="icon" onClick={handleCopy}>
+                    <Copy className="h-4 w-4" />
+                </Button>
             </div>
             <Alert>
                 <Info className="h-4 w-4" />
                 <AlertTitle>How it works</AlertTitle>
                 <AlertDescription>
-                The agent will only read and reply to new, unread emails in the inbox. It will not have access to your historical emails.
+                To get started, configure your email provider (e.g., Gmail, Outlook) to automatically forward incoming emails to the address above. The agent will then process them and reply to the original sender.
                 </AlertDescription>
             </Alert>
         </div>
@@ -68,7 +79,7 @@ export default function DeployEmailPage() {
                 <Label htmlFor="auto-reply-toggle" className="font-medium">Enable Auto-Reply</Label>
                 <p className="text-sm text-muted-foreground">Allow the agent to automatically reply to emails.</p>
             </div>
-            <Switch id="auto-reply-toggle" />
+            <Switch id="auto-reply-toggle" defaultChecked />
           </div>
            <div className="space-y-2">
             <Label htmlFor="signature">Email Signature</Label>
@@ -112,20 +123,6 @@ export default function DeployEmailPage() {
           </p>
         </div>
       </div>
-
-      {/* Delete Zone */}
-      <div className="space-y-4 rounded-lg border border-destructive p-6">
-         <div>
-          <h3 className="text-lg font-semibold text-destructive">Disconnect Email</h3>
-           <p className="text-sm text-muted-foreground">
-            Disconnecting the email will stop the agent from processing new emails. This action cannot be undone.
-          </p>
-        </div>
-        <div>
-            <Button variant="destructive">Disconnect</Button>
-        </div>
-      </div>
-
     </div>
   );
 }
