@@ -109,6 +109,7 @@ interface AgentResponseInput {
     agentId: string;
     message: string;
     runId: string | null;
+    sessionId: string;
 }
 
 type ChatResponse = { type: 'chat', response: string };
@@ -158,10 +159,29 @@ const workflowSelectorPrompt = ai.definePrompt({
     `,
 });
 
+const TitleGeneratorInputSchema = z.object({
+  message: z.string(),
+});
+const TitleGeneratorOutputSchema = z.object({
+  title: z.string(),
+});
+const titleGeneratorPrompt = ai.definePrompt({
+  name: 'titleGeneratorPrompt',
+  input: { schema: TitleGeneratorInputSchema },
+  output: { schema: TitleGeneratorOutputSchema },
+  prompt: 'Generate a short, concise title (4-5 words max) for a conversation that starts with this message: "{{message}}"',
+});
+
+async function saveMessage(db: FirebaseFirestore.Firestore, path: string, message: { sender: 'user' | 'agent', text: string }) {
+    await db.collection(path).add({
+        ...message,
+        timestamp: FieldValue.serverTimestamp(),
+    });
+}
 
 export async function getAgentResponse(input: AgentResponseInput): Promise<AgentResponse> {
-  const { userId, agentId, message, runId } = input;
-  if (!userId || !agentId) {
+  const { userId, agentId, message, runId, sessionId } = input;
+  if (!userId || !agentId || !sessionId) {
     return { error: 'Sorry, I cannot respond without an agent context.' };
   }
   
@@ -169,12 +189,32 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
 
   try {
     const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
-    const agentDoc = await agentRef.get();
+    const sessionRef = agentRef.collection('sessions').doc(sessionId);
+    const messagesPath = sessionRef.collection('messages').path;
 
+    await saveMessage(firestore, messagesPath, { sender: 'user', text: message });
+
+    const agentDoc = await agentRef.get();
     if (!agentDoc.exists) {
       return { error: 'Agent not found.' };
     }
     const agent = agentDoc.data() as Agent;
+
+    const sessionDoc = await sessionRef.get();
+    if (!sessionDoc.exists) {
+        const { output } = await titleGeneratorPrompt({ message });
+        await sessionRef.set({
+            title: output?.title || message.substring(0, 40),
+            createdAt: FieldValue.serverTimestamp(),
+            lastActivity: FieldValue.serverTimestamp(),
+            lastMessageSnippet: message,
+        });
+    } else {
+        await sessionRef.update({
+            lastActivity: FieldValue.serverTimestamp(),
+            lastMessageSnippet: message,
+        });
+    }
 
     const workflowsSnapshot = await agentRef.collection('workflows').where('status', '==', 'enabled').get();
     const enabledWorkflows = workflowsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Workflow[];
@@ -187,8 +227,6 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         triggerDescription: w.blocks?.[0]?.params.description || ''
       }));
       
-      console.log('DEBUG: plainWorkflows sent to AI: ', JSON.stringify(plainWorkflows, null, 2));
-
       const { output } = await workflowSelectorPrompt({ userInput: message, workflows: plainWorkflows })
         .catch(err => {
             console.error("Workflow selector prompt failed:", err);
@@ -197,10 +235,6 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         
       selectedWorkflowId = output?.workflowId ?? null;
       
-      console.log('DEBUG: selectedWorkflowId received from AI: ', selectedWorkflowId);
-      console.log('DEBUG: typeof selectedWorkflowId: ', typeof selectedWorkflowId);
-      
-      // Robust check to handle if the model returns the string "null"
       if (selectedWorkflowId === "null") {
         selectedWorkflowId = null;
       }
@@ -216,7 +250,13 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       });
 
       if ('error' in workflowResult) {
+        await saveMessage(firestore, messagesPath, { sender: 'agent', text: workflowResult.error });
         return { error: `Workflow error: ${workflowResult.error}` };
+      }
+
+      const responseText = workflowResult.promptForUser || workflowResult.context?.finalResult;
+      if (responseText) {
+        await saveMessage(firestore, messagesPath, { sender: 'agent', text: responseText });
       }
 
       return {
@@ -244,6 +284,9 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         instructions: agent.instructions || '',
         knowledge: knowledge,
       });
+
+      await saveMessage(firestore, messagesPath, { sender: 'agent', text: chatResult.response });
+
       return { type: 'chat', response: chatResult.response };
     }
   } catch (e: any) {
@@ -251,3 +294,5 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
     return { error: e.message || 'Failed to get agent response.' };
   }
 }
+
+    

@@ -1,9 +1,11 @@
+
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
 import type { Agent, Message } from '@/lib/types';
 import { useUser } from '@/firebase';
 import { getAgentResponse } from '@/app/actions/agents';
+import { useSearchParams } from 'next/navigation';
 
 // Define the shape of the data the hook will manage and return
 export interface UseChatManagerProps {
@@ -12,11 +14,14 @@ export interface UseChatManagerProps {
 
 export function useChatManager({ agent }: UseChatManagerProps) {
   const { user } = useUser();
+  const searchParams = useSearchParams();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState('');
   const [isResponding, startResponding] = useTransition();
   const [currentWorkflowRunId, setCurrentWorkflowRunId] = useState<string | null>(null);
+
+  const sessionId = searchParams.get('sessionId');
 
   // Effect to set initial welcome message
   useEffect(() => {
@@ -40,7 +45,7 @@ export function useChatManager({ agent }: UseChatManagerProps) {
   }, [agent]);
 
   const handleSendMessage = (messageText: string) => {
-    if (!messageText.trim() || !agent?.id || !user) return;
+    if (!messageText.trim() || !agent?.id || !user || !sessionId) return;
 
     const newUserMessage: Message = {
       id: Date.now().toString(),
@@ -57,6 +62,7 @@ export function useChatManager({ agent }: UseChatManagerProps) {
         agentId: agent.id!,
         message: messageText,
         runId: currentWorkflowRunId,
+        sessionId: sessionId,
       });
 
       if ('error' in result) {
@@ -117,3 +123,5 @@ export function useChatManager({ agent }: UseChatManagerProps) {
     handleOptionClick,
   };
 }
+
+    

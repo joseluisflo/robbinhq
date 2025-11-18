@@ -1,15 +1,16 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Agent, AgentFile, TextSource } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { ChatWidgetPublic } from '@/components/chat-widget-public';
+import { useSearchParams } from 'next/navigation';
 
 
-export default function WidgetPage({ params }: { params: { userId: string, agentId: string } }) {
+function WidgetContent({ params }: { params: { userId: string, agentId: string } }) {
   const { userId, agentId } = params;
   const firestore = useFirestore();
   const [agent, setAgent] = useState<Agent | null>(null);
@@ -60,7 +61,7 @@ export default function WidgetPage({ params }: { params: { userId: string, agent
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-transparent">
+      <div className="flex h-full w-full items-center justify-center bg-transparent">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -68,7 +69,7 @@ export default function WidgetPage({ params }: { params: { userId: string, agent
 
   if (error) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-transparent p-4">
+      <div className="flex h-full w-full items-center justify-center bg-transparent p-4">
         <p className="text-red-500 bg-red-100 p-4 rounded-lg">{error}</p>
       </div>
     );
@@ -78,9 +79,18 @@ export default function WidgetPage({ params }: { params: { userId: string, agent
     return null; // Should be covered by error state, but for safety
   }
 
-  return (
-    <div className="h-screen">
-        <ChatWidgetPublic agent={agent} />
-    </div>
-  )
+  return <ChatWidgetPublic agent={agent} />;
 }
+
+
+export default function WidgetPage({ params }: { params: { userId: string, agentId: string } }) {
+    return (
+        <div className="h-full">
+            <Suspense fallback={<div className="flex h-full w-full items-center justify-center bg-transparent"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}>
+                <WidgetContent params={params} />
+            </Suspense>
+        </div>
+    )
+}
+
+    
