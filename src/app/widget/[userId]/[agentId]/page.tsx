@@ -85,7 +85,7 @@ function WidgetContent({ params }: { params: { userId: string, agentId: string }
 
 export default function WidgetPage({ params }: { params: { userId: string, agentId: string } }) {
     return (
-        <div className="h-full w-full">
+        <div className="h-screen w-full">
             <Suspense fallback={<div className="flex h-full w-full items-center justify-center bg-transparent"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}>
                 <WidgetContent params={params} />
             </Suspense>
