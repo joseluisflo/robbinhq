@@ -9,6 +9,7 @@
 
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -125,7 +126,7 @@ export type ChatSession = {
   lastMessageSnippet: string;
   createdAt: any;
   lastActivity: any;
-  leadAnalyzed?: boolean;
+  lastLeadAnalysisAt?: any;
   visitorInfo?: {
     ip: string;
     userAgent: string;

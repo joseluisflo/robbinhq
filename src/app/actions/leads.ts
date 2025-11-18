@@ -1,9 +1,10 @@
+
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { extractLeadFromConversation } from '@/ai/flows/lead-extraction-flow';
-import type { ChatMessage } from '@/lib/types';
+import type { ChatMessage, ChatSession } from '@/lib/types';
 
 export async function analyzeSessionsForLeads(userId: string, agentId: string): Promise<{ success: boolean, leadsFound: number } | { error: string }> {
   if (!userId || !agentId) {
@@ -14,20 +15,38 @@ export async function analyzeSessionsForLeads(userId: string, agentId: string): 
   const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
   
   let leadsFound = 0;
+  const analysisTime = FieldValue.serverTimestamp();
 
   try {
-    const sessionsSnapshot = await agentRef.collection('sessions').where('leadAnalyzed', '!=', true).get();
+    const sessionsSnapshot = await agentRef.collection('sessions').get();
 
     if (sessionsSnapshot.empty) {
       return { success: true, leadsFound: 0 };
     }
+    
+    const sessionsToAnalyze: FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>[] = [];
+    
+    sessionsSnapshot.forEach(doc => {
+      const session = doc.data() as ChatSession;
+      const lastActivity = (session.lastActivity as Timestamp)?.toDate();
+      const lastAnalysis = (session.lastLeadAnalysisAt as Timestamp)?.toDate();
 
-    const analysisPromises = sessionsSnapshot.docs.map(async (sessionDoc) => {
+      // Analyze if it's never been analyzed OR if there's new activity since the last analysis.
+      if (!lastAnalysis || (lastActivity && lastActivity > lastAnalysis)) {
+        sessionsToAnalyze.push(doc);
+      }
+    });
+
+    if (sessionsToAnalyze.length === 0) {
+      return { success: true, leadsFound: 0 };
+    }
+
+    const analysisPromises = sessionsToAnalyze.map(async (sessionDoc) => {
       const sessionRef = sessionDoc.ref;
       const messagesSnapshot = await sessionRef.collection('messages').orderBy('timestamp', 'asc').get();
       
       if (messagesSnapshot.empty) {
-        await sessionRef.update({ leadAnalyzed: true });
+        await sessionRef.update({ lastLeadAnalysisAt: analysisTime });
         return;
       }
 
@@ -53,7 +72,7 @@ export async function analyzeSessionsForLeads(userId: string, agentId: string): 
         leadsFound++;
       }
 
-      await sessionRef.update({ leadAnalyzed: true });
+      await sessionRef.update({ lastLeadAnalysisAt: analysisTime });
     });
 
     await Promise.all(analysisPromises);

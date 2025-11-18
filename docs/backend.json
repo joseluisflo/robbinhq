@@ -244,9 +244,10 @@
           "format": "date-time",
           "description": "Timestamp of the last message in the session."
         },
-        "leadAnalyzed": {
-            "type": "boolean",
-            "description": "Whether this chat session has been analyzed for lead generation."
+        "lastLeadAnalysisAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when this chat session was last analyzed for lead generation."
         }
       },
       "required": ["title", "createdAt", "lastActivity"]
