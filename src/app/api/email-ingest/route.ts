@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     console.log('From:', from);
     console.log('To:', to);
     
-    // Llamar a la Server Action para procesar el correo
+    // Llamar a la Server Action para procesar el correo y enviar la respuesta
     const result = await processInboundEmail({ from, to, subject, body });
 
     if ('error' in result) {
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true, message: 'Webhook received, but processing failed internally.' });
     }
     
-    console.log('--- Agent processing complete ---');
+    console.log('--- Agent processing and reply complete ---');
 
     // Responder a Plunk con un 200 OK para confirmar la recepción.
     return NextResponse.json({ success: true, message: 'Email received and processed' });

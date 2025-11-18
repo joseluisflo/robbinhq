@@ -3,6 +3,7 @@
 import { firebaseAdmin } from '@/firebase/admin';
 import { agentChat } from '@/ai/flows/agent-chat';
 import type { Agent, AgentFile, TextSource } from '@/lib/types';
+import { sendEmail } from '@/lib/email-service';
 
 interface EmailData {
   from: string;
@@ -15,10 +16,10 @@ interface EmailData {
  * Procesa un correo electrónico entrante, encuentra el agente correspondiente,
  * y genera una respuesta de la IA.
  * @param emailData Los datos del correo electrónico recibido.
- * @returns La respuesta generada por el agente o un objeto de error.
+ * @returns Un objeto que indica el éxito o un objeto de error.
  */
-export async function processInboundEmail(emailData: EmailData): Promise<{ response: string } | { error: string }> {
-  const { to, body } = emailData;
+export async function processInboundEmail(emailData: EmailData): Promise<{ success: boolean } | { error: string }> {
+  const { from, to, subject, body } = emailData;
 
   // 1. Extraer el agentId de la dirección de correo 'to'
   const agentIdMatch = to.match(/agent-([a-zA-Z0-9_-]+)@/);
@@ -30,27 +31,24 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ respo
   try {
     const firestore = firebaseAdmin.firestore();
 
-    // 2. Usar una consulta de grupo de colección para encontrar el agente y su usuario
+    // NOTA: Esta consulta asume una estructura plana o predecible.
+    // En una app multi-usuario real, podrías necesitar una colección raíz `agents`
+    // o una forma más directa de buscar un agente por su ID de email.
+    // Por ahora, esta consulta de grupo es un buen punto de partida.
     const agentsCollectionGroup = firestore.collectionGroup('agents');
-    const agentQuerySnapshot = await agentsCollectionGroup.where('__name__', '==', `users/default/agents/${agentId}`).limit(1).get();
+    const agentQuerySnapshot = await agentsCollectionGroup.get();
 
-    if (agentQuerySnapshot.empty) {
-        // Fallback for non-default user structure if needed in future
-        console.warn(`Agent ${agentId} not found directly, trying broader search.`);
-        const broaderSnapshot = await agentsCollectionGroup.where('__name__', 'like', `%/${agentId}`).limit(1).get();
-        if (broaderSnapshot.empty) {
-            return { error: `Agent with ID ${agentId} not found.` };
+    let agentDoc: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+    agentQuerySnapshot.forEach(doc => {
+        if (doc.id === agentId) {
+            agentDoc = doc;
         }
-        // This is less efficient and assumes agentId is globally unique
-        // In a real multi-user scenario, a root-level mapping might be better
+    });
+
+    if (!agentDoc) {
+      return { error: `Agent with ID ${agentId} not found.` };
     }
     
-    // For now, let's assume we can't find the agent if the first query fails.
-    if (agentQuerySnapshot.empty) {
-        return { error: `Agent with ID ${agentId} not found.` };
-    }
-
-    const agentDoc = agentQuerySnapshot.docs[0];
     const agent = agentDoc.data() as Agent;
 
     // 3. Obtener el conocimiento del agente (textos y archivos)
@@ -71,9 +69,21 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ respo
       instructions: agent.instructions || '',
       knowledge: knowledge,
     });
+    
+    // 5. Enviar la respuesta por correo electrónico
+    const replySubject = `Re: ${subject}`;
+    const agentSignature = agent.emailSignature || `\n\n--\nSent by ${agent.name}`;
+    const replyBody = `${chatResult.response}${agentSignature}`;
 
-    console.log(`Generated response for agent ${agentId}:`, chatResult.response);
-    return { response: chatResult.response };
+    await sendEmail({
+      to: from,
+      from: to, // Responder desde la misma dirección única del agente
+      subject: replySubject,
+      text: replyBody,
+    });
+
+    console.log(`Response sent to ${from} from agent ${agentId}`);
+    return { success: true };
 
   } catch (error: any) {
     console.error('Error processing inbound email:', error);

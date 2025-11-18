@@ -112,6 +112,10 @@
                 "c2": { "type": "string" },
                 "c3": { "type": "string" }
             }
+        },
+        "emailSignature": {
+            "type": "string",
+            "description": "The signature to be appended to all emails sent by the agent."
         }
       },
       "required": ["name", "userId", "createdAt"]
