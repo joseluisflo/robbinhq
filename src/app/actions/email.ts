@@ -21,7 +21,6 @@ interface EmailData {
 export async function processInboundEmail(emailData: EmailData): Promise<{ success: boolean } | { error: string }> {
   const { from, to, subject, body } = emailData;
 
-  // 1. Extraer el agentId de la dirección de correo 'to'
   const agentIdMatch = to.match(/agent-([a-zA-Z0-9_-]+)@/);
   if (!agentIdMatch || !agentIdMatch[1]) {
     return { error: `Could not parse agentId from email address: ${to}` };
@@ -30,28 +29,22 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
   try {
     const firestore = firebaseAdmin.firestore();
-
-    // NOTA: Esta consulta asume una estructura plana o predecible.
-    // En una app multi-usuario real, podrías necesitar una colección raíz `agents`
-    // o una forma más directa de buscar un agente por su ID de email.
-    // Por ahora, esta consulta de grupo es un buen punto de partida.
+    
+    // Query the agents subcollection across all users to find the matching agentId.
     const agentsCollectionGroup = firestore.collectionGroup('agents');
-    const agentQuerySnapshot = await agentsCollectionGroup.get();
+    const agentQuerySnapshot = await agentsCollectionGroup.where('__name__', '==', agentId).get();
 
-    let agentDoc: FirebaseFirestore.QueryDocumentSnapshot | undefined;
-    agentQuerySnapshot.forEach(doc => {
-        if (doc.id === agentId) {
-            agentDoc = doc;
-        }
-    });
-
+    if (agentQuerySnapshot.empty) {
+        return { error: `Agent with ID ${agentId} not found.` };
+    }
+    
+    const agentDoc = agentQuerySnapshot.docs[0];
     if (!agentDoc) {
-      return { error: `Agent with ID ${agentId} not found.` };
+        return { error: `Could not retrieve document for agent ${agentId}.`};
     }
     
     const agent = agentDoc.data() as Agent;
 
-    // 3. Obtener el conocimiento del agente (textos y archivos)
     const textsSnapshot = await agentDoc.ref.collection('texts').get();
     const filesSnapshot = await agentDoc.ref.collection('files').get();
 
@@ -63,21 +56,19 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
         ...fileSources.map(f => `File: ${f.name}\nContent: ${f.extractedText || ''}`)
     ].join('\n\n---\n\n');
 
-    // 4. Llamar a la IA para generar una respuesta
     const chatResult = await agentChat({
       message: body,
-      instructions: agent.instructions || '',
+      instructions: agent.instructions || 'You are a helpful assistant responding to an email.',
       knowledge: knowledge,
     });
     
-    // 5. Enviar la respuesta por correo electrónico
-    const replySubject = `Re: ${subject}`;
+    const replySubject = subject.toLowerCase().startsWith('re:') ? subject : `Re: ${subject}`;
     const agentSignature = agent.emailSignature || `\n\n--\nSent by ${agent.name}`;
     const replyBody = `${chatResult.response}${agentSignature}`;
 
     await sendEmail({
       to: from,
-      from: to, // Responder desde la misma dirección única del agente
+      from: to, // Reply from the agent's unique address
       subject: replySubject,
       text: replyBody,
     });
