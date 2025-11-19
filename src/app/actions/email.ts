@@ -79,10 +79,8 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     const agentSignature = agent.emailSignature || `\n\n--\nSent by ${agent.name}`;
     const replyBody = `${chatResult.response}${agentSignature}`;
 
-    // Note: The 'from' address in sendEmail should be a verified sending address in Plunk,
-    // not the dynamic agent address, which is only for receiving.
-    // For simplicity, we can use a generic "no-reply" or a main support address.
-    const sendingAddress = `support@${agentEmailDomain}`;
+    // Use a fixed, verified "from" address as required by Plunk.
+    const sendingAddress = `agent@${agentEmailDomain}`;
 
     await sendEmail({
       to: from,
