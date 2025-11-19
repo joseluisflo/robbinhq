@@ -13,7 +13,7 @@ interface EmailData {
   body: string;
 }
 
-const agentEmailDomain = process.env.NEXT_PUBLIC_AGENT_EMAIL_DOMAIN;
+const agentEmailDomain = process.env.NEXT_PUBLIC_AGENT_EMAIL_DOMAIN || process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN;
 
 
 /**
@@ -31,7 +31,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
   }
 
   // Extract agentId from an address like "agent-xyz123@osomelabs.com"
-  const agentIdMatch = to.match(new RegExp(`^agent-([a-zA-Z0-9_-]+)@${agentEmailDomain}$`));
+  const agentIdMatch = to.match(new RegExp(`^agent-([a-zA-Z0-9_-]+)@${agentEmailDomain.replace('.', '\\.')}$`));
 
   if (!agentIdMatch || !agentIdMatch[1]) {
     return { error: `Could not parse agentId from email address: ${to}` };
