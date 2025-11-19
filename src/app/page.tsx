@@ -1,3 +1,6 @@
+
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -6,6 +9,10 @@ import { CheckCircle, Bot, Zap, Target } from 'lucide-react';
 import { LandingHeader } from '@/components/layout/landing-header';
 import { LandingFooter } from '@/components/layout/landing-footer';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useUser } from '@/firebase';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 const heroImage = PlaceHolderImages.find((img) => img.id === 'hero');
 
@@ -28,6 +35,23 @@ const features = [
 ];
 
 export default function Home() {
+  const { user, loading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, loading, router]);
+
+  if (loading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <LandingHeader />
