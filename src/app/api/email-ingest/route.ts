@@ -26,6 +26,10 @@ export async function POST(request: Request) {
     const to = payload.to;
     const subject = payload.subject;
     const body = payload.text || payload.html || 'No content';
+    const messageId = payload.headers?.['message-id'] || `no-id-${Date.now()}`;
+    const inReplyTo = payload.headers?.['in-reply-to'];
+    const references = payload.headers?.['references'];
+
 
     if (!from || !to || !subject) {
         return NextResponse.json({ success: false, error: 'Missing required email fields (from, to, subject).' }, { status: 400 });
@@ -36,7 +40,15 @@ export async function POST(request: Request) {
     console.log('To:', to);
     
     // 3. Process Email
-    const result = await processInboundEmail({ from, to, subject, body });
+    const result = await processInboundEmail({ 
+        from, 
+        to, 
+        subject, 
+        body,
+        messageId,
+        inReplyTo,
+        references
+    });
 
     if ('error' in result) {
         console.error('Failed to process email:', result.error);

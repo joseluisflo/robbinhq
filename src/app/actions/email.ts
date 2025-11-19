@@ -3,36 +3,32 @@
 
 import { firebaseAdmin } from '@/firebase/admin';
 import { agentChat } from '@/ai/flows/agent-chat';
-import type { Agent, AgentFile, TextSource } from '@/lib/types';
+import type { Agent, AgentFile, TextSource, EmailMessage } from '@/lib/types';
 import { sendEmail } from '@/lib/email-service';
+import { FieldValue } from 'firebase-admin/firestore';
+
 
 interface EmailData {
   from: string;
   to: string;
   subject: string;
   body: string;
+  messageId: string;
+  references?: string;
+  inReplyTo?: string;
 }
 
 const agentEmailDomain = process.env.NEXT_PUBLIC_AGENT_EMAIL_DOMAIN || process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN;
 
-
-/**
- * Procesa un correo electrónico entrante, encuentra el agente correspondiente,
- * y genera una respuesta de la IA.
- * @param emailData Los datos del correo electrónico recibido.
- * @returns Un objeto que indica el éxito o un objeto de error.
- */
 export async function processInboundEmail(emailData: EmailData): Promise<{ success: boolean } | { error: string }> {
-  const { from, to, subject, body } = emailData;
+  const { from, to, subject, body, messageId, inReplyTo, references } = emailData;
 
   if (!agentEmailDomain) {
-    console.error('Agent email domain (NEXT_PUBLIC_AGENT_EMAIL_DOMAIN) is not configured.');
+    console.error('Agent email domain (NEXT_PUBLIC_AGENT_EMAIL_DOMAIN or NEXT_PUBLIC_EMAIL_INGEST_DOMAIN) is not configured.');
     return { error: 'Agent email domain is not configured.' };
   }
 
-  // Extract agentId from an address like "agent-xyz123@osomelabs.com"
   const agentIdMatch = to.match(new RegExp(`^agent-([a-zA-Z0-9_-]+)@`));
-
   if (!agentIdMatch || !agentIdMatch[1]) {
     return { error: `Could not parse agentId from email address: ${to}` };
   }
@@ -40,24 +36,49 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
   try {
     const firestore = firebaseAdmin.firestore();
-    
-    const querySnapshot = await firestore.collectionGroup('agents').get();
-
-    const agentDoc = querySnapshot.docs.find(doc => doc.id === agentId) || null;
+    const querySnapshot = await firestore.collectionGroup('agents').where('__name__', '==', agentId).get();
+    const agentDoc = querySnapshot.docs[0];
 
     if (!agentDoc) {
-        return { error: `Agent with ID ${agentId} not found.` };
+      return { error: `Agent with ID ${agentId} not found.` };
+    }
+    const agent = agentDoc.data() as Agent;
+    const agentRef = agentDoc.ref;
+    const emailSessionsRef = agentRef.collection('emailSessions');
+
+    let sessionRef;
+    let messages: EmailMessage[] = [];
+
+    // Find existing session or create a new one
+    if (inReplyTo) {
+      const sessionQuery = await emailSessionsRef.where('participants', 'array-contains', from).get();
+      // This logic is simplified; a real app might need more robust session matching
+      sessionRef = sessionQuery.docs[0]?.ref;
+    } 
+    
+    if (!sessionRef) {
+        sessionRef = emailSessionsRef.doc();
+        await sessionRef.set({
+            subject: subject,
+            participants: [from, to],
+            lastActivity: FieldValue.serverTimestamp(),
+        });
+    } else {
+         const messagesSnapshot = await sessionRef.collection('messages').orderBy('timestamp', 'asc').get();
+         messages = messagesSnapshot.docs.map(doc => doc.data() as EmailMessage);
     }
     
-    const agent = agentDoc.data() as Agent;
+    // Save incoming message
+    await sessionRef.collection('messages').doc(messageId).set({
+        messageId: messageId,
+        sender: from,
+        text: body,
+        timestamp: FieldValue.serverTimestamp(),
+    });
 
-    // TODO: Check if the agent is allowed to reply to emails (if auto-reply is enabled)
-    // This logic needs to be implemented based on agent settings. For now, we assume it's on.
 
-    // TODO: Check if the sender's domain is allowed based on agent settings.
-
-    const textsSnapshot = await agentDoc.ref.collection('texts').get();
-    const filesSnapshot = await agentDoc.ref.collection('files').get();
+    const textsSnapshot = await agentRef.collection('texts').get();
+    const filesSnapshot = await agentRef.collection('files').get();
 
     const textSources = textsSnapshot.docs.map(doc => doc.data() as TextSource);
     const fileSources = filesSnapshot.docs.map(doc => doc.data() as AgentFile);
@@ -67,8 +88,16 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
         ...fileSources.map(f => `File: ${f.name}\nContent: ${f.extractedText || ''}`)
     ].join('\n\n---\n\n');
 
+    const conversationHistory = messages.map(msg => {
+        const senderPrefix = msg.sender === from ? 'User' : 'Agent';
+        return `${senderPrefix}: ${msg.text}`;
+    }).join('\n');
+    
+    const messageWithHistory = `${conversationHistory}\n\nUser: ${body}`;
+
+
     const chatResult = await agentChat({
-      message: `The user sent the following email with the subject "${subject}":\n\n${body}`,
+      message: messageWithHistory,
       instructions: agent.instructions || 'You are a helpful assistant responding to an email.',
       knowledge: knowledge,
     });
