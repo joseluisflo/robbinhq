@@ -12,7 +12,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const AgentChatInputSchema = z.object({
-  message: z.string().describe('The user\'s message.'),
+  message: z.string().describe('The user\'s message, which may include the full conversation history.'),
   instructions: z.string().describe('The agent\'s instructions and persona.'),
   knowledge: z.string().describe('A collection of knowledge from texts and files for the agent to use.'),
 });
@@ -38,14 +38,18 @@ You are an AI assistant. Your instructions and persona are defined below.
 {{{instructions}}}
 
 ### Knowledge Base
-Use the following information to answer the user's questions. This is your primary source of truth. Do not use any external knowledge unless explicitly asked to.
+If the user's question can be answered using the information below, use it as your primary source of truth.
 ---
 {{{knowledge}}}
 ---
 
-Based on the instructions and knowledge base, respond to the following user message.
+### Conversation History
+Below is the history of the conversation so far. Use it to understand the full context.
+---
+{{{message}}}
+---
 
-User Message: {{{message}}}
+Based on all the information above, provide a helpful and relevant response to the LAST message in the conversation history.
 `,
 });
 
