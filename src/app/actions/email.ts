@@ -36,7 +36,8 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
   try {
     const firestore = firebaseAdmin.firestore();
-    // Efficiently find the user ID for the agent
+    // Use a collection group query to find the agent by its ID, which is more efficient
+    // than iterating over all users if the number of users is large.
     const agentQuerySnapshot = await firestore.collectionGroup('agents').where('__name__', '==', agentId).limit(1).get();
     
     if (agentQuerySnapshot.empty) {
@@ -47,13 +48,12 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     const agentRef = agentDoc.ref;
     
     const emailSessionsRef = agentRef.collection('emailSessions');
-
     let sessionRef;
     let messages: EmailMessage[] = [];
-    let existingSessionId: string | null = null;
-    let existingSession: EmailSession | null = null;
-
-    // A more robust way to find the session
+    
+    // To find the session, we need to look for a thread based on the 'References' or 'In-Reply-To' headers.
+    // A simple approach is to find a session that involves the sender.
+    // A more robust solution would involve storing message IDs and checking references.
     const sessionQuery = await emailSessionsRef
         .where('participants', 'array-contains', from)
         .where('subject', '==', subject.replace(/^Re: /i, ''))
@@ -62,24 +62,19 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
     if (!sessionQuery.empty) {
         sessionRef = sessionQuery.docs[0].ref;
-        existingSessionId = sessionQuery.docs[0].id;
-        existingSession = sessionQuery.docs[0].data() as EmailSession;
-    }
-
-
-    if (!sessionRef) {
+        const messagesSnapshot = await sessionRef.collection('messages').orderBy('timestamp', 'asc').get();
+        messages = messagesSnapshot.docs.map(doc => doc.data() as EmailMessage);
+    } else {
+        // No existing session found, create a new one.
         sessionRef = emailSessionsRef.doc();
         await sessionRef.set({
             subject: subject,
-            participants: [from, to],
+            participants: [from, to], // Store both participants for future lookups
             lastActivity: FieldValue.serverTimestamp(),
         });
-    } else {
-         const messagesSnapshot = await sessionRef.collection('messages').orderBy('timestamp', 'asc').get();
-         messages = messagesSnapshot.docs.map(doc => doc.data() as EmailMessage);
     }
     
-    // Save incoming message
+    // Save incoming message, using its unique Message-ID as the document ID
     await sessionRef.collection('messages').doc(messageId).set({
         messageId: messageId,
         sender: from,
@@ -100,6 +95,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     ].join('\n\n---\n\n');
 
     const conversationHistory = messages.map(msg => {
+        // Determine if the sender of the historical message is the current user or the agent
         const senderPrefix = msg.sender === from ? 'User' : 'Agent';
         return `${senderPrefix}: ${msg.text}`;
     }).join('\n');
@@ -109,7 +105,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
     const chatResult = await agentChat({
       message: messageWithHistory,
-      instructions: agent.instructions || 'You are a helpful assistant responding to an email.',
+      instructions: agent.instructions || 'You are a helpful assistant responding to an email. Your response should be in plain text, not markdown.',
       knowledge: knowledge,
     });
     
@@ -117,7 +113,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     const agentSignature = agent.emailSignature || `\n\n--\nSent by ${agent.name}`;
     const replyBody = `${chatResult.response}${agentSignature}`;
     
-    // Construct references for threading
+    // Construct references for threading. Plunk will handle this, but it's good practice.
     const newReferences = [references, inReplyTo].filter(Boolean).join(' ');
 
     await sendEmail({
@@ -126,6 +122,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
       text: replyBody,
       inReplyTo: messageId,
       references: newReferences,
+      replyTo: to, // Ensure replies come back to the unique agent address
     });
 
     console.log(`Response sent to ${from} for agent ${agentId}`);

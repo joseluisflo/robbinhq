@@ -15,9 +15,10 @@ interface SendEmailParams {
   text: string;
   inReplyTo?: string;
   references?: string;
+  replyTo?: string;
 }
 
-export async function sendEmail({ to, subject, text, inReplyTo, references }: SendEmailParams) {
+export async function sendEmail({ to, subject, text, inReplyTo, references, replyTo }: SendEmailParams) {
   if (!plunk) {
     console.error('Email service is not initialized. PLUNK_API_KEY might be missing.');
     throw new Error('Email service is not available.');
@@ -27,9 +28,10 @@ export async function sendEmail({ to, subject, text, inReplyTo, references }: Se
     const headers: Record<string, string> = {};
     if (inReplyTo) headers['In-Reply-To'] = inReplyTo;
     if (references) headers['References'] = references;
+    if (replyTo) headers['Reply-To'] = replyTo;
     
-    // The 'from' field is intentionally omitted to let Plunk use its default verified sender.
-    // This avoids domain verification issues during development.
+    // The 'from' field is intentionally omitted to let Plunk use its default verified sender (e.g. no-reply@useplunk.com).
+    // The 'Reply-To' header will direct user replies back to the correct agent address.
     const response = await plunk.emails.send({
       to,
       subject,
