@@ -11,6 +11,7 @@
 
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -149,7 +150,7 @@ export type ChatSession = {
       vendor: string;
       model: string;
       type: string;
-    }
+    };
   }
 }
 
@@ -171,3 +172,18 @@ export type WorkflowRun = {
   promptForUser?: string;
 };
 
+
+export type EmailSession = {
+  id?: string;
+  subject: string;
+  participants: string[];
+  lastActivity: any;
+};
+
+export type EmailMessage = {
+  id?: string;
+  messageId: string;
+  sender: string;
+  text: string;
+  timestamp: any;
+};

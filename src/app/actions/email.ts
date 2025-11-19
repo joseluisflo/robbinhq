@@ -3,7 +3,7 @@
 
 import { firebaseAdmin } from '@/firebase/admin';
 import { agentChat } from '@/ai/flows/agent-chat';
-import type { Agent, AgentFile, TextSource, EmailMessage } from '@/lib/types';
+import type { Agent, AgentFile, TextSource, EmailMessage, EmailSession } from '@/lib/types';
 import { sendEmail } from '@/lib/email-service';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -36,26 +36,37 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
   try {
     const firestore = firebaseAdmin.firestore();
-    const querySnapshot = await firestore.collectionGroup('agents').where('__name__', '==', agentId).get();
-    const agentDoc = querySnapshot.docs[0];
-
-    if (!agentDoc) {
-      return { error: `Agent with ID ${agentId} not found.` };
+    // Efficiently find the user ID for the agent
+    const agentQuerySnapshot = await firestore.collectionGroup('agents').where('__name__', '==', agentId).limit(1).get();
+    
+    if (agentQuerySnapshot.empty) {
+        return { error: `Agent with ID ${agentId} not found.` };
     }
+    const agentDoc = agentQuerySnapshot.docs[0];
     const agent = agentDoc.data() as Agent;
     const agentRef = agentDoc.ref;
+    
     const emailSessionsRef = agentRef.collection('emailSessions');
 
     let sessionRef;
     let messages: EmailMessage[] = [];
+    let existingSessionId: string | null = null;
+    let existingSession: EmailSession | null = null;
 
-    // Find existing session or create a new one
-    if (inReplyTo) {
-      const sessionQuery = await emailSessionsRef.where('participants', 'array-contains', from).get();
-      // This logic is simplified; a real app might need more robust session matching
-      sessionRef = sessionQuery.docs[0]?.ref;
-    } 
-    
+    // A more robust way to find the session
+    const sessionQuery = await emailSessionsRef
+        .where('participants', 'array-contains', from)
+        .where('subject', '==', subject.replace(/^Re: /i, ''))
+        .limit(1)
+        .get();
+
+    if (!sessionQuery.empty) {
+        sessionRef = sessionQuery.docs[0].ref;
+        existingSessionId = sessionQuery.docs[0].id;
+        existingSession = sessionQuery.docs[0].data() as EmailSession;
+    }
+
+
     if (!sessionRef) {
         sessionRef = emailSessionsRef.doc();
         await sessionRef.set({
@@ -105,11 +116,16 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     const replySubject = subject.toLowerCase().startsWith('re:') ? subject : `Re: ${subject}`;
     const agentSignature = agent.emailSignature || `\n\n--\nSent by ${agent.name}`;
     const replyBody = `${chatResult.response}${agentSignature}`;
+    
+    // Construct references for threading
+    const newReferences = [references, inReplyTo].filter(Boolean).join(' ');
 
     await sendEmail({
       to: from,
       subject: replySubject,
       text: replyBody,
+      inReplyTo: messageId,
+      references: newReferences,
     });
 
     console.log(`Response sent to ${from} for agent ${agentId}`);
@@ -117,6 +133,8 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
   } catch (error: any) {
     console.error('Error processing inbound email:', error);
-    return { error: error.message || 'An unknown error occurred while processing the email.' };
+    // Log the specific error for debugging
+    const errorMessage = error.message || 'An unknown error occurred while processing the email.';
+    return { error: `Could not send email. Reason: ${errorMessage}` };
   }
 }
