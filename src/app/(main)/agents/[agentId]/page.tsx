@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Wand2 } from 'lucide-react';
-import { getTasksSummary } from '../actions';
+import { getTasksSummary } from '../../../actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { notFound, useParams } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
