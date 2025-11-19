@@ -13,7 +13,7 @@ interface EmailData {
   body: string;
 }
 
-const ingestDomain = process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN;
+const agentEmailDomain = process.env.NEXT_PUBLIC_AGENT_EMAIL_DOMAIN;
 
 
 /**
@@ -25,12 +25,14 @@ const ingestDomain = process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN;
 export async function processInboundEmail(emailData: EmailData): Promise<{ success: boolean } | { error: string }> {
   const { from, to, subject, body } = emailData;
 
-  if (!ingestDomain) {
-    console.error('Email ingest domain is not configured.');
-    return { error: 'Email ingest domain is not configured.' };
+  if (!agentEmailDomain) {
+    console.error('Agent email domain (NEXT_PUBLIC_AGENT_EMAIL_DOMAIN) is not configured.');
+    return { error: 'Agent email domain is not configured.' };
   }
 
-  const agentIdMatch = to.match(new RegExp(`^agent-([a-zA-Z0-9_-]+)@${ingestDomain}$`));
+  // Extract agentId from an address like "agent-xyz123@osomelabs.com"
+  const agentIdMatch = to.match(new RegExp(`^agent-([a-zA-Z0-9_-]+)@${agentEmailDomain}$`));
+
   if (!agentIdMatch || !agentIdMatch[1]) {
     return { error: `Could not parse agentId from email address: ${to}` };
   }
@@ -41,14 +43,13 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     
     // This is an inefficient query. In a production scenario, you would likely have a separate
     // top-level collection to map agentIds to their userIds for a direct lookup.
-    const querySnapshot = await firestore.collectionGroup('agents').get();
+    const querySnapshot = await firestore.collectionGroup('agents').where('__name__', '==', agentId).get();
     
     let agentDoc: FirebaseFirestore.QueryDocumentSnapshot | null = null;
-    querySnapshot.forEach(doc => {
-      if (doc.id === agentId) {
-        agentDoc = doc;
-      }
-    });
+    // Since we query by document ID (__name__), there should be at most one result.
+    if (!querySnapshot.empty) {
+        agentDoc = querySnapshot.docs[0];
+    }
 
     if (!agentDoc) {
         return { error: `Agent with ID ${agentId} not found.` };
@@ -56,11 +57,10 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     
     const agent = agentDoc.data() as Agent;
 
-    // Check if the agent is allowed to reply to emails (if auto-reply is enabled)
+    // TODO: Check if the agent is allowed to reply to emails (if auto-reply is enabled)
     // This logic needs to be implemented based on agent settings. For now, we assume it's on.
 
-    // Check if the sender's domain is allowed.
-    // This logic also needs to be implemented.
+    // TODO: Check if the sender's domain is allowed based on agent settings.
 
     const textsSnapshot = await agentDoc.ref.collection('texts').get();
     const filesSnapshot = await agentDoc.ref.collection('files').get();
@@ -83,14 +83,19 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     const agentSignature = agent.emailSignature || `\n\n--\nSent by ${agent.name}`;
     const replyBody = `${chatResult.response}${agentSignature}`;
 
+    // Note: The 'from' address in sendEmail should be a verified sending address in Plunk,
+    // not the dynamic agent address, which is only for receiving.
+    // For simplicity, we can use a generic "no-reply" or a main support address.
+    const sendingAddress = `support@${agentEmailDomain}`;
+
     await sendEmail({
       to: from,
-      from: to, // Reply from the agent's unique address
+      from: sendingAddress, 
       subject: replySubject,
       text: replyBody,
     });
 
-    console.log(`Response sent to ${from} from agent ${agentId}`);
+    console.log(`Response sent to ${from} for agent ${agentId}`);
     return { success: true };
 
   } catch (error: any) {

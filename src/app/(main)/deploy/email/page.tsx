@@ -23,20 +23,22 @@ export default function DeployEmailPage() {
     const { activeAgent } = useActiveAgent();
     const { toast } = useToast();
 
-    const ingestDomain = process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN || 'your-domain.com';
+    const agentEmailDomain = process.env.NEXT_PUBLIC_AGENT_EMAIL_DOMAIN || 'your-domain.com';
 
     const uniqueAgentEmail = useMemo(() => {
         if (!activeAgent?.id) return 'loading...';
-        if (ingestDomain === 'your-domain.com') return 'Domain not configured.';
-        return `agent-${activeAgent.id}@${ingestDomain}`;
-    }, [activeAgent?.id, ingestDomain]);
+        if (agentEmailDomain === 'your-domain.com') return 'Domain not configured.';
+        // This address doesn't need to actually exist as a mailbox.
+        // Cloudflare Email Routing will catch it.
+        return `agent-${activeAgent.id}@${agentEmailDomain}`;
+    }, [activeAgent?.id, agentEmailDomain]);
 
     const handleCopy = () => {
         if (uniqueAgentEmail.includes('@')) {
             navigator.clipboard.writeText(uniqueAgentEmail);
             toast({
                 title: 'Copied to clipboard!',
-                description: 'You can now set up forwarding in your email client.',
+                description: 'You can now test by sending an email to this address.',
             });
         }
     };
@@ -53,7 +55,7 @@ export default function DeployEmailPage() {
         <div>
             <h3 className="text-lg font-semibold">Agent Email Address</h3>
             <p className="text-sm text-muted-foreground">
-                Forward emails from your existing account to this unique address.
+                Emails sent to this unique address will be processed by your agent.
             </p>
         </div>
         <div className="space-y-4">
@@ -67,7 +69,7 @@ export default function DeployEmailPage() {
                 <Info className="h-4 w-4" />
                 <AlertTitle>How it works</AlertTitle>
                 <AlertDescription>
-                To get started, configure your email provider (e.g., Gmail, Outlook) to automatically forward incoming emails to the address above. The agent will then process them and reply to the original sender.
+                This address is handled by your domain&apos;s email routing rules (e.g., Cloudflare Email Routing). When an email is sent here, it&apos;s forwarded to a worker which securely calls your agent&apos;s API endpoint. The agent then processes it and replies to the original sender.
                 </AlertDescription>
             </Alert>
         </div>
