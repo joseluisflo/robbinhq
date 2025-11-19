@@ -12,6 +12,7 @@
 
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -178,6 +179,7 @@ export type EmailSession = {
   subject: string;
   participants: string[];
   lastActivity: any;
+  createdAt: any;
 };
 
 export type EmailMessage = {
