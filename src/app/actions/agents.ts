@@ -1,7 +1,6 @@
 
 'use server';
 
-import { summarizeTaskResults } from '@/ai/flows/task-summarization';
 import { generateAgentInstructions } from '@/ai/flows/agent-instruction-generation';
 import { agentChat } from '@/ai/flows/agent-chat';
 import { firebaseAdmin } from '@/firebase/admin';
@@ -12,16 +11,6 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { headers } from 'next/headers';
 import UAParser from 'ua-parser-js';
-
-export async function getTasksSummary(taskResults: string): Promise<string | { error: string }> {
-  try {
-    const result = await summarizeTaskResults({ taskResults });
-    return result.summary;
-  } catch (e) {
-    console.error(e);
-    return { error: 'Failed to get summary.' };
-  }
-}
 
 export async function createAgent(userId: string, name: string, description: string): Promise<{ id: string } | { error: string }> {
   if (!userId || !name || !description) {
