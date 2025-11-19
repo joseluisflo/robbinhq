@@ -168,13 +168,13 @@ function ConversationList() {
                       key={index}
                       className={cn(
                         'flex items-end gap-3',
-                        msg.sender === 'user' || msg.sender.includes('@') ? 'flex-row-reverse' : 'flex-row'
+                        msg.sender === 'user' || (typeof msg.sender === 'string' && msg.sender.includes('@')) ? 'flex-row-reverse' : 'flex-row'
                       )}
                     >
                       <div
                         className={cn(
                           'max-w-[70%] rounded-lg p-3 text-sm',
-                          msg.sender === 'user' || msg.sender.includes('@')
+                          msg.sender === 'user' || (typeof msg.sender === 'string' && msg.sender.includes('@'))
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted'
                         )}
@@ -183,7 +183,7 @@ function ConversationList() {
                         <p
                           className={cn(
                             'text-xs mt-2',
-                             msg.sender === 'user' || msg.sender.includes('@')
+                             msg.sender === 'user' || (typeof msg.sender === 'string' && msg.sender.includes('@'))
                               ? 'text-primary-foreground/70'
                               : 'text-muted-foreground'
                           )}
