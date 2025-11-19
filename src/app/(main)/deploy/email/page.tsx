@@ -23,7 +23,7 @@ export default function DeployEmailPage() {
     const { activeAgent } = useActiveAgent();
     const { toast } = useToast();
 
-    const agentEmailDomain = process.env.NEXT_PUBLIC_AGENT_EMAIL_DOMAIN || 'your-domain.com';
+    const agentEmailDomain = process.env.NEXT_PUBLIC_AGENT_EMAIL_DOMAIN || process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN || 'your-domain.com';
 
     const uniqueAgentEmail = useMemo(() => {
         if (!activeAgent?.id) return 'loading...';
