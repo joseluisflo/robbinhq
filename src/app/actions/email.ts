@@ -31,7 +31,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
   }
 
   // Extract agentId from an address like "agent-xyz123@osomelabs.com"
-  const agentIdMatch = to.match(new RegExp(`^agent-([a-zA-Z0-9_-]+)@${agentEmailDomain.replace('.', '\\.')}$`));
+  const agentIdMatch = to.match(new RegExp(`^agent-([a-zA-Z0-9_-]+)@`));
 
   if (!agentIdMatch || !agentIdMatch[1]) {
     return { error: `Could not parse agentId from email address: ${to}` };
@@ -43,13 +43,9 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     
     // This is an inefficient query. In a production scenario, you would likely have a separate
     // top-level collection to map agentIds to their userIds for a direct lookup.
-    const querySnapshot = await firestore.collectionGroup('agents').where('__name__', '==', agentId).get();
-    
-    let agentDoc: FirebaseFirestore.QueryDocumentSnapshot | null = null;
-    // Since we query by document ID (__name__), there should be at most one result.
-    if (!querySnapshot.empty) {
-        agentDoc = querySnapshot.docs[0];
-    }
+    const querySnapshot = await firestore.collectionGroup('agents').get();
+
+    const agentDoc = querySnapshot.docs.find(doc => doc.id === agentId) || null;
 
     if (!agentDoc) {
         return { error: `Agent with ID ${agentId} not found.` };
