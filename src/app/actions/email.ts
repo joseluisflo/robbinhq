@@ -41,8 +41,6 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
   try {
     const firestore = firebaseAdmin.firestore();
     
-    // This is an inefficient query. In a production scenario, you would likely have a separate
-    // top-level collection to map agentIds to their userIds for a direct lookup.
     const querySnapshot = await firestore.collectionGroup('agents').get();
 
     const agentDoc = querySnapshot.docs.find(doc => doc.id === agentId) || null;
@@ -79,12 +77,8 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     const agentSignature = agent.emailSignature || `\n\n--\nSent by ${agent.name}`;
     const replyBody = `${chatResult.response}${agentSignature}`;
 
-    // Use a fixed, verified "from" address as required by Plunk.
-    const sendingAddress = `agent@${agentEmailDomain}`;
-
     await sendEmail({
       to: from,
-      from: sendingAddress, 
       subject: replySubject,
       text: replyBody,
     });

@@ -10,25 +10,24 @@ const plunk = PLUNK_API_KEY ? new Plunk(PLUNK_API_KEY) : null;
 
 interface SendEmailParams {
   to: string;
-  from: string; // The "from" address displayed to the user
   subject: string;
   text: string;
 }
 
-export async function sendEmail({ to, from, subject, text }: SendEmailParams) {
+export async function sendEmail({ to, subject, text }: SendEmailParams) {
   if (!plunk) {
     console.error('Email service is not initialized. PLUNK_API_KEY might be missing.');
     throw new Error('Email service is not available.');
   }
 
   try {
+    // Se omite el campo 'from' para que Plunk use su remitente por defecto.
     const response = await plunk.emails.send({
       to,
-      from,
       subject,
       body: text,
     });
-    console.log('Email sent successfully:', response);
+    console.log('Email sent successfully via Plunk:', response);
     return response;
   } catch (error) {
     console.error('Failed to send email:', error);
