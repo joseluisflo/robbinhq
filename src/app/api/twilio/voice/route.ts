@@ -16,9 +16,14 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const callSid = formData.get('CallSid') as string;
 
-  // IMPORTANT: This now points to our new serverless-friendly webhook,
-  // NOT a WebSocket (wss://) address.
-  const streamUrl = `/api/twilio/stream?agentId=${agentId}&callSid=${callSid}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) {
+    console.error('NEXT_PUBLIC_APP_URL is not set. Cannot create a fully qualified URL for Twilio webhook.');
+    return new Response('Application URL is not configured.', { status: 500 });
+  }
+
+  // Twilio requires a fully qualified, absolute URL for the stream webhook.
+  const streamUrl = `${appUrl}/api/twilio/stream?agentId=${agentId}&callSid=${callSid}`;
 
   const response = new twiml.VoiceResponse();
   const connect = response.connect();
