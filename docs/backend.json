@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "userProfile": {
@@ -115,6 +116,20 @@
         "emailSignature": {
             "type": "string",
             "description": "The signature to be appended to all emails sent by the agent."
+        },
+        "phoneConfig": {
+          "type": "object",
+          "description": "Configuration for the agent's assigned phone number.",
+          "properties": {
+            "phoneNumber": {
+              "type": "string",
+              "description": "The E.164 formatted phone number."
+            },
+            "phoneSid": {
+              "type": "string",
+              "description": "The Twilio SID for the phone number."
+            }
+          }
         }
       },
       "required": ["name", "userId", "createdAt"]

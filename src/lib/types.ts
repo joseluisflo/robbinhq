@@ -1,20 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 export type Task = {
   id: string;
   name: string;
@@ -60,6 +44,10 @@ export type Agent = {
   };
   emailSignature?: string;
   handoffEmail?: string;
+  phoneConfig?: {
+    phoneNumber: string;
+    phoneSid: string;
+  };
   // For passing to live agent
   textSources?: TextSource[];
   fileSources?: AgentFile[];
