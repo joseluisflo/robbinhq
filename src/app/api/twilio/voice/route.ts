@@ -12,7 +12,6 @@ export async function POST(request: Request) {
     return new Response('Agent ID is required', { status: 400 });
   }
 
-  // The CallSid is provided by Twilio in the POST request body
   const formData = await request.formData();
   const callSid = formData.get('CallSid') as string;
 
@@ -21,21 +20,20 @@ export async function POST(request: Request) {
     console.error('NEXT_PUBLIC_APP_URL is not set. Cannot create a fully qualified URL for Twilio webhook.');
     return new Response('Application URL is not configured.', { status: 500 });
   }
-
-  // Twilio requires a fully qualified, absolute URL for the stream webhook.
-  const streamUrl = `${appUrl}/api/twilio/stream?agentId=${agentId}&callSid=${callSid}`;
+  
+  // Ensure the URL uses wss:// protocol and does not contain http/https.
+  const websocketHost = appUrl.replace(/^https?:\/\//, '');
+  const streamUrl = `wss://${websocketHost}/api/twilio/stream?agentId=${agentId}&callSid=${callSid}`;
 
   const response = new twiml.VoiceResponse();
   const connect = response.connect();
-
-  // Use the <Stream> verb to send audio to our new webhook
+  
   connect.stream({
     url: streamUrl,
   });
 
   console.log(`Incoming call for agent ${agentId}. Responding with TwiML to stream to: ${streamUrl}`);
   
-  // Respond with TwiML
   return new NextResponse(response.toString(), {
     headers: {
       'Content-Type': 'text/xml',
