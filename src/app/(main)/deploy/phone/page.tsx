@@ -22,8 +22,9 @@ import {
 import { Globe, Search, Loader2, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { searchAvailableNumbers } from '@/app/actions/twilio';
+import { searchAvailableNumbers, purchaseAndConfigureNumber } from '@/app/actions/twilio';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
 
 interface TwilioNumber {
     friendlyName: string;
@@ -31,14 +32,17 @@ interface TwilioNumber {
 }
 
 export default function DeployPhonePage() {
-    const { activeAgent } = useActiveAgent();
+    const { user } = useUser();
+    const { activeAgent, setActiveAgent } = useActiveAgent();
     const { toast } = useToast();
     const [isSearching, startSearchTransition] = useTransition();
+    const [isPurchasing, startPurchaseTransition] = useTransition();
 
     const [country, setCountry] = useState('US');
     const [areaCode, setAreaCode] = useState('');
     const [availableNumbers, setAvailableNumbers] = useState<TwilioNumber[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [purchasingNumber, setPurchasingNumber] = useState<string | null>(null);
 
     const handleSearch = () => {
         if (!areaCode) {
@@ -61,6 +65,27 @@ export default function DeployPhonePage() {
         });
     }
 
+    const handlePurchase = (numberToPurchase: string) => {
+        if (!user || !activeAgent?.id) {
+            toast({ title: 'Error', description: 'You must be logged in and have an active agent.', variant: 'destructive' });
+            return;
+        }
+        setPurchasingNumber(numberToPurchase);
+        startPurchaseTransition(async () => {
+            const result = await purchaseAndConfigureNumber(user.uid, activeAgent.id!, numberToPurchase);
+            if ('error' in result) {
+                toast({ title: 'Purchase Failed', description: result.error, variant: 'destructive' });
+            } else {
+                toast({ title: 'Purchase Successful!', description: `Number ${result.purchasedNumber} is now assigned to your agent.` });
+                // Update agent context
+                const newPhoneConfig = { phoneNumber: result.purchasedNumber, phoneSid: '' }; // SID is not returned here but it's ok for UI
+                setActiveAgent({ ...activeAgent, phoneConfig: newPhoneConfig });
+                setAvailableNumbers([]); // Clear the list after purchase
+            }
+            setPurchasingNumber(null);
+        });
+    };
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
@@ -80,17 +105,19 @@ export default function DeployPhonePage() {
           <div className="space-y-2">
             <Label htmlFor="active-number" className="font-semibold">Active Number</Label>
             <div className="flex items-center justify-between">
-                <p className="text-muted-foreground">{activeAgent?.phoneConfig?.phoneNumber || 'No number assigned'}</p>
-                <Button variant="secondary" size="sm">Manage</Button>
+                <p className="text-muted-foreground font-mono">{activeAgent?.phoneConfig?.phoneNumber || 'No number assigned'}</p>
+                {activeAgent?.phoneConfig?.phoneNumber && (
+                    <Button variant="secondary" size="sm">Manage</Button>
+                )}
             </div>
           </div>
           <div className="space-y-4">
             <Label htmlFor="search-number" className="font-semibold">Purchase a New Number</Label>
              <Alert>
                 <Info className="h-4 w-4" />
-                <AlertTitle>Twilio Configuration Required</AlertTitle>
+                <AlertTitle>Twilio & App URL Configuration Required</AlertTitle>
                 <AlertDescription>
-                    Ensure your Twilio Account SID and Auth Token are set in your environment variables to search for and purchase numbers.
+                    Ensure your Twilio credentials and NEXT_PUBLIC_APP_URL are set in your environment variables to purchase and configure numbers.
                 </AlertDescription>
             </Alert>
             <div className="flex gap-2">
@@ -123,7 +150,7 @@ export default function DeployPhonePage() {
                 onChange={(e) => setAreaCode(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
-              <Button onClick={handleSearch} disabled={isSearching}>
+              <Button onClick={handleSearch} disabled={isSearching || isPurchasing}>
                 {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 <span className="ml-2 hidden sm:inline">Search</span>
               </Button>
@@ -147,7 +174,14 @@ export default function DeployPhonePage() {
                     {availableNumbers.map(num => (
                         <div key={num.phoneNumber} className="flex items-center justify-between p-3 border rounded-md">
                             <p className="font-mono text-sm">{num.friendlyName}</p>
-                            <Button size="sm">Purchase</Button>
+                            <Button 
+                                size="sm" 
+                                onClick={() => handlePurchase(num.phoneNumber)}
+                                disabled={isPurchasing}
+                            >
+                                {isPurchasing && purchasingNumber === num.phoneNumber && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Purchase
+                            </Button>
                         </div>
                     ))}
                 </CardContent>
