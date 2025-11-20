@@ -92,7 +92,7 @@ wss.on('connection', async (ws, req) => {
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         config: {
           responseModalities: [Modality.AUDIO],
-          inputAudioTranscription: { interruptions: true },
+          inputAudioTranscription: { interruptions: true, model: 'chirp' },
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: agent.agentVoice || 'Zephyr' } },
           },
