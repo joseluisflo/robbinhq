@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState, useEffect, useTransition } from 'react';
 import {
   Card,
   CardHeader,
@@ -13,23 +14,64 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Mail, Info, Copy } from 'lucide-react';
+import { Mail, Info, Copy, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useActiveAgent } from '@/app/(main)/layout';
 import { useToast } from '@/hooks/use-toast';
 import { useMemo } from 'react';
+import { updateAgent } from '@/app/actions/agents';
+import { useUser } from '@/firebase';
+import type { Agent } from '@/lib/types';
+
 
 export default function DeployEmailPage() {
-    const { activeAgent } = useActiveAgent();
+    const { activeAgent, setActiveAgent } = useActiveAgent();
+    const { user } = useUser();
     const { toast } = useToast();
+    const [isSaving, startSaving] = useTransition();
 
+    const [emailSignature, setEmailSignature] = useState('');
+    const [handoffEmail, setHandoffEmail] = useState('');
+    
     const agentEmailDomain = process.env.NEXT_PUBLIC_AGENT_EMAIL_DOMAIN || process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN || 'your-domain.com';
+
+    const isChanged = 
+        emailSignature !== (activeAgent?.emailSignature || '') ||
+        handoffEmail !== (activeAgent?.handoffEmail || '');
+
+    useEffect(() => {
+        if (activeAgent) {
+            setEmailSignature(activeAgent.emailSignature || '');
+            setHandoffEmail(activeAgent.handoffEmail || '');
+        }
+    }, [activeAgent]);
+
+    const handleSaveChanges = () => {
+        if (!user || !activeAgent || !isChanged) return;
+
+        startSaving(async () => {
+            const dataToUpdate: Partial<Agent> = {};
+            if (emailSignature !== activeAgent.emailSignature) {
+                dataToUpdate.emailSignature = emailSignature;
+            }
+             if (handoffEmail !== activeAgent.handoffEmail) {
+                dataToUpdate.handoffEmail = handoffEmail;
+            }
+
+            const result = await updateAgent(user.uid, activeAgent.id!, dataToUpdate);
+
+            if ('error' in result) {
+                toast({ title: 'Failed to save changes', description: result.error, variant: 'destructive' });
+            } else {
+                toast({ title: 'Changes saved!' });
+                setActiveAgent({ ...activeAgent, ...dataToUpdate });
+            }
+        });
+    }
 
     const uniqueAgentEmail = useMemo(() => {
         if (!activeAgent?.id) return 'loading...';
         if (agentEmailDomain === 'your-domain.com') return 'Domain not configured.';
-        // This address doesn't need to actually exist as a mailbox.
-        // Cloudflare Email Routing will catch it.
         return `agent-${activeAgent.id}@${agentEmailDomain}`;
     }, [activeAgent?.id, agentEmailDomain]);
 
@@ -47,7 +89,10 @@ export default function DeployEmailPage() {
     <div className="space-y-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Deploy to Email</h2>
-        <Button>Save changes</Button>
+        <Button onClick={handleSaveChanges} disabled={isSaving || !isChanged}>
+          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Save changes
+        </Button>
       </div>
 
       {/* Agent Email Address Section */}
@@ -97,12 +142,19 @@ export default function DeployEmailPage() {
               id="signature"
               placeholder="e.g., Best, Your Friendly AI Assistant"
               rows={3}
+              value={emailSignature}
+              onChange={(e) => setEmailSignature(e.target.value)}
             />
              <p className="text-sm text-muted-foreground">This signature will be appended to all emails sent by the agent.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="handoff-email">Human Handoff Email</Label>
-            <Input id="handoff-email" placeholder="support@example.com" />
+            <Input 
+                id="handoff-email" 
+                placeholder="support@example.com" 
+                value={handoffEmail}
+                onChange={(e) => setHandoffEmail(e.target.value)}
+            />
             <p className="text-sm text-muted-foreground">
               If the agent cannot answer, it will forward the email to this address.
             </p>

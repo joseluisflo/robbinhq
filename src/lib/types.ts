@@ -14,6 +14,7 @@
 
 
 
+
 export type Task = {
   id: string;
   name: string;
@@ -58,6 +59,7 @@ export type Agent = {
     c3: string;
   };
   emailSignature?: string;
+  handoffEmail?: string;
   // For passing to live agent
   textSources?: TextSource[];
   fileSources?: AgentFile[];
@@ -190,5 +192,3 @@ export type EmailMessage = {
   text: string;
   timestamp: any;
 };
-
-    

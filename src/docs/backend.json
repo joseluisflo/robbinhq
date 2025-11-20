@@ -112,6 +112,15 @@
                 "c2": { "type": "string" },
                 "c3": { "type": "string" }
             }
+        },
+        "emailSignature": {
+            "type": "string",
+            "description": "The signature to be appended to all emails sent by the agent."
+        },
+        "handoffEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address to forward to for human handoff."
         }
       },
       "required": ["name", "userId", "createdAt"]
@@ -220,6 +229,141 @@
         }
       },
       "required": ["name", "createdAt"]
+    },
+    "chatSession": {
+      "title": "Chat Session",
+      "description": "Represents a single conversation session with an agent.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "A title for the conversation, generated from the first user message."
+        },
+        "lastMessageSnippet": {
+          "type": "string",
+          "description": "A short preview of the last message in the conversation."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the first message in the session."
+        },
+        "lastActivity": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last message in the session."
+        },
+        "lastLeadAnalysisAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when this chat session was last analyzed for lead generation."
+        }
+      },
+      "required": ["title", "createdAt", "lastActivity"]
+    },
+    "chatMessage": {
+      "title": "Chat Message",
+      "description": "Represents a single message within a chat session.",
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "enum": ["user", "agent"]
+        },
+        "text": {
+          "type": "string",
+          "description": "The content of the message."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["sender", "text", "timestamp"]
+    },
+    "lead": {
+      "title": "Lead",
+      "description": "Represents a potential customer lead captured from a conversation.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the lead."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email address of the lead."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The phone number of the lead."
+        },
+        "summary": {
+          "type": "string",
+          "description": "A brief summary of the lead's inquiry."
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "The ID of the chat session where the lead was captured."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the lead was created."
+        }
+      }
+    },
+    "emailSession": {
+        "title": "Email Session",
+        "description": "Represents a single email conversation thread with an agent.",
+        "type": "object",
+        "properties": {
+            "subject": {
+                "type": "string",
+                "description": "The subject line of the email thread."
+            },
+            "participants": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "description": "A list of email addresses participating in the conversation."
+            },
+            "lastActivity": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp of the last message in the thread."
+            }
+        },
+        "required": ["subject", "participants", "lastActivity"]
+    },
+    "emailMessage": {
+        "title": "Email Message",
+        "description": "Represents a single email within a conversation thread.",
+        "type": "object",
+        "properties": {
+            "messageId": {
+                "type": "string",
+                "description": "The unique Message-ID of the email."
+            },
+            "sender": {
+                "type": "string",
+                "format": "email",
+                "description": "The email address of the sender."
+            },
+            "text": {
+                "type": "string",
+                "description": "The plain text content of the email."
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The timestamp when the email was received or sent."
+            }
+        },
+        "required": ["messageId", "sender", "text", "timestamp"]
     }
   },
   "auth": {
@@ -255,6 +399,36 @@
         "$ref": "#/entities/workflowDefinition"
       },
       "description": "Stores the workflow definitions for a specific agent."
+    },
+    "/users/{userId}/agents/{agentId}/sessions/{sessionId}": {
+        "schema": {
+            "$ref": "#/entities/chatSession"
+        },
+        "description": "Stores metadata for each public chat session."
+    },
+    "/users/{userId}/agents/{agentId}/sessions/{sessionId}/messages/{messageId}": {
+        "schema": {
+            "$ref": "#/entities/chatMessage"
+        },
+        "description": "Stores all messages for a specific chat session."
+    },
+    "/users/{userId}/agents/{agentId}/leads/{leadId}": {
+        "schema": {
+            "$ref": "#/entities/lead"
+        },
+        "description": "Stores the leads captured for a specific agent."
+    },
+    "/users/{userId}/agents/{agentId}/emailSessions/{sessionId}": {
+        "schema": {
+            "$ref": "#/entities/emailSession"
+        },
+        "description": "Stores metadata for each email conversation thread."
+    },
+    "/users/{userId}/agents/{agentId}/emailSessions/{sessionId}/messages/{messageId}": {
+        "schema": {
+            "$ref": "#/entities/emailMessage"
+        },
+        "description": "Stores all messages for a specific email thread."
     }
   }
 }
