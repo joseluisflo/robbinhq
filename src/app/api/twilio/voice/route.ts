@@ -17,7 +17,6 @@ export async function POST(request: Request) {
   const callSid = formData.get('CallSid') as string;
 
   // Dynamically construct the WebSocket URL.
-  // In a production environment, you'd replace this with your public domain.
   // The port '3001' must match the port your WebSocket server is listening on.
   const host = request.headers.get('host') || 'localhost:9002';
   const websocketHost = host.replace(/:\d+$/, ':3001'); // Replace app port with WebSocket port
