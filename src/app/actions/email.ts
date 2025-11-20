@@ -110,7 +110,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     });
     
     const replySubject = subject.toLowerCase().startsWith('re:') ? subject : `Re: ${subject}`;
-    const agentSignature = agent.emailSignature || `\n\n--\nSent by ${agent.name}`;
+    const agentSignature = agent.emailSignature ? `\n\n${agent.emailSignature}` : `\n\n--\nSent by ${agent.name}`;
     const replyBody = `${chatResult.response}${agentSignature}`;
     
     // Construct references for threading. Plunk will handle this, but it's good practice.
