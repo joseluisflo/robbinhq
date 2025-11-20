@@ -16,14 +16,14 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const callSid = formData.get('CallSid') as string;
 
-  // Dynamically construct the WebSocket URL.
-  // The port '3001' must match the port your WebSocket server is listening on.
-  const host = request.headers.get('host') || 'localhost:9002';
-  const websocketHost = host.replace(/:\d+$/, ':3001'); // Replace app port with WebSocket port
-  const streamUrl = `wss://${websocketHost}/api/twilio/stream?agentId=${agentId}&callSid=${callSid}`;
+  // IMPORTANT: This now points to our new serverless-friendly webhook,
+  // NOT a WebSocket (wss://) address.
+  const streamUrl = `/api/twilio/stream?agentId=${agentId}&callSid=${callSid}`;
 
   const response = new twiml.VoiceResponse();
   const connect = response.connect();
+
+  // Use the <Stream> verb to send audio to our new webhook
   connect.stream({
     url: streamUrl,
   });
