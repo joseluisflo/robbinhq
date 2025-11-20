@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     return new Response('Application URL is not configured.', { status: 500 });
   }
   
-  // Ensure the URL uses wss:// protocol and does not contain http/https.
+  // Correctly construct the WebSocket URL by removing any existing protocol and prepending wss://
   const websocketHost = appUrl.replace(/^https?:\/\//, '');
   const streamUrl = `wss://${websocketHost}/api/twilio/stream?agentId=${agentId}&callSid=${callSid}`;
 
