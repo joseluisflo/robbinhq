@@ -1,0 +1,5 @@
+{
+  "name": "agentverse-calls",
+  "main": "src/party/main.ts",
+  "compatibilityDate": "2024-07-25"
+}
