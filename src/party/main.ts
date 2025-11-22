@@ -10,6 +10,11 @@ interface MinimalLiveSession extends LiveSession {
 }
 
 export default class CallServer implements Party.Server {
+  // Enable hibernation to reduce costs. The server will "sleep" when idle.
+  static options = {
+    hibernate: true,
+  };
+
   googleAISession: MinimalLiveSession | null = null;
   
   constructor(readonly room: Party.Room) {}
