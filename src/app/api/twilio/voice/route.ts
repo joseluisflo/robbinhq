@@ -15,15 +15,14 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const callSid = formData.get('CallSid') as string;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!appUrl) {
-    console.error('NEXT_PUBLIC_APP_URL is not set. Cannot create a fully qualified URL for Twilio webhook.');
-    return new Response('Application URL is not configured.', { status: 500 });
+  const partykitHost = process.env.NEXT_PUBLIC_PARTYKIT_HOST;
+  if (!partykitHost) {
+    console.error('NEXT_PUBLIC_PARTYKIT_HOST is not set.');
+    return new Response('Application is not configured for real-time calls.', { status: 500 });
   }
   
-  // Correctly construct the WebSocket URL by removing any existing protocol and prepending wss://
-  const websocketHost = appUrl.replace(/^https?:\/\//, '');
-  const streamUrl = `wss://${websocketHost}/api/twilio/stream?agentId=${agentId}&callSid=${callSid}`;
+  // Construct the PartyKit URL. The room ID will be the Twilio CallSid.
+  const streamUrl = `wss://${partykitHost}/parties/main/${callSid}?agentId=${agentId}`;
 
   const response = new twiml.VoiceResponse();
   const connect = response.connect();
@@ -32,7 +31,7 @@ export async function POST(request: Request) {
     url: streamUrl,
   });
 
-  console.log(`Incoming call for agent ${agentId}. Responding with TwiML to stream to: ${streamUrl}`);
+  console.log(`Incoming call for agent ${agentId}. Responding with TwiML to stream to PartyKit: ${streamUrl}`);
   
   return new NextResponse(response.toString(), {
     headers: {
