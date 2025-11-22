@@ -10,10 +10,10 @@ interface MinimalLiveSession extends LiveSession {
 }
 
 export default class CallServer implements Party.Server {
-  // Enable hibernation to reduce costs. The server will "sleep" when idle.
-  static options = {
-    hibernate: true,
-  };
+  // NOTE: Hibernation is a PartyKit-specific feature and is not directly
+  // used by Wrangler. Cloudflare's Durable Objects have their own
+  // lifecycle management that achieves a similar cost-saving effect.
+  // We can remove the `static options` block for a pure Wrangler deployment.
 
   googleAISession: MinimalLiveSession | null = null;
   
