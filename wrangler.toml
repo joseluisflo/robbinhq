@@ -9,4 +9,4 @@ class_name = "PartyKitDurable"
 
 [[migrations]]
 tag = "v1"
-new_sqlite_classes = ["PartyKitDurable"]
+new_classes = ["PartyKitDurable"]

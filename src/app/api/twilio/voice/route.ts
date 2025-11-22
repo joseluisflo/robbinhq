@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   }
   
   // Construct the PartyKit URL. The room ID will be the Twilio CallSid.
-  const streamUrl = `wss://${partykitHost}/parties/main/${callSid}?agentId=${agentId}`;
+  const streamUrl = `wss://${partykitHost}/party/${callSid}?agentId=${agentId}`;
 
   const response = new twiml.VoiceResponse();
   const connect = response.connect();

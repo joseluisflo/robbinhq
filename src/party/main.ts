@@ -10,11 +10,6 @@ interface MinimalLiveSession extends LiveSession {
 }
 
 export default class CallServer implements Party.Server {
-  // NOTE: Hibernation is a PartyKit-specific feature and is not directly
-  // used by Wrangler. Cloudflare's Durable Objects have their own
-  // lifecycle management that achieves a similar cost-saving effect.
-  // We can remove the `static options` block for a pure Wrangler deployment.
-
   googleAISession: MinimalLiveSession | null = null;
   
   constructor(readonly room: Party.Room) {}
@@ -35,7 +30,7 @@ export default class CallServer implements Party.Server {
       conn.close(1011, "AI service is not configured.");
       return;
     }
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
     // 2. Connect to Google AI Live Session
     try {
