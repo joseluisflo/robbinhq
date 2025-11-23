@@ -21,8 +21,8 @@ export async function POST(request: Request) {
     return new Response('Application is not configured for real-time calls.', { status: 500 });
   }
   
-  // Construct the PartyKit URL. The room ID will be the Twilio CallSid.
-  const streamUrl = `wss://${partykitHost}/party/${callSid}?agentId=${agentId}`;
+  // Construct the PartyKit URL using the production host.
+  const streamUrl = `wss://${partykitHost.replace(/^https?:\/\//, '')}/party/${callSid}?agentId=${agentId}`;
 
   const response = new twiml.VoiceResponse();
   const connect = response.connect();
