@@ -1,3 +1,4 @@
+
 'use server';
 
 import { NextResponse } from 'next/server';
@@ -25,10 +26,10 @@ export async function POST(request: Request) {
     return new Response('Application is not configured for real-time calls.', { status: 500 });
   }
   
-  // ✅ CAMBIO CRÍTICO: Usar PATH en lugar de query params para WebSocket
-  // Formato: wss://domain/party/CALLSID/AGENTID
+  // ✅ CAMBIO CRÍTICO: Construir la URL con el agentId tanto en el path como en query params.
   const cleanHost = partykitHost.replace(/^https?:\/\//, '');
-  const streamUrl = `wss://${cleanHost}/party/${callSid}/${encodeURIComponent(agentId)}`;
+  const streamUrl = `wss://${cleanHost}/party/${callSid}/${encodeURIComponent(agentId)}?agentId=${encodeURIComponent(agentId)}`;
+
 
   const response = new twiml.VoiceResponse();
   const connect = response.connect();
