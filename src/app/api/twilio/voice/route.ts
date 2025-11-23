@@ -61,41 +61,12 @@ export async function POST(request: Request) {
     return new Response('Application is not configured for real-time calls.', { status: 500 });
   }
 
-  // Fetch agent configuration from Firestore
-  const agentConfig = await getAgentConfig(agentId);
-  if (!agentConfig) {
-      console.error(`[Vercel Webhook] Could not find configuration for agent ${agentId}`);
-      return new Response(`Agent configuration for ${agentId} not found.`, { status: 404 });
-  }
-
-  // Construct the system instruction
-  const knowledge = [
-    ...(agentConfig.textSources || []).map(t => `Title: ${t.title}\\nContent: ${t.content}`),
-    ...(agentConfig.fileSources || []).map(f => `File: ${f.name}\\nContent: ${f.extractedText || ''}`)
-  ].join('\\n\\n---\\n\\n');
-
-  const systemInstruction = `
-    You are a voice AI. Your goal is to be as responsive as possible. Your first response to a user MUST be an immediate, short acknowledgment. Then, you will provide the full answer.
-    This is a real-time conversation. Keep all your answers concise and to the point. Prioritize speed. Do not use filler phrases.
-    ${agentConfig.inCallWelcomeMessage ? `Your very first response in this conversation must be: "${agentConfig.inCallWelcomeMessage}"` : ''}
-
-    Your instructions and persona are defined below.
-
-    ### Instructions & Persona
-    ${agentConfig.instructions || 'You are a helpful assistant.'}
-            
-    ### Knowledge Base
-    Use the following information to answer questions. This is your primary source of truth.
-    ---
-    ${knowledge}
-    ---
-  `;
-
   // Build the WebSocket URL with configuration in query parameters
   const cleanHost = partykitHost.replace(/^https?:\/\//, '');
   const url = new URL(`https://${cleanHost}/party/${callSid}`);
-  url.searchParams.set("systemInstruction", encodeURIComponent(systemInstruction));
-  url.searchParams.set("agentVoice", agentConfig.agentVoice || 'Zephyr');
+  
+  // Pass agentId as a query parameter
+  url.searchParams.set("agentId", agentId);
   
   const streamUrl = `wss://${url.host}${url.pathname}${url.search}`;
 
@@ -106,7 +77,7 @@ export async function POST(request: Request) {
     url: streamUrl,
   });
 
-  console.log(`[Vercel Webhook] Incoming call for agent ${agentId}. Responding with TwiML to stream to PartyKit: ${streamUrl.substring(0, 100)}...`);
+  console.log(`[Vercel Webhook] Incoming call for agent ${agentId}. Responding with TwiML to stream to PartyKit: ${streamUrl}`);
   
   return new NextResponse(response.toString(), {
     headers: {
