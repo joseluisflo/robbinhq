@@ -121,3 +121,6 @@ export default class CallServer implements Party.Server {
 }
 
 CallServer satisfies Party.Worker;
+
+// This export is required for Wrangler to correctly identify the Durable Object class.
+export class PartyKitDurable extends CallServer {}
