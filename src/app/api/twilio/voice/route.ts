@@ -1,3 +1,4 @@
+
 'use server';
 
 import { NextResponse } from 'next/server';
@@ -70,20 +71,20 @@ export async function POST(request: Request) {
   ].join('\\n\\n---\\n\\n');
 
   const systemInstruction = `
-    You are a voice AI. Your goal is to be as responsive as possible. Your first response to a user MUST be an immediate, short acknowledgment like "Of course, let me check that" or "Sure, one moment". Then, you will provide the full answer.
-    This is a real-time conversation. Keep all your answers concise and to the point. Prioritize speed. Do not use filler phrases.
-    ${agentConfig.inCallWelcomeMessage ? `Your very first response in this conversation must be: "${agentConfig.inCallWelcomeMessage}"` : ''}
+You are a voice AI. Your goal is to be as responsive as possible. Your first response to a user MUST be an immediate, short acknowledgment like "Of course, let me check that" or "Sure, one moment". Then, you will provide the full answer.
+This is a real-time conversation. Keep all your answers concise and to the point. Prioritize speed. Do not use filler phrases.
+${agentConfig.inCallWelcomeMessage ? `Your very first response in this conversation must be: "${agentConfig.inCallWelcomeMessage}"` : ''}
 
-    Your instructions and persona are defined below.
+Your instructions and persona are defined below.
 
-    ### Instructions & Persona
-    ${agentConfig.instructions || 'You are a helpful assistant.'}
+### Instructions & Persona
+${agentConfig.instructions || 'You are a helpful assistant.'}
         
-    ### Knowledge Base
-    Use the following information to answer questions. This is your primary source of truth.
-    ---
-    ${knowledge}
-    ---
+### Knowledge Base
+Use the following information to answer questions. This is your primary source of truth.
+---
+${knowledge}
+---
   `;
 
   const cleanHost = partykitHost.replace(/^https?:\/\//, '');
