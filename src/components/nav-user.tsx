@@ -33,6 +33,7 @@ import {
 import { User, signOut } from "firebase/auth"
 import { useAuth } from "@/firebase"
 import { useRouter } from "next/navigation"
+import { SettingsDialog } from "./settings-dialog"
 
 export function NavUser({
   user,
@@ -115,10 +116,12 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
+              <SettingsDialog>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <BadgeCheck />
+                  Account
+                </DropdownMenuItem>
+              </SettingsDialog>
               <DropdownMenuItem>
                 <CreditCard />
                 Billing
