@@ -1,4 +1,3 @@
-
 "use client"
 
 import {
@@ -122,14 +121,18 @@ export function NavUser({
                   Account
                 </DropdownMenuItem>
               </SettingsDialog>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
+              <SettingsDialog initialTab="Billing">
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <CreditCard />
+                  Billing
+                </DropdownMenuItem>
+              </SettingsDialog>
+              <SettingsDialog initialTab="Notifications">
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <Bell />
+                  Notifications
+                </DropdownMenuItem>
+              </SettingsDialog>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>

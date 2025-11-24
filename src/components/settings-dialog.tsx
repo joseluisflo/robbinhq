@@ -49,12 +49,20 @@ const navItems = [
     { name: "Advanced", icon: Settings },
 ];
 
-export function SettingsDialog({ children }: { children: React.ReactNode }) {
+export function SettingsDialog({ children, initialTab = "Profile" }: { children: React.ReactNode, initialTab?: string }) {
   const [open, setOpen] = React.useState(false)
-  const [activeTab, setActiveTab] = React.useState("Profile");
+  const [activeTab, setActiveTab] = React.useState(initialTab);
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    // Reset to the initialTab when dialog is opened via a specific trigger
+    if (isOpen) {
+        setActiveTab(initialTab);
+    }
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
