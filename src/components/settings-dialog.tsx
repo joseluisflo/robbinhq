@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   Bell,
   Check,
+  CreditCard,
   Globe,
   Home,
   Keyboard,
@@ -48,6 +49,7 @@ const navItems = [
     { name: "Profile", icon: User },
     { name: "Appearance", icon: Paintbrush },
     { name: "Notifications", icon: Bell },
+    { name: "Billing", icon: CreditCard },
     { name: "Language & region", icon: Globe },
     { name: "Privacy & visibility", icon: Lock },
     { name: "Advanced", icon: Settings },
