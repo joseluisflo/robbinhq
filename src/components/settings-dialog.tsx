@@ -3,18 +3,12 @@
 import * as React from "react"
 import {
   Bell,
-  Check,
+  Bot,
   CreditCard,
   Globe,
-  Home,
-  Keyboard,
-  Link as LinkIcon,
   Lock,
-  Menu,
-  MessageCircle,
   Paintbrush,
   Settings,
-  Video,
   User,
 } from "lucide-react"
 
@@ -26,7 +20,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -47,6 +40,7 @@ import {
 
 const navItems = [
     { name: "Profile", icon: User },
+    { name: "Agent", icon: Bot },
     { name: "Appearance", icon: Paintbrush },
     { name: "Notifications", icon: Bell },
     { name: "Billing", icon: CreditCard },
