@@ -1,11 +1,9 @@
-
 'use server';
 
 import { NextResponse } from 'next/server';
 import { twiml } from 'twilio';
 import { firebaseAdmin } from '@/firebase/admin';
 import type { Agent, AgentFile, TextSource } from '@/lib/types';
-
 
 async function getAgentConfig(agentId: string): Promise<Agent | null> {
     const firestore = firebaseAdmin.firestore();
@@ -36,7 +34,6 @@ async function getAgentConfig(agentId: string): Promise<Agent | null> {
         return null;
     }
 }
-
 
 export async function POST(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -89,21 +86,31 @@ export async function POST(request: Request) {
     ---
   `;
 
-  // Build the WebSocket URL with configuration in query parameters
+  // Build the WebSocket URL configuration
   const cleanHost = partykitHost.replace(/^https?:\/\//, '');
   const url = new URL(`https://${cleanHost}/party/${callSid}`);
   
-  url.searchParams.set("systemInstruction", encodeURIComponent(systemInstruction));
+  // MODIFICACIÓN: Ya no ponemos systemInstruction en la URL
+  // url.searchParams.set("systemInstruction", encodeURIComponent(systemInstruction)); // <--- ELIMINADO
+  
+  // Mantenemos agentVoice en la URL (es corto y seguro)
   url.searchParams.set("agentVoice", agentConfig.agentVoice || 'Zephyr');
 
   const streamUrl = `wss://${url.host}${url.pathname}${url.search}`;
-  console.log(`[Vercel Webhook] Incoming call for agent ${agentId}. Responding with TwiML to stream to PartyKit: ${streamUrl.substring(0, 100)}...`);
+  console.log(`[Vercel Webhook] Incoming call for agent ${agentId}. Streaming to: ${streamUrl}`);
 
   const response = new twiml.VoiceResponse();
   const connect = response.connect();
   
-  connect.stream({
+  // MODIFICACIÓN: Configuramos el stream con parámetros personalizados
+  const stream = connect.stream({
     url: streamUrl,
+  });
+
+  // Aquí enviamos la instrucción larga como un parámetro seguro
+  stream.parameter({
+    name: "systemInstruction",
+    value: systemInstruction
   });
   
   return new NextResponse(response.toString(), {
@@ -112,4 +119,3 @@ export async function POST(request: Request) {
     },
   });
 }
-
