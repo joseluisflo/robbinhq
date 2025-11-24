@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   ].join('\\n\\n---\\n\\n');
 
   const systemInstruction = `
-    You are a voice AI. Your goal is to be as responsive as possible. Your first response to a user MUST be an immediate, short acknowledgment. Then, you will provide the full answer.
+    You are a voice AI. Your goal is to be as responsive as possible. Your first response to a user MUST be an immediate, short acknowledgment like "Of course, let me check that" or "Sure, one moment". Then, you will provide the full answer.
     This is a real-time conversation. Keep all your answers concise and to the point. Prioritize speed. Do not use filler phrases.
     ${agentConfig.inCallWelcomeMessage ? `Your very first response in this conversation must be: "${agentConfig.inCallWelcomeMessage}"` : ''}
 
@@ -86,32 +86,35 @@ export async function POST(request: Request) {
     ---
   `;
 
-  // Build the WebSocket URL configuration
   const cleanHost = partykitHost.replace(/^https?:\/\//, '');
-  const url = new URL(`https://${cleanHost}/party/${callSid}`);
-  
-  // MODIFICACIÓN: Ya no ponemos systemInstruction en la URL
-  // url.searchParams.set("systemInstruction", encodeURIComponent(systemInstruction)); // <--- ELIMINADO
-  
-  // Mantenemos agentVoice en la URL (es corto y seguro)
-  url.searchParams.set("agentVoice", agentConfig.agentVoice || 'Zephyr');
+  const streamUrl = `wss://${cleanHost}/party/${callSid}`;
 
-  const streamUrl = `wss://${url.host}${url.pathname}${url.search}`;
-  console.log(`[Vercel Webhook] Incoming call for agent ${agentId}. Streaming to: ${streamUrl}`);
+  console.log(`[Vercel Webhook] Incoming call for agent ${agentId}. Responding with TwiML to stream to PartyKit: ${streamUrl}`);
 
   const response = new twiml.VoiceResponse();
   const connect = response.connect();
   
-  // MODIFICACIÓN: Configuramos el stream con parámetros personalizados
   const stream = connect.stream({
     url: streamUrl,
   });
 
-  // Aquí enviamos la instrucción larga como un parámetro seguro
+  // Use <Parameter> to reliably send data in the 'start' event
   stream.parameter({
     name: "systemInstruction",
-    value: systemInstruction
+    // Encode as Base64 to handle long and complex strings safely
+    value: Buffer.from(systemInstruction).toString('base64')
   });
+  stream.parameter({
+    name: "agentVoice",
+    value: agentConfig.agentVoice || 'Zephyr'
+  });
+   stream.parameter({
+    name: "agentId",
+    value: agentId
+  });
+
+  // CRITICAL: Add a pause to keep the call alive while the stream connects.
+  response.pause({ length: 60 });
   
   return new NextResponse(response.toString(), {
     headers: {
