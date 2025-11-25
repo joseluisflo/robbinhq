@@ -94,12 +94,6 @@ export function AgentSettings() {
             </div>
             
             <div className="p-4 rounded-lg border border-destructive/50 space-y-4">
-                <div>
-                    <h4 className="text-lg font-semibold text-destructive">Danger Zone</h4>
-                    <p className="text-sm text-muted-foreground">
-                        These actions are irreversible. Please be certain before proceeding.
-                    </p>
-                </div>
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="font-medium">Delete this agent</p>
