@@ -9,7 +9,7 @@ import {
   Lock,
   Paintbrush,
   Settings,
-  User,
+  BadgeCheck,
 } from "lucide-react"
 
 import {
@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/sidebar"
 
 const navItems = [
-    { name: "Profile", icon: User },
+    { name: "Account", icon: BadgeCheck },
     { name: "Agent", icon: Bot },
     { name: "Appearance", icon: Paintbrush },
     { name: "Notifications", icon: Bell },
@@ -49,7 +49,7 @@ const navItems = [
     { name: "Advanced", icon: Settings },
 ];
 
-export function SettingsDialog({ children, initialTab = "Profile" }: { children: React.ReactNode, initialTab?: string }) {
+export function SettingsDialog({ children, initialTab = "Account" }: { children: React.ReactNode, initialTab?: string }) {
   const [open, setOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState(initialTab);
 
@@ -100,7 +100,7 @@ export function SettingsDialog({ children, initialTab = "Profile" }: { children:
                   <BreadcrumbList>
                     <BreadcrumbItem className="hidden md:block">
                       <BreadcrumbLink asChild>
-                        <button onClick={() => setActiveTab("Profile")}>Settings</button>
+                        <button onClick={() => setActiveTab("Account")}>Settings</button>
                       </BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator className="hidden md:block" />
