@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -42,6 +43,7 @@ import {
 } from "@/components/ui/sidebar"
 import { AccountSettings } from "./settings/account-settings"
 import { AgentSettings } from "./settings/agent-settings"
+import { LogSettings } from "./settings/log-settings"
 
 const navItems = [
     { name: "Account", icon: BadgeCheck },
@@ -119,8 +121,9 @@ export function SettingsDialog({ children, initialTab = "Account" }: { children:
               
               {activeTab === 'Account' && <AccountSettings />}
               {activeTab === 'Agent' && <AgentSettings />}
+              {activeTab === 'Logs' && <LogSettings />}
 
-              {activeTab !== 'Account' && activeTab !== 'Agent' && (
+              {activeTab !== 'Account' && activeTab !== 'Agent' && activeTab !== 'Logs' && (
                  <>
                     {/* Placeholder Content */}
                     <div className="text-center p-8">
