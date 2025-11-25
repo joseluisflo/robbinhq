@@ -1,3 +1,4 @@
+
 "use client"
 
 import {
@@ -7,7 +8,8 @@ import {
   CreditCard,
   LogOut,
   Sparkles,
-  Settings
+  Settings,
+  MessageSquare,
 } from "lucide-react"
 
 import {
@@ -128,10 +130,10 @@ export function NavUser({
                   Billing
                 </DropdownMenuItem>
               </SettingsDialog>
-              <SettingsDialog initialTab="Notifications">
+              <SettingsDialog initialTab="Logs">
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <Bell />
-                  Notifications
+                  <MessageSquare />
+                  Logs
                 </DropdownMenuItem>
               </SettingsDialog>
             </DropdownMenuGroup>

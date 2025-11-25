@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -10,6 +11,7 @@ import {
   Paintbrush,
   Settings,
   BadgeCheck,
+  MessageSquare,
 } from "lucide-react"
 
 import {
@@ -44,7 +46,7 @@ import { AgentSettings } from "./settings/agent-settings"
 const navItems = [
     { name: "Account", icon: BadgeCheck },
     { name: "Agent", icon: Bot },
-    { name: "Notifications", icon: Bell },
+    { name: "Logs", icon: MessageSquare },
     { name: "Billing", icon: CreditCard },
     { name: "Language & region", icon: Globe },
     { name: "Privacy & visibility", icon: Lock },
