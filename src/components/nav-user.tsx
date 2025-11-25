@@ -7,6 +7,7 @@ import {
   CreditCard,
   LogOut,
   Sparkles,
+  Settings
 } from "lucide-react"
 
 import {
@@ -117,8 +118,8 @@ export function NavUser({
             <DropdownMenuGroup>
               <SettingsDialog>
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <BadgeCheck />
-                  Account
+                  <Settings />
+                  Settings
                 </DropdownMenuItem>
               </SettingsDialog>
               <SettingsDialog initialTab="Billing">
