@@ -42,7 +42,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Label } from "./ui/label"
 import { Input } from "./ui/input"
 import { Separator } from "./ui/separator"
-import { ChangePasswordDialog } from "./change-password-dialog"
 
 const navItems = [
     { name: "Account", icon: BadgeCheck },
@@ -120,7 +119,7 @@ export function SettingsDialog({ children, initialTab = "Account" }: { children:
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
               
               {activeTab === 'Account' && (
-                <div className="space-y-6">
+                <div className="space-y-8">
                   <div>
                     <h3 className="text-2xl font-semibold">Your Profile</h3>
                     <p className="text-sm text-muted-foreground">This is how your name and email will be displayed.</p>
@@ -136,21 +135,34 @@ export function SettingsDialog({ children, initialTab = "Account" }: { children:
                           <Input id="email" defaultValue="jlfloressanchez01@gmail.com" readOnly />
                         </div>
                     </div>
-                     <div className="border-t pt-4">
-                        <Button>Save</Button>
-                    </div>
                   </div>
-                   <Card>
-                    <CardHeader>
-                      <CardTitle>Password</CardTitle>
-                      <CardDescription>Manage your password for added security.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ChangePasswordDialog>
-                        <Button variant="outline">Change password</Button>
-                      </ChangePasswordDialog>
-                    </CardContent>
-                  </Card>
+                  
+                  <Separator />
+
+                  <div>
+                     <h3 className="text-2xl font-semibold">Password</h3>
+                     <p className="text-sm text-muted-foreground">Manage your password for added security.</p>
+                  </div>
+                   <div className="space-y-6">
+                       <div className="space-y-2">
+                          <Label htmlFor="current-password">Current Password</Label>
+                          <Input id="current-password" type="password" />
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="new-password">New Password</Label>
+                                <Input id="new-password" type="password" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                                <Input id="confirm-password" type="password" />
+                            </div>
+                        </div>
+                    </div>
+
+                  <div className="border-t pt-4">
+                      <Button>Save</Button>
+                  </div>
                 </div>
               )}
               
@@ -158,7 +170,7 @@ export function SettingsDialog({ children, initialTab = "Account" }: { children:
                  <>
                     {/* Placeholder Content */}
                     <div className="text-center p-8">
-                        <h2 className="text-xl font-semibold">{activeTab} Settings</h2>
+                        <h2 className="text-xl font-semibold">{activeTab}</h2>
                         <p className="text-muted-foreground mt-2">
                         Content for {activeTab} will go here.
                         </p>
