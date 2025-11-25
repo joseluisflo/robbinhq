@@ -42,6 +42,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Label } from "./ui/label"
 import { Input } from "./ui/input"
 import { Separator } from "./ui/separator"
+import { ChangePasswordDialog } from "./change-password-dialog"
 
 const navItems = [
     { name: "Account", icon: BadgeCheck },
@@ -120,11 +121,11 @@ export function SettingsDialog({ children, initialTab = "Account" }: { children:
               
               {activeTab === 'Account' && (
                 <div className="space-y-6">
+                  <div>
+                    <h3 className="text-2xl font-semibold">Your Profile</h3>
+                    <p className="text-sm text-muted-foreground">This is how your name and email will be displayed.</p>
+                  </div>
                   <div className="space-y-6">
-                    <div>
-                      <h3 className="text-2xl font-semibold">Your Profile</h3>
-                      <p className="text-sm text-muted-foreground">This is how your name and email will be displayed.</p>
-                    </div>
                      <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="name">Name</Label>
@@ -145,7 +146,9 @@ export function SettingsDialog({ children, initialTab = "Account" }: { children:
                       <CardDescription>Manage your password for added security.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <Button variant="outline">Change password</Button>
+                      <ChangePasswordDialog>
+                        <Button variant="outline">Change password</Button>
+                      </ChangePasswordDialog>
                     </CardContent>
                   </Card>
                 </div>
