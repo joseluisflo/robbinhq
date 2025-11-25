@@ -130,12 +130,6 @@ export function NavUser({
                   Billing
                 </DropdownMenuItem>
               </SettingsDialog>
-              <SettingsDialog initialTab="Logs">
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <MessageSquare />
-                  Logs
-                </DropdownMenuItem>
-              </SettingsDialog>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
