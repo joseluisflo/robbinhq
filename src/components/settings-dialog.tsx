@@ -41,6 +41,7 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./ui/card"
 import { Label } from "./ui/label"
 import { Input } from "./ui/input"
+import { Separator } from "./ui/separator"
 
 const navItems = [
     { name: "Account", icon: BadgeCheck },
@@ -119,27 +120,25 @@ export function SettingsDialog({ children, initialTab = "Account" }: { children:
               
               {activeTab === 'Account' && (
                 <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Your Profile</CardTitle>
-                      <CardDescription>This is how your name and email will be displayed.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input id="name" defaultValue="Jose Luis Flores" />
-                          </div>
-                           <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" defaultValue="jlfloressanchez01@gmail.com" readOnly />
-                          </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="border-t px-6 py-4">
-                      <Button>Save</Button>
-                    </CardFooter>
-                  </Card>
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-2xl font-semibold">Your Profile</h3>
+                      <p className="text-sm text-muted-foreground">This is how your name and email will be displayed.</p>
+                    </div>
+                     <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Name</Label>
+                          <Input id="name" defaultValue="Jose Luis Flores" />
+                        </div>
+                         <div className="space-y-2">
+                          <Label htmlFor="email">Email</Label>
+                          <Input id="email" defaultValue="jlfloressanchez01@gmail.com" readOnly />
+                        </div>
+                    </div>
+                     <div className="border-t pt-4">
+                        <Button>Save</Button>
+                    </div>
+                  </div>
                    <Card>
                     <CardHeader>
                       <CardTitle>Password</CardTitle>
