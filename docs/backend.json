@@ -117,19 +117,10 @@
             "type": "string",
             "description": "The signature to be appended to all emails sent by the agent."
         },
-        "phoneConfig": {
-          "type": "object",
-          "description": "Configuration for the agent's assigned phone number.",
-          "properties": {
-            "phoneNumber": {
-              "type": "string",
-              "description": "The E.164 formatted phone number."
-            },
-            "phoneSid": {
-              "type": "string",
-              "description": "The Twilio SID for the phone number."
-            }
-          }
+        "handoffEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address to forward to for human handoff."
         }
       },
       "required": ["name", "userId", "createdAt"]
@@ -373,6 +364,41 @@
             }
         },
         "required": ["messageId", "sender", "text", "timestamp"]
+    },
+    "interactionLog": {
+        "title": "Interaction Log",
+        "description": "A log of a complete interaction with an agent.",
+        "type": "object",
+        "properties": {
+            "title": { "type": "string" },
+            "origin": { "type": "string", "enum": ["Chat", "Email", "In-Call", "Phone"] },
+            "status": { "type": "string", "enum": ["success", "error", "in-progress"] },
+            "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["title", "origin", "status", "timestamp"]
+    },
+    "logStep": {
+        "title": "Log Step",
+        "description": "A detailed step within a larger interaction log.",
+        "type": "object",
+        "properties": {
+            "description": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "metadata": { "type": "object" }
+        },
+        "required": ["description", "timestamp"]
+    },
+    "configurationLog": {
+        "title": "Configuration Log",
+        "description": "A log of a configuration change made to an agent.",
+        "type": "object",
+        "properties": {
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "actor": { "type": "string", "description": "The user ID of the person who made the change." }
+        },
+        "required": ["title", "description", "timestamp", "actor"]
     }
   },
   "auth": {
@@ -438,7 +464,18 @@
             "$ref": "#/entities/emailMessage"
         },
         "description": "Stores all messages for a specific email thread."
+    },
+    "/users/{userId}/agents/{agentId}/interactionLogs/{logId}": {
+        "schema": { "$ref": "#/entities/interactionLog" },
+        "description": "Stores high-level logs of agent interactions."
+    },
+    "/users/{userId}/agents/{agentId}/interactionLogs/{logId}/steps/{stepId}": {
+        "schema": { "$ref": "#/entities/logStep" },
+        "description": "Stores the detailed steps for each interaction log."
+    },
+    "/users/{userId}/agents/{agentId}/configurationLogs/{logId}": {
+        "schema": { "$ref": "#/entities/configurationLog" },
+        "description": "Stores audit logs for agent configuration changes."
     }
   }
 }
-    

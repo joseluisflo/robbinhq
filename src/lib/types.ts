@@ -1,4 +1,5 @@
 
+
 export type Task = {
   id: string;
   name: string;
@@ -179,4 +180,28 @@ export type EmailMessage = {
   sender: string;
   text: string;
   timestamp: any;
+};
+
+export type InteractionLog = {
+    id?: string;
+    title: string;
+    origin: 'Chat' | 'Email' | 'In-Call' | 'Phone';
+    status: 'success' | 'error' | 'in-progress';
+    timestamp: any;
+    steps?: LogStep[];
+};
+
+export type LogStep = {
+    id?: string;
+    description: string;
+    timestamp: any;
+    metadata?: Record<string, any>;
+};
+
+export type ConfigurationLog = {
+    id?: string;
+    title: string;
+    description: string;
+    timestamp: any;
+    actor: string;
 };
