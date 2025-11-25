@@ -317,3 +317,31 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
     return { error: e.message || 'Failed to get agent response.' };
   }
 }
+
+export async function deleteAgent(userId: string, agentId: string): Promise<{ success: boolean } | { error: string }> {
+    if (!userId || !agentId) {
+        return { error: 'User ID and Agent ID are required.' };
+    }
+
+    const firestore = firebaseAdmin.firestore();
+    const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+
+    try {
+        const collections = await agentRef.listCollections();
+        for (const collection of collections) {
+            const snapshot = await collection.get();
+            const batch = firestore.batch();
+            snapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+        }
+
+        await agentRef.delete();
+
+        return { success: true };
+    } catch (e: any) {
+        console.error(`Failed to delete agent ${agentId}:`, e);
+        return { error: e.message || 'Failed to delete agent from database.' };
+    }
+}

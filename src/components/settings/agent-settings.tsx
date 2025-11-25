@@ -8,11 +8,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { useActiveAgent } from '@/app/(main)/layout';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { updateAgent } from '@/app/actions/agents';
-import { Loader2, Copy } from 'lucide-react';
+import { updateAgent, deleteAgent } from '@/app/actions/agents';
+import { Loader2, Copy, Trash2, Info } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function AgentSettings() {
-  const { activeAgent, setActiveAgent } = useActiveAgent();
+  const { activeAgent, setActiveAgent, agents } = useActiveAgent();
   const { user } = useUser();
   const { toast } = useToast();
 
@@ -20,6 +32,9 @@ export function AgentSettings() {
   const [description, setDescription] = useState('');
 
   const [isSaving, startSaving] = useTransition();
+  const [isDeleting, startDeleting] = useTransition();
+
+  const isOnlyAgent = agents.length <= 1;
 
   const isChanged =
     name !== (activeAgent?.name || '') ||
@@ -70,7 +85,24 @@ export function AgentSettings() {
     });
   };
 
+  const handleDeleteAgent = () => {
+    if (!user || !activeAgent || isOnlyAgent) return;
+    
+    startDeleting(async () => {
+        const result = await deleteAgent(user.uid, activeAgent.id!);
+        if (result.error) {
+            toast({ title: 'Error deleting agent', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Agent deleted', description: `"${activeAgent.name}" has been permanently removed.` });
+            const remainingAgents = agents.filter(a => a.id !== activeAgent.id);
+            setActiveAgent(remainingAgents[0] || null);
+            // The dialog will close automatically if we re-render its parent, which we will by changing active agent.
+        }
+    });
+  }
+
   return (
+    <TooltipProvider>
     <div className="space-y-8">
       <div className="space-y-6">
         <div className="space-y-2">
@@ -106,13 +138,47 @@ export function AgentSettings() {
 
       <div className="space-y-4 rounded-lg border border-destructive/50 p-4">
         <div>
-          <p className="font-medium">Delete this agent</p>
+          <p className="font-medium">Delete agent</p>
           <p className="text-sm text-muted-foreground">
             Once deleted, all of its data will be gone forever.
           </p>
         </div>
-        <div className='flex justify-end'>
-            <Button variant="destructive">Delete Agent</Button>
+        <div className='flex items-center justify-end gap-2'>
+            {isOnlyAgent && (
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                         <Info className="h-4 w-4 text-muted-foreground cursor-default" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>You cannot delete your only agent.</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isOnlyAgent || isDeleting}>
+                        {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                        Delete Agent
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the agent
+                        <span className="font-semibold text-foreground"> {activeAgent?.name} </span>
+                        and all of its associated data from our servers.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAgent} className="bg-destructive hover:bg-destructive/90">
+                        {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Delete
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
       </div>
 
@@ -127,5 +193,6 @@ export function AgentSettings() {
         </Button>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
