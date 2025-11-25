@@ -1,62 +1,22 @@
 
 'use client';
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { CheckCircle, XCircle, Loader2, MessageSquare, Phone, Mail } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useUser, useFirestore, useCollection, query, collection, orderBy } from '@/firebase';
+import { useActiveAgent } from '@/app/(main)/layout';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { CheckCircle, XCircle, Loader2, MessageSquare, Phone, Mail, FileCog } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Badge } from "@/components/ui/badge";
-
-
-const mockLogsWithSteps = [
-  {
-    id: "log-1",
-    title: "Workflow 'Bienvenida a nuevo cliente' ejecutado",
-    origin: "Chat",
-    status: "success",
-    timestamp: "hace 2 horas",
-    steps: [
-      { id: "step-1-1", description: "Trigger activado por mensaje de usuario.", timestamp: "10:05:01 AM" },
-      { id: "step-1-2", description: "Buscando información del cliente en la base de datos.", timestamp: "10:05:02 AM" },
-      { id: "step-1-3", description: "Generando mensaje de bienvenida personalizado.", timestamp: "10:05:03 AM" },
-      { id: "step-1-4", description: "Respuesta enviada al usuario.", timestamp: "10:05:04 AM" },
-    ]
-  },
-  {
-    id: "log-2",
-    title: "Error al enviar email de seguimiento",
-    origin: "Email",
-    status: "error",
-    timestamp: "ayer",
-    steps: [
-        { id: "step-2-1", description: "Intentando enviar email a 'cliente@email.com'.", timestamp: "Ayer, 3:30:15 PM" },
-        { id: "step-2-2", description: "Error de autenticación con el proveedor de email.", timestamp: "Ayer, 3:30:16 PM" },
-        { id: "step-2-3", description: "Reintentando envío (1/3).", timestamp: "Ayer, 3:30:46 PM" },
-        { id: "step-2-4", description: "Fallo final en el envío. Razón: API key inválida.", timestamp: "Ayer, 3:31:16 PM" },
-    ]
-  },
-  {
-    id: "log-3",
-    title: "Llamada entrante de +1-202-555-0104",
-    origin: "In-Call",
-    status: "in-progress",
-    timestamp: "ahora",
-    steps: [
-        { id: "step-3-1", description: "Llamada conectada.", timestamp: "1:15:20 PM" },
-        { id: "step-3-2", description: "Transcribiendo audio de usuario en tiempo real.", timestamp: "1:15:22 PM" },
-    ]
-  },
-];
+import type { InteractionLog, LogStep, ConfigurationLog } from '@/lib/types';
+import { Timestamp } from 'firebase/firestore';
+import { format, formatDistanceToNow } from 'date-fns';
 
 const originIcons: Record<string, React.ElementType> = {
   Chat: MessageSquare,
   Email: Mail,
   'In-Call': Phone,
   Phone: Phone,
+  System: FileCog,
 };
 
 const statusInfo: Record<string, { icon: React.ElementType, color: string }> = {
@@ -66,7 +26,78 @@ const statusInfo: Record<string, { icon: React.ElementType, color: string }> = {
 };
 
 
+function LogSteps({ logId }: { logId: string }) {
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const { activeAgent } = useActiveAgent();
+    
+    const stepsQuery = useMemo(() => {
+        if (!user || !activeAgent?.id || !logId) return null;
+        return query(
+            collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'interactionLogs', logId, 'steps'),
+            orderBy('timestamp', 'asc')
+        );
+    }, [user, firestore, activeAgent?.id, logId]);
+
+    const { data: steps, loading } = useCollection<LogStep>(stepsQuery);
+
+    if (loading) {
+        return <div className="p-4 text-sm text-muted-foreground">Loading steps...</div>;
+    }
+
+    if (!steps || steps.length === 0) {
+        return <div className="p-4 text-sm text-muted-foreground">No detailed steps for this log.</div>;
+    }
+
+    return (
+        <ul className="space-y-2">
+            {steps.map(step => (
+                <li key={step.id} className="flex items-center justify-between">
+                    <span className="truncate pr-4">{step.description}</span>
+                    <span className="text-xs font-mono text-muted-foreground/80">
+                        {step.timestamp ? format((step.timestamp as Timestamp).toDate(), 'HH:mm:ss.SSS') : ''}
+                    </span>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+
 export function LogSettings() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { activeAgent } = useActiveAgent();
+
+  const interactionLogsQuery = useMemo(() => {
+    if (!user || !activeAgent?.id) return null;
+    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'interactionLogs'), orderBy('timestamp', 'desc'));
+  }, [user, firestore, activeAgent?.id]);
+  const { data: interactionLogs, loading: loadingInteractions } = useCollection<InteractionLog>(interactionLogsQuery);
+
+  const configLogsQuery = useMemo(() => {
+    if (!user || !activeAgent?.id) return null;
+    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'configurationLogs'), orderBy('timestamp', 'desc'));
+  }, [user, firestore, activeAgent?.id]);
+  const { data: configLogs, loading: loadingConfig } = useCollection<ConfigurationLog>(configLogsQuery);
+
+  const combinedLogs = useMemo(() => {
+    const interactions = (interactionLogs || []).map(log => ({ ...log, logType: 'interaction' as const }));
+    const configs = (configLogs || []).map(log => ({ ...log, logType: 'config' as const, origin: 'System' })); // Add origin for consistency
+    
+    const allLogs = [...interactions, ...configs];
+    
+    allLogs.sort((a, b) => {
+      const timeA = (a.timestamp as Timestamp)?.toMillis() || 0;
+      const timeB = (b.timestamp as Timestamp)?.toMillis() || 0;
+      return timeB - timeA;
+    });
+
+    return allLogs;
+  }, [interactionLogs, configLogs]);
+
+  const loading = loadingInteractions || loadingConfig;
+
   return (
     <div className="space-y-4">
       <div>
@@ -75,42 +106,50 @@ export function LogSettings() {
           A chronological log of important actions performed by your agent.
         </p>
       </div>
-       <Accordion type="single" collapsible className="w-full space-y-2">
-        {mockLogsWithSteps.map((log) => {
-            const OriginIcon = originIcons[log.origin] || MessageSquare;
-            const StatusIcon = statusInfo[log.status]?.icon || CheckCircle;
 
-            return (
-              <AccordionItem key={log.id} value={log.id} className="border rounded-lg bg-card">
-                <AccordionTrigger className="p-4 hover:no-underline [&>svg]:hidden">
-                  <div className="flex items-center gap-4 text-sm w-full">
-                     <div className="flex items-center gap-2 w-1/3">
-                        <StatusIcon className={cn("h-4 w-4", statusInfo[log.status]?.color, log.status === 'in-progress' && 'animate-spin')} />
-                        <span className="font-medium truncate">{log.title}</span>
-                     </div>
-                     <div className="flex items-center gap-2 text-muted-foreground w-1/3">
-                        <OriginIcon className="h-4 w-4" />
-                        <span>{log.origin}</span>
-                     </div>
-                      <span className="text-muted-foreground ml-auto">{log.timestamp}</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="border-t">
-                  <div className="p-4 text-sm text-muted-foreground">
-                     <ul className="space-y-2">
-                        {log.steps.map(step => (
-                            <li key={step.id} className="flex items-center justify-between">
-                                <span>{step.description}</span>
-                                <span className="text-xs font-mono">{step.timestamp}</span>
-                            </li>
-                        ))}
-                     </ul>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )
-        })}
-      </Accordion>
+      {loading ? (
+        <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : combinedLogs.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">No logs found for this agent yet.</div>
+      ) : (
+        <Accordion type="single" collapsible className="w-full space-y-2">
+            {combinedLogs.map((log) => {
+                const OriginIcon = originIcons[log.origin] || MessageSquare;
+                const StatusIcon = statusInfo[log.status || 'success']?.icon || CheckCircle;
+
+                return (
+                    <AccordionItem key={log.id} value={log.id!} className="border rounded-lg bg-card">
+                        <AccordionTrigger className="p-4 hover:no-underline [&>svg]:hidden">
+                        <div className="flex items-center gap-4 text-sm w-full">
+                            <div className="flex items-center gap-2 w-1/3">
+                                <StatusIcon className={cn("h-4 w-4", statusInfo[log.status || 'success']?.color, log.status === 'in-progress' && 'animate-spin')} />
+                                <span className="font-medium truncate">{log.title}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-muted-foreground w-1/3">
+                                <OriginIcon className="h-4 w-4" />
+                                <span>{log.origin}</span>
+                            </div>
+                            <span className="text-muted-foreground ml-auto">
+                                {log.timestamp ? formatDistanceToNow((log.timestamp as Timestamp).toDate(), { addSuffix: true }) : 'N/A'}
+                            </span>
+                        </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="border-t">
+                            <div className="p-4 text-sm text-muted-foreground">
+                                {log.logType === 'interaction' ? (
+                                    <LogSteps logId={log.id!} />
+                                ) : (
+                                    <p>{(log as ConfigurationLog).description}</p>
+                                )}
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                )
+            })}
+        </Accordion>
+      )}
     </div>
   );
 }
