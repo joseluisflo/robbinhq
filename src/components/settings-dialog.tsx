@@ -121,26 +121,23 @@ export function SettingsDialog({ children, initialTab = "Account" }: { children:
                 <div className="space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Your Name</CardTitle>
-                      <CardDescription>This is how your name will be displayed in the app.</CardDescription>
+                      <CardTitle>Your Profile</CardTitle>
+                      <CardDescription>This is how your name and email will be displayed.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <Input defaultValue="John Doe" />
+                      <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="name">Name</Label>
+                            <Input id="name" defaultValue="Jose Luis Flores" />
+                          </div>
+                           <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input id="email" defaultValue="jlfloressanchez01@gmail.com" readOnly />
+                          </div>
+                      </div>
                     </CardContent>
                     <CardFooter className="border-t px-6 py-4">
                       <Button>Save</Button>
-                    </CardFooter>
-                  </Card>
-                   <Card>
-                    <CardHeader>
-                      <CardTitle>Email Address</CardTitle>
-                      <CardDescription>Your email address is used for login and notifications.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Input defaultValue="john.doe@example.com" readOnly />
-                    </CardContent>
-                    <CardFooter className="border-t px-6 py-4 text-sm text-muted-foreground">
-                      Your email cannot be changed.
                     </CardFooter>
                   </Card>
                    <Card>
