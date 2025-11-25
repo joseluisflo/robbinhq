@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
@@ -92,8 +93,6 @@ export function AgentSettings() {
                 </div>
             </div>
             
-            <Separator />
-
             <div className="p-4 rounded-lg border border-destructive/50 space-y-4">
                 <div>
                     <h4 className="text-lg font-semibold text-destructive">Danger Zone</h4>
