@@ -143,21 +143,11 @@ export function AgentSettings() {
             Once deleted, all of its data will be gone forever.
           </p>
         </div>
-        <div className='flex items-center justify-end gap-2'>
-            {isOnlyAgent && (
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                         <Info className="h-4 w-4 text-muted-foreground cursor-default" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>You cannot delete your only agent.</p>
-                    </TooltipContent>
-                </Tooltip>
-            )}
+        <div className='flex items-center justify-end'>
             <AlertDialog>
                 <AlertDialogTrigger asChild>
                     <Button variant="destructive" disabled={isOnlyAgent || isDeleting}>
-                        {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                        {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Delete Agent
                     </Button>
                 </AlertDialogTrigger>
