@@ -38,10 +38,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./ui/card"
-import { Label } from "./ui/label"
-import { Input } from "./ui/input"
-import { Separator } from "./ui/separator"
+import { AccountSettings } from "./settings/account-settings"
 
 const navItems = [
     { name: "Account", icon: BadgeCheck },
@@ -118,55 +115,9 @@ export function SettingsDialog({ children, initialTab = "Account" }: { children:
             </header>
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
               
-              {activeTab === 'Account' && (
-                <div className="space-y-8">
-                  <div>
-                    <h3 className="text-2xl font-semibold">Your Profile</h3>
-                    <p className="text-sm text-muted-foreground">This is how your name and email will be displayed.</p>
-                  </div>
-                  <div className="space-y-6">
-                     <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Name</Label>
-                          <Input id="name" defaultValue="Jose Luis Flores" />
-                        </div>
-                         <div className="space-y-2">
-                          <Label htmlFor="email">Email</Label>
-                          <Input id="email" defaultValue="jlfloressanchez01@gmail.com" readOnly />
-                        </div>
-                    </div>
-                  </div>
-                  
-                  <Separator />
-
-                  <div>
-                     <h3 className="text-2xl font-semibold">Password</h3>
-                     <p className="text-sm text-muted-foreground">Manage your password for added security.</p>
-                  </div>
-                   <div className="space-y-6">
-                       <div className="space-y-2">
-                          <Label htmlFor="current-password">Current Password</Label>
-                          <Input id="current-password" type="password" />
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="new-password">New Password</Label>
-                                <Input id="new-password" type="password" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="confirm-password">Confirm New Password</Label>
-                                <Input id="confirm-password" type="password" />
-                            </div>
-                        </div>
-                    </div>
-
-                  <div className="border-t pt-4">
-                      <Button>Save</Button>
-                  </div>
-                </div>
-              )}
-              
-              {activeTab !== 'Account' && (
+              {activeTab === 'Account' ? (
+                <AccountSettings />
+              ) : (
                  <>
                     {/* Placeholder Content */}
                     <div className="text-center p-8">
