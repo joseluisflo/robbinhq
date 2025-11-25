@@ -10,6 +10,7 @@ import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { updateAgent } from "@/app/actions/agents";
 import { Loader2, Copy } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export function AgentSettings() {
     const { activeAgent, setActiveAgent } = useActiveAgent();
@@ -65,29 +66,51 @@ export function AgentSettings() {
 
     return (
         <div className="space-y-8">
-            <div className="space-y-2">
-                <Label htmlFor="agent-name">Name</Label>
-                <Input id="agent-name" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="agent-description">Description</Label>
-                <Textarea
-                    id="agent-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="min-h-[100px]"
-                />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="agent-id">Agent ID</Label>
-                <div className="flex items-center gap-2">
-                    <Input id="agent-id" value={activeAgent?.id || ""} readOnly />
-                    <Button variant="outline" size="icon" onClick={handleCopyId}>
-                        <Copy className="h-4 w-4" />
-                    </Button>
+            <div className="space-y-6">
+                <div className="space-y-2">
+                    <Label htmlFor="agent-name">Name</Label>
+                    <Input id="agent-name" value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
-                <p className="text-sm text-muted-foreground">This unique ID is used for API calls and integrations.</p>
+                <div className="space-y-2">
+                    <Label htmlFor="agent-description">Description</Label>
+                    <Textarea
+                        id="agent-description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        className="min-h-[100px]"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="agent-id">Agent ID</Label>
+                    <div className="flex items-center gap-2">
+                        <Input id="agent-id" value={activeAgent?.id || ""} readOnly />
+                        <Button variant="outline" size="icon" onClick={handleCopyId}>
+                            <Copy className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">This unique ID is used for API calls and integrations.</p>
+                </div>
             </div>
+            
+            <Separator />
+
+            <div className="p-4 rounded-lg border border-destructive/50 space-y-4">
+                <div>
+                    <h4 className="text-lg font-semibold text-destructive">Danger Zone</h4>
+                    <p className="text-sm text-muted-foreground">
+                        These actions are irreversible. Please be certain before proceeding.
+                    </p>
+                </div>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="font-medium">Delete this agent</p>
+                        <p className="text-sm text-muted-foreground">Once deleted, all of its data will be gone forever.</p>
+                    </div>
+                    <Button variant="destructive">Delete Agent</Button>
+                </div>
+            </div>
+
+
             <div className="border-t pt-4">
               <Button onClick={handleSaveChanges} disabled={!isChanged || isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
