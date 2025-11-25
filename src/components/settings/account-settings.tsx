@@ -1,24 +1,69 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useUser } from "@/firebase";
+import { useUser, useAuth } from "@/firebase";
+import { useToast } from "@/hooks/use-toast";
+import { updateProfile } from "firebase/auth";
+import { updateUserProfile } from "@/app/actions/users";
+import { Loader2 } from "lucide-react";
 
 export function AccountSettings() {
     const { user } = useUser();
+    const auth = useAuth();
+    const { toast } = useToast();
+
     const [name, setName] = useState("");
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    
+    const [isSaving, startSaving] = useTransition();
+
+    const isNameChanged = name !== (user?.displayName || "");
+    // For now, only checking name change. Password logic will be separate.
+    const isChanged = isNameChanged;
 
     useEffect(() => {
         if (user) {
             setName(user.displayName || "");
         }
     }, [user]);
+
+    const handleSaveChanges = () => {
+        if (!user || !isChanged) return;
+
+        startSaving(async () => {
+            if (isNameChanged) {
+                // Update Firebase Auth profile on the client
+                if (auth?.currentUser) {
+                    try {
+                        await updateProfile(auth.currentUser, { displayName: name });
+                        
+                        // Update Firestore profile on the server
+                        const result = await updateUserProfile(user.uid, { displayName: name });
+
+                        if (result.error) {
+                            throw new Error(result.error);
+                        }
+                        
+                        toast({ title: "Success", description: "Your profile has been updated." });
+                        
+                        // Manually trigger a re-render or state update if needed, though useUser should reflect this
+                        // Forcing a refresh might be too heavy, but is an option: router.refresh();
+
+                    } catch (error: any) {
+                         toast({ title: "Error updating profile", description: error.message, variant: "destructive" });
+                    }
+                }
+            }
+            // Password change logic will go here in the next step
+        });
+    }
 
 
     return (
@@ -77,7 +122,10 @@ export function AccountSettings() {
             </div>
 
             <div className="border-t pt-4">
-              <Button>Save</Button>
+              <Button onClick={handleSaveChanges} disabled={!isChanged || isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
             </div>
         </div>
     );
