@@ -44,7 +44,6 @@ import { AgentSettings } from "./settings/agent-settings"
 const navItems = [
     { name: "Account", icon: BadgeCheck },
     { name: "Agent", icon: Bot },
-    { name: "Appearance", icon: Paintbrush },
     { name: "Notifications", icon: Bell },
     { name: "Billing", icon: CreditCard },
     { name: "Language & region", icon: Globe },
