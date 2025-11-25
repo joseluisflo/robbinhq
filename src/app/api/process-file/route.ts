@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { firebaseAdmin } from '@/firebase/admin';
 import { s3Client } from '@/lib/r2';
@@ -5,6 +6,7 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
 
@@ -49,13 +51,8 @@ export async function POST(request: Request) {
   }
 
   const firestore = firebaseAdmin.firestore();
-  const fileRef = firestore
-    .collection('users')
-    .doc(userId)
-    .collection('agents')
-    .doc(agentId)
-    .collection('files')
-    .doc(fileId);
+  const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+  const fileRef = agentRef.collection('files').doc(fileId);
 
   try {
     const fileDoc = await fileRef.get();
@@ -65,6 +62,7 @@ export async function POST(request: Request) {
     const fileData = fileDoc.data();
     const storagePath = fileData?.storagePath;
     const fileType = fileData?.type;
+    const fileName = fileData?.name || 'Unknown File';
 
     if (!storagePath || !fileType) {
       return NextResponse.json({ error: 'File metadata incomplete' }, { status: 400 });
@@ -106,6 +104,14 @@ export async function POST(request: Request) {
     // 3. Update Firestore with extracted text
     await fileRef.update({
       extractedText: extractedText.trim(),
+    });
+
+    // 4. Create Configuration Log
+    await agentRef.collection('configurationLogs').add({
+        title: 'Knowledge Base Updated',
+        description: `Added file source: "${fileName}"`,
+        timestamp: FieldValue.serverTimestamp(),
+        actor: userId,
     });
 
     return NextResponse.json({ success: true, ...extractionInfo });

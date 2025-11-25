@@ -1,8 +1,10 @@
+
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
 import { s3Client } from '@/lib/r2';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
 
@@ -19,13 +21,8 @@ export async function deleteAgentFile(
   }
 
   const firestore = firebaseAdmin.firestore();
-  const fileRef = firestore
-    .collection('users')
-    .doc(userId)
-    .collection('agents')
-    .doc(agentId)
-    .collection('files')
-    .doc(fileId);
+  const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+  const fileRef = agentRef.collection('files').doc(fileId);
 
   try {
     const fileDoc = await fileRef.get();
@@ -34,6 +31,7 @@ export async function deleteAgentFile(
     }
     const fileData = fileDoc.data();
     const storagePath = fileData?.storagePath;
+    const fileName = fileData?.name || 'Unknown File';
 
     // 1. Delete from R2
     if (storagePath) {
@@ -48,6 +46,15 @@ export async function deleteAgentFile(
 
     // 2. Delete from Firestore
     await fileRef.delete();
+
+    // 3. Create Configuration Log
+    await agentRef.collection('configurationLogs').add({
+        title: 'Knowledge Base Updated',
+        description: `Removed file source: "${fileName}"`,
+        timestamp: FieldValue.serverTimestamp(),
+        actor: userId,
+    });
+
 
     return { success: true };
   } catch (e: any) {

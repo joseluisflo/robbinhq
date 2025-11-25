@@ -1,3 +1,4 @@
+
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
@@ -14,13 +15,8 @@ export async function addAgentText(
 
   try {
     const firestore = firebaseAdmin.firestore();
-    const textRef = firestore
-      .collection('users')
-      .doc(userId)
-      .collection('agents')
-      .doc(agentId)
-      .collection('texts')
-      .doc();
+    const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+    const textRef = agentRef.collection('texts').doc();
 
     const newText = {
       ...data,
@@ -28,6 +24,15 @@ export async function addAgentText(
     };
 
     await textRef.set(newText);
+    
+    // Create Configuration Log
+    await agentRef.collection('configurationLogs').add({
+        title: 'Knowledge Base Updated',
+        description: `Added text source: "${data.title}"`,
+        timestamp: FieldValue.serverTimestamp(),
+        actor: userId,
+    });
+
 
     return { id: textRef.id };
   } catch (e: any) {
@@ -47,15 +52,24 @@ export async function deleteAgentText(
 
   try {
     const firestore = firebaseAdmin.firestore();
-    const textRef = firestore
-      .collection('users')
-      .doc(userId)
-      .collection('agents')
-      .doc(agentId)
-      .collection('texts')
-      .doc(textId);
+    const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+    const textRef = agentRef.collection('texts').doc(textId);
     
+    const textDoc = await textRef.get();
+    if (!textDoc.exists) {
+        return { error: 'Text source not found.' };
+    }
+    const textTitle = textDoc.data()?.title || 'Unknown Text';
+
     await textRef.delete();
+    
+    // Create Configuration Log
+    await agentRef.collection('configurationLogs').add({
+        title: 'Knowledge Base Updated',
+        description: `Removed text source: "${textTitle}"`,
+        timestamp: FieldValue.serverTimestamp(),
+        actor: userId,
+    });
 
     return { success: true };
   } catch (e: any) {

@@ -169,6 +169,35 @@ async function saveMessage(db: FirebaseFirestore.Firestore, path: string, messag
     });
 }
 
+// Helper to manage interaction logs
+async function getOrCreateInteractionLog(db: FirebaseFirestore.Firestore, agentRef: FirebaseFirestore.DocumentReference, sessionId: string, title: string, source: 'Chat' | 'Email' | 'In-Call' | 'Phone') {
+    const logCollection = agentRef.collection('interactionLogs');
+    const existingLogQuery = await logCollection.where('metadata.sessionId', '==', sessionId).limit(1).get();
+
+    if (!existingLogQuery.empty) {
+        return existingLogQuery.docs[0].ref;
+    }
+
+    const newLogRef = logCollection.doc();
+    await newLogRef.set({
+        title,
+        origin: source,
+        status: 'in-progress',
+        timestamp: FieldValue.serverTimestamp(),
+        metadata: { sessionId }
+    });
+    return newLogRef;
+}
+
+async function addLogStep(logRef: FirebaseFirestore.DocumentReference, description: string, metadata: Record<string, any> = {}) {
+    await logRef.collection('steps').add({
+        description,
+        timestamp: FieldValue.serverTimestamp(),
+        metadata,
+    });
+}
+
+
 export async function getAgentResponse(input: AgentResponseInput): Promise<AgentResponse> {
   const { userId, agentId, message, runId, sessionId } = input;
   if (!userId || !agentId || !sessionId) {
@@ -176,7 +205,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
   }
   
   const firestore = firebaseAdmin.firestore();
-
+  
   try {
     const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
     const sessionRef = agentRef.collection('sessions').doc(sessionId);
@@ -189,6 +218,13 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       return { error: 'Agent not found.' };
     }
     const agent = agentDoc.data() as Agent;
+
+    // --- LOGGING ---
+    const logTitle = `Conversation with Visitor`; // Simplified title
+    const logRef = await getOrCreateInteractionLog(firestore, agentRef, sessionId, logTitle, 'Chat');
+    await addLogStep(logRef, `User: "${message}"`);
+    // --- END LOGGING ---
+
 
     const sessionDoc = await sessionRef.get();
     if (!sessionDoc.exists) {
@@ -264,6 +300,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
     }
 
     if (selectedWorkflowId) {
+      await addLogStep(logRef, `Triggering workflow: "${selectedWorkflowId}"`);
       const workflowResult = await runOrResumeWorkflow({
         userId,
         agentId,
@@ -274,13 +311,21 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
 
       if ('error' in workflowResult) {
         await saveMessage(firestore, messagesPath, { sender: 'agent', text: workflowResult.error });
+        await addLogStep(logRef, `Workflow Error: ${workflowResult.error}`);
+        await logRef.update({ status: 'error' });
         return { error: `Workflow error: ${workflowResult.error}` };
       }
 
       const responseText = workflowResult.promptForUser || workflowResult.context?.finalResult;
       if (responseText) {
         await saveMessage(firestore, messagesPath, { sender: 'agent', text: responseText });
+        await addLogStep(logRef, `Agent: "${responseText}"`);
       }
+      
+      if (workflowResult.status === 'completed') {
+        await logRef.update({ status: 'success' });
+      }
+
 
       return {
         type: 'workflow',
@@ -291,6 +336,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         finalResult: workflowResult.context?.finalResult,
       };
     } else {
+      await addLogStep(logRef, "Searching knowledge base for answer.");
       const textsSnapshot = await agentRef.collection('texts').get();
       const filesSnapshot = await agentRef.collection('files').get();
 
@@ -309,11 +355,22 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       });
 
       await saveMessage(firestore, messagesPath, { sender: 'agent', text: chatResult.response });
+      await addLogStep(logRef, `Agent: "${chatResult.response}"`);
+      await logRef.update({ status: 'success' });
 
       return { type: 'chat', response: chatResult.response };
     }
   } catch (e: any) {
     console.error('Failed to get agent response:', e);
+    // Log error to Firestore if possible
+    try {
+        const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+        const logRef = await getOrCreateInteractionLog(firestore, agentRef, sessionId, "Failed Interaction", 'Chat');
+        await addLogStep(logRef, `Critical Error: ${e.message}`);
+        await logRef.update({ status: 'error' });
+    } catch (logError) {
+        console.error("Failed to even write the error log:", logError);
+    }
     return { error: e.message || 'Failed to get agent response.' };
   }
 }
