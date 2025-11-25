@@ -122,9 +122,9 @@ export function AccountSettings() {
             </div>
 
             <div className="border-t pt-4">
-              <Button onClick={handleSaveChanges} disabled={!isChanged || isSaving}>
+              <Button onClick={handleSaveChanges} disabled={!isChanged || isSaving} className="w-full">
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save
+                Save changes
               </Button>
             </div>
         </div>

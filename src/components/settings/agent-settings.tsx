@@ -11,7 +11,6 @@ import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { updateAgent } from "@/app/actions/agents";
 import { Loader2, Copy } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 
 export function AgentSettings() {
     const { activeAgent, setActiveAgent } = useActiveAgent();
@@ -105,7 +104,7 @@ export function AgentSettings() {
 
 
             <div className="border-t pt-4">
-              <Button onClick={handleSaveChanges} disabled={!isChanged || isSaving}>
+              <Button onClick={handleSaveChanges} disabled={!isChanged || isSaving} className="w-full">
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save changes
               </Button>
