@@ -82,7 +82,7 @@ export function LogSettings() {
 
             return (
               <AccordionItem key={log.id} value={log.id} className="border rounded-lg bg-card">
-                <AccordionTrigger className="p-4 hover:no-underline">
+                <AccordionTrigger className="p-4 hover:no-underline [&>svg]:hidden">
                   <div className="flex items-center gap-4 text-sm w-full">
                      <div className="flex items-center gap-2 w-1/3">
                         <StatusIcon className={cn("h-4 w-4", statusInfo[log.status]?.color, log.status === 'in-progress' && 'animate-spin')} />
