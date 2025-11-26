@@ -44,6 +44,7 @@ import {
 import { AccountSettings } from "./settings/account-settings"
 import { AgentSettings } from "./settings/agent-settings"
 import { LogSettings } from "./settings/log-settings"
+import { BillingSettings } from "./settings/billing-settings"
 
 const navItems = [
     { name: "Account", icon: BadgeCheck },
@@ -122,14 +123,16 @@ export function SettingsDialog({ children, initialTab = "Account" }: { children:
               {activeTab === 'Account' && <AccountSettings />}
               {activeTab === 'Agent' && <AgentSettings />}
               {activeTab === 'Logs' && <LogSettings />}
+              {activeTab === 'Billing' && <BillingSettings />}
 
-              {activeTab !== 'Account' && activeTab !== 'Agent' && activeTab !== 'Logs' && (
+
+              {activeTab !== 'Account' && activeTab !== 'Agent' && activeTab !== 'Logs' && activeTab !== 'Billing' && (
                  <>
                     {/* Placeholder Content */}
                     <div className="text-center p-8">
                         <h2 className="text-xl font-semibold">{activeTab}</h2>
                         <p className="text-muted-foreground mt-2">
-                        Content for {activeTab} will go here.
+                        Content for {activeTab} will be here.
                         </p>
                     </div>
                     {Array.from({ length: 4 }).map((_, i) => (
