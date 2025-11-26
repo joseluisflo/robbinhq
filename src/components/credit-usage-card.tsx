@@ -1,7 +1,6 @@
 
 'use client';
 
-import { ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -12,7 +11,7 @@ export function CreditUsageCard() {
   const percentage = (usedCredits / totalCredits) * 100;
 
   return (
-    <Card className="bg-transparent border-0 shadow-none">
+    <Card>
       <CardHeader className="p-2">
         <div className="flex items-center justify-between text-sm">
           <CardTitle className="text-sm font-medium">Credits</CardTitle>
@@ -26,7 +25,7 @@ export function CreditUsageCard() {
         <p className="text-xs text-muted-foreground">
           Resets on Nov 30, 2025 at 6:00 PM
         </p>
-        <Button className="w-full mt-3 h-9 font-semibold">
+        <Button className="w-full mt-3 h-9 font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
           Upgrade
         </Button>
       </CardContent>
