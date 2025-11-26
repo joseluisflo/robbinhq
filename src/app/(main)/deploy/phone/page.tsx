@@ -1,6 +1,6 @@
+
 'use client';
 
-import { useState, useTransition } from 'react';
 import {
   Card,
   CardHeader,
@@ -21,71 +21,23 @@ import {
 } from '@/components/ui/select';
 import { Globe, Search, Loader2, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useActiveAgent } from '@/app/(main)/layout';
-import { searchAvailableNumbers, purchaseAndConfigureNumber } from '@/app/actions/twilio';
-import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
-
-interface TwilioNumber {
-    friendlyName: string;
-    phoneNumber: string;
-}
+import { useDeployPhone } from '@/hooks/use-deploy-phone';
 
 export default function DeployPhonePage() {
-    const { user } = useUser();
-    const { activeAgent, setActiveAgent } = useActiveAgent();
-    const { toast } = useToast();
-    const [isSearching, startSearchTransition] = useTransition();
-    const [isPurchasing, startPurchaseTransition] = useTransition();
-
-    const [country, setCountry] = useState('US');
-    const [areaCode, setAreaCode] = useState('');
-    const [availableNumbers, setAvailableNumbers] = useState<TwilioNumber[]>([]);
-    const [error, setError] = useState<string | null>(null);
-    const [purchasingNumber, setPurchasingNumber] = useState<string | null>(null);
-
-    const handleSearch = () => {
-        if (!areaCode) {
-            toast({ title: 'Area code is required', variant: 'destructive'});
-            return;
-        }
-        setError(null);
-        setAvailableNumbers([]);
-        startSearchTransition(async () => {
-            const result = await searchAvailableNumbers(country, areaCode);
-            if ('error' in result) {
-                setError(result.error);
-                toast({ title: 'Search Failed', description: result.error, variant: 'destructive'});
-            } else {
-                setAvailableNumbers(result.data || []);
-                if (!result.data || result.data.length === 0) {
-                     toast({ title: 'No Numbers Found', description: 'Try a different area code or country.'});
-                }
-            }
-        });
-    }
-
-    const handlePurchase = (numberToPurchase: string) => {
-        if (!user || !activeAgent?.id) {
-            toast({ title: 'Error', description: 'You must be logged in and have an active agent.', variant: 'destructive' });
-            return;
-        }
-        setPurchasingNumber(numberToPurchase);
-        startPurchaseTransition(async () => {
-            const result = await purchaseAndConfigureNumber(user.uid, activeAgent.id!, numberToPurchase);
-            if ('error' in result) {
-                toast({ title: 'Purchase Failed', description: result.error, variant: 'destructive' });
-            } else {
-                toast({ title: 'Purchase Successful!', description: `Number ${result.purchasedNumber} is now assigned to your agent.` });
-                // Update agent context
-                const newPhoneConfig = { phoneNumber: result.purchasedNumber, phoneSid: '' }; // SID is not returned here but it's ok for UI
-                setActiveAgent({ ...activeAgent, phoneConfig: newPhoneConfig });
-                setAvailableNumbers([]); // Clear the list after purchase
-            }
-            setPurchasingNumber(null);
-        });
-    };
-
+    const {
+        activeAgent,
+        country,
+        setCountry,
+        areaCode,
+        setAreaCode,
+        availableNumbers,
+        isSearching,
+        isPurchasing,
+        purchasingNumber,
+        handleSearch,
+        handlePurchase,
+    } = useDeployPhone();
+    
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
