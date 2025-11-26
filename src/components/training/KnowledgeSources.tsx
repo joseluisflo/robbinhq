@@ -11,6 +11,7 @@ import { AddFileDialog } from '@/components/add-file-dialog';
 import type { TextSource, AgentFile } from '@/lib/types';
 
 interface KnowledgeSourcesProps {
+  sourceType: 'text' | 'file';
   textSources: TextSource[];
   fileSources: AgentFile[];
   textsLoading: boolean;
@@ -29,6 +30,7 @@ function formatBytes(bytes: number, decimals = 2) {
 }
 
 export function KnowledgeSources({
+  sourceType,
   textSources,
   fileSources,
   textsLoading,
@@ -36,22 +38,9 @@ export function KnowledgeSources({
   handleDeleteText,
   handleDeleteFile,
 }: KnowledgeSourcesProps) {
-  return (
-    <div className='space-y-6'>
+  if (sourceType === 'text') {
+    return (
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between mb-4">
-          <Label className="text-base font-semibold flex items-center gap-2">
-            Texts
-            <Info className="h-4 w-4 text-muted-foreground" />
-          </Label>
-          <AddTextDialog>
-            <Button variant="outline" size="sm">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add
-            </Button>
-          </AddTextDialog>
-        </div>
-        
         {textsLoading ? (
           <div className="text-center py-12">
             <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
@@ -88,21 +77,12 @@ export function KnowledgeSources({
           </Card>
         )}
       </div>
+    );
+  }
 
+  if (sourceType === 'file') {
+    return (
       <div className="flex flex-col mt-6">
-        <div className="flex items-center justify-between mb-4">
-          <Label className="text-base font-semibold flex items-center gap-2">
-            Files
-            <Info className="h-4 w-4 text-muted-foreground" />
-          </Label>
-            <AddFileDialog>
-            <Button variant="outline" size="sm">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add
-            </Button>
-          </AddFileDialog>
-        </div>
-        
         {filesLoading ? (
           <div className="text-center py-12">
             <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
@@ -142,8 +122,8 @@ export function KnowledgeSources({
           </Card>
         )}
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-    
+  return null;
+}

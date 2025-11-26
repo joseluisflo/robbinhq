@@ -174,9 +174,10 @@ export default function TrainingPage() {
           <div className="flex flex-col h-full">
             <Tabs defaultValue="instructions" className="flex flex-col flex-1 h-full">
                <div className="px-6 py-3 border-b">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="instructions">Instructions</TabsTrigger>
-                  <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
+                  <TabsTrigger value="texts">Texts</TabsTrigger>
+                  <TabsTrigger value="files">Files</TabsTrigger>
                   <TabsTrigger value="security">Security</TabsTrigger>
                 </TabsList>
               </div>
@@ -196,13 +197,25 @@ export default function TrainingPage() {
                     />
                   </TabsContent>
 
-                  <TabsContent value="knowledge" className="mt-0">
+                  <TabsContent value="texts" className="mt-0">
                      <KnowledgeSources
+                        sourceType="text"
                         textSources={textSources || []}
-                        fileSources={fileSources || []}
+                        fileSources={[]}
                         textsLoading={textsLoading}
-                        filesLoading={filesLoading}
+                        filesLoading={false}
                         handleDeleteText={handleDeleteText}
+                        handleDeleteFile={() => {}}
+                    />
+                  </TabsContent>
+                   <TabsContent value="files" className="mt-0">
+                     <KnowledgeSources
+                        sourceType="file"
+                        textSources={[]}
+                        fileSources={fileSources || []}
+                        textsLoading={false}
+                        filesLoading={filesLoading}
+                        handleDeleteText={() => {}}
                         handleDeleteFile={handleDeleteFile}
                     />
                   </TabsContent>
@@ -249,5 +262,3 @@ export default function TrainingPage() {
     </div>
   );
 }
-
-    
