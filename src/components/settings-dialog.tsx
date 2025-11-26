@@ -51,7 +51,6 @@ const navItems = [
     { name: "Logs", icon: MessageSquare },
     { name: "Billing", icon: CreditCard },
     { name: "Privacy & visibility", icon: Lock },
-    { name: "Advanced", icon: Settings },
 ];
 
 export function SettingsDialog({ children, initialTab = "Account" }: { children: React.ReactNode, initialTab?: string }) {
@@ -124,24 +123,6 @@ export function SettingsDialog({ children, initialTab = "Account" }: { children:
               {activeTab === 'Billing' && <BillingSettings />}
               {activeTab === 'Privacy & visibility' && <PrivacySettings />}
 
-
-              {activeTab !== 'Account' && activeTab !== 'Agent' && activeTab !== 'Logs' && activeTab !== 'Billing' && activeTab !== 'Privacy & visibility' && (
-                 <>
-                    {/* Placeholder Content */}
-                    <div className="text-center p-8">
-                        <h2 className="text-xl font-semibold">{activeTab}</h2>
-                        <p className="text-muted-foreground mt-2">
-                        Content for {activeTab} will be here.
-                        </p>
-                    </div>
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div
-                        key={i}
-                        className="bg-muted/50 h-32 w-full max-w-3xl rounded-xl"
-                        />
-                    ))}
-                 </>
-              )}
             </div>
           </main>
         </SidebarProvider>
