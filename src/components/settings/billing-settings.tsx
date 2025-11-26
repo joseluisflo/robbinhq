@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download } from "lucide-react";
+import { ChangePlanDialog } from "./change-plan-dialog";
 
 function UsageMeter({ title, used, total }: { title: string, used: number, total: number }) {
     const remaining = total - used;
@@ -59,7 +60,9 @@ export function BillingSettings() {
                              <h4 className="text-xl font-bold">Starter Plan</h4>
                              <p className="text-muted-foreground mt-1">$0 per month</p>
                         </div>
-                        <Button variant="outline">Change Plan</Button>
+                        <ChangePlanDialog>
+                           <Button variant="outline">Change Plan</Button>
+                        </ChangePlanDialog>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-2">
