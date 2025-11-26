@@ -52,6 +52,8 @@ export type Agent = {
   // For passing to live agent
   textSources?: TextSource[];
   fileSources?: AgentFile[];
+  dataRetentionPolicy?: '30' | '90' | '365' | 'forever';
+  anonymizeData?: boolean;
 };
 
 export type WorkflowBlock = {

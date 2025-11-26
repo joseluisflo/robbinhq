@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Download, Loader2, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -19,10 +20,54 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useActiveAgent } from "@/app/(main)/layout";
+import { useUser } from "@/firebase";
+import { useToast } from "@/hooks/use-toast";
+import { updateAgent } from "@/app/actions/agents";
+import type { Agent } from "@/lib/types";
 
 
 export function PrivacySettings() {
-    const [retention, setRetention] = useState("90");
+    const { activeAgent, setActiveAgent } = useActiveAgent();
+    const { user } = useUser();
+    const { toast } = useToast();
+    
+    const [retention, setRetention] = useState<'30' | '90' | '365' | 'forever'>("90");
+    const [anonymize, setAnonymize] = useState(false);
+    const [isSaving, startSaving] = useTransition();
+
+    const isChanged = retention !== (activeAgent?.dataRetentionPolicy || '90') || anonymize !== (activeAgent?.anonymizeData || false);
+
+    useEffect(() => {
+        if (activeAgent) {
+            setRetention(activeAgent.dataRetentionPolicy || '90');
+            setAnonymize(activeAgent.anonymizeData || false);
+        }
+    }, [activeAgent]);
+
+    const handleSaveChanges = () => {
+        if (!user || !activeAgent || !isChanged) return;
+
+        startSaving(async () => {
+            const dataToUpdate: Partial<Agent> = {};
+            if (retention !== (activeAgent.dataRetentionPolicy || '90')) {
+                dataToUpdate.dataRetentionPolicy = retention;
+            }
+            if (anonymize !== (activeAgent.anonymizeData || false)) {
+                dataToUpdate.anonymizeData = anonymize;
+            }
+
+            const result = await updateAgent(user.uid, activeAgent.id!, dataToUpdate);
+
+            if ('error' in result) {
+                toast({ title: 'Failed to save settings', description: result.error, variant: 'destructive' });
+            } else {
+                toast({ title: 'Privacy settings saved!' });
+                setActiveAgent({ ...activeAgent, ...dataToUpdate });
+            }
+        });
+    };
+
 
     const retentionOptions = [
         { value: "30", label: "30 days" },
@@ -44,12 +89,15 @@ export function PrivacySettings() {
                 <div className="w-full">
                      <RadioGroup
                         value={retention}
-                        onValueChange={setRetention}
+                        onValueChange={(v) => setRetention(v as '30' | '90' | '365' | 'forever')}
                         className="relative grid grid-cols-4 items-center justify-center rounded-lg bg-muted p-1 text-center font-medium text-sm"
                     >
                          <div
-                            className="absolute h-[calc(100%-0.5rem)] w-1/4 rounded-md bg-background shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                            style={{ transform: `translateX(${selectedIndex * 100}%)` }}
+                            className="absolute h-[calc(100%-0.5rem)] rounded-md bg-background shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                            style={{ 
+                                width: `calc((100% - 0.5rem) / 4)`,
+                                transform: `translateX(calc(${selectedIndex * 100}% + ${selectedIndex * 0.125}rem))` 
+                            }}
                         />
                         {retentionOptions.map((option) => (
                             <Label
@@ -77,7 +125,11 @@ export function PrivacySettings() {
                         Do not store visitor's personal information (IP, location, etc.).
                     </p>
                 </div>
-                <Switch id="anonymization-toggle" />
+                <Switch 
+                    id="anonymization-toggle" 
+                    checked={anonymize}
+                    onCheckedChange={setAnonymize}
+                />
             </div>
             <div className="flex items-center justify-between rounded-lg border p-4">
                 <div>
@@ -155,6 +207,13 @@ export function PrivacySettings() {
                         </AlertDialog>
                     </div>
                 </div>
+            </div>
+
+            <div className="border-t pt-6">
+              <Button onClick={handleSaveChanges} disabled={!isChanged || isSaving} className="w-full">
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save changes
+              </Button>
             </div>
         </div>
     );

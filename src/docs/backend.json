@@ -121,6 +121,15 @@
             "type": "string",
             "format": "email",
             "description": "Email address to forward to for human handoff."
+        },
+        "dataRetentionPolicy": {
+            "type": "string",
+            "enum": ["30", "90", "365", "forever"],
+            "description": "How long to retain conversation data."
+        },
+        "anonymizeData": {
+            "type": "boolean",
+            "description": "Whether to anonymize visitor data."
         }
       },
       "required": ["name", "userId", "createdAt"]
@@ -364,6 +373,41 @@
             }
         },
         "required": ["messageId", "sender", "text", "timestamp"]
+    },
+    "interactionLog": {
+        "title": "Interaction Log",
+        "description": "A log of a complete interaction with an agent.",
+        "type": "object",
+        "properties": {
+            "title": { "type": "string" },
+            "origin": { "type": "string", "enum": ["Chat", "Email", "In-Call", "Phone"] },
+            "status": { "type": "string", "enum": ["success", "error", "in-progress"] },
+            "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["title", "origin", "status", "timestamp"]
+    },
+    "logStep": {
+        "title": "Log Step",
+        "description": "A detailed step within a larger interaction log.",
+        "type": "object",
+        "properties": {
+            "description": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "metadata": { "type": "object" }
+        },
+        "required": ["description", "timestamp"]
+    },
+    "configurationLog": {
+        "title": "Configuration Log",
+        "description": "A log of a configuration change made to an agent.",
+        "type": "object",
+        "properties": {
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "actor": { "type": "string", "description": "The user ID of the person who made the change." }
+        },
+        "required": ["title", "description", "timestamp", "actor"]
     }
   },
   "auth": {
@@ -429,6 +473,18 @@
             "$ref": "#/entities/emailMessage"
         },
         "description": "Stores all messages for a specific email thread."
+    },
+    "/users/{userId}/agents/{agentId}/interactionLogs/{logId}": {
+        "schema": { "$ref": "#/entities/interactionLog" },
+        "description": "Stores high-level logs of agent interactions."
+    },
+    "/users/{userId}/agents/{agentId}/interactionLogs/{logId}/steps/{stepId}": {
+        "schema": { "$ref": "#/entities/logStep" },
+        "description": "Stores the detailed steps for each interaction log."
+    },
+    "/users/{userId}/agents/{agentId}/configurationLogs/{logId}": {
+        "schema": { "$ref": "#/entities/configurationLog" },
+        "description": "Stores audit logs for agent configuration changes."
     }
   }
 }
