@@ -59,7 +59,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
             </div>
 
             <form className="space-y-5">
-              <RadioGroup className="gap-2" defaultValue="2">
+              <RadioGroup className="gap-2" defaultValue="1">
                 {/* Radio card #1 */}
                 <div className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
                   <RadioGroupItem
@@ -69,12 +69,12 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                     value="1"
                   />
                   <div className="grid grow gap-1">
-                    <Label htmlFor={`${id}-1`}>Essential</Label>
+                    <Label htmlFor={`${id}-1`}>Free</Label>
                     <p
                       className="text-muted-foreground text-xs"
                       id={`${id}-1-description`}
                     >
-                      $4 per member/month
+                      $0 per month
                     </p>
                   </div>
                 </div>
@@ -87,12 +87,12 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                     value="2"
                   />
                   <div className="grid grow gap-1">
-                    <Label htmlFor={`${id}-2`}>Standard</Label>
+                    <Label htmlFor={`${id}-2`}>Essential</Label>
                     <p
                       className="text-muted-foreground text-xs"
                       id={`${id}-2-description`}
                     >
-                      $19 per member/month
+                      $15 Per month
                     </p>
                   </div>
                 </div>
@@ -105,12 +105,12 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                     value="3"
                   />
                   <div className="grid grow gap-1">
-                    <Label htmlFor={`${id}-3`}>Enterprise</Label>
+                    <Label htmlFor={`${id}-3`}>Pro</Label>
                     <p
                       className="text-muted-foreground text-xs"
                       id={`${id}-3-description`}
                     >
-                      $32 per member/month
+                      $29 Per month
                     </p>
                   </div>
                 </div>

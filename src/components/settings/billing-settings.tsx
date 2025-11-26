@@ -28,17 +28,17 @@ const invoices = [
     {
         date: "July 15, 2024",
         description: "Subscription - Pro Plan",
-        amount: "$99.00",
+        amount: "$29.00",
     },
     {
         date: "June 15, 2024",
         description: "Subscription - Pro Plan",
-        amount: "$99.00",
+        amount: "$29.00",
     },
     {
         date: "May 15, 2024",
         description: "Subscription - Pro Plan",
-        amount: "$99.00",
+        amount: "$29.00",
     },
 ];
 
@@ -57,7 +57,7 @@ export function BillingSettings() {
                     <div className="flex justify-between items-start">
                         <div>
                              <p className="text-sm font-semibold text-primary">FREE</p>
-                             <h4 className="text-xl font-bold">Starter Plan</h4>
+                             <h4 className="text-xl font-bold">Free Plan</h4>
                              <p className="text-muted-foreground mt-1">$0 per month</p>
                         </div>
                         <ChangePlanDialog>
