@@ -27,7 +27,6 @@ export function CreditUsageCard() {
           Resets on Nov 30, 2025 at 6:00 PM
         </p>
         <Button className="w-full mt-3 h-9 font-semibold">
-          <ArrowUp className="h-4 w-4 mr-2 rounded-full bg-primary-foreground text-primary p-0.5" />
           Upgrade
         </Button>
       </CardContent>
