@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,9 @@ export function PrivacySettings() {
         { value: "365", label: "1 year" },
         { value: "forever", label: "Forever" },
     ];
+    
+    const selectedIndex = retentionOptions.findIndex(o => o.value === retention);
+
 
     return (
         <div className="space-y-8">
@@ -40,23 +44,28 @@ export function PrivacySettings() {
                             <RadioGroup
                                 value={retention}
                                 onValueChange={setRetention}
-                                className="grid grid-cols-4 gap-2 rounded-lg bg-muted p-1"
+                                className="relative grid grid-cols-4 items-center justify-center rounded-lg bg-muted p-1 text-center font-medium text-sm"
+                                style={{
+                                    '--translate-x': `${selectedIndex * 100}%`
+                                } as React.CSSProperties}
                             >
+                                 <div className="absolute inset-0 z-0 p-1">
+                                    <div className="h-full w-1/4 rounded-md bg-background shadow-sm transition-[transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                         style={{ transform: `translateX(var(--translate-x))` }}
+                                    />
+                                </div>
                                 {retentionOptions.map((option) => (
-                                    <div key={option.value}>
+                                     <Label 
+                                        key={option.value}
+                                        htmlFor={`retention-${option.value}`}
+                                        className={cn(
+                                            "relative z-10 flex h-full cursor-pointer select-none items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors",
+                                            retention === option.value ? "text-foreground" : "text-muted-foreground"
+                                        )}
+                                    >
+                                        {option.label}
                                         <RadioGroupItem value={option.value} id={`retention-${option.value}`} className="sr-only" />
-                                        <Label 
-                                            htmlFor={`retention-${option.value}`}
-                                            className={cn(
-                                                "flex justify-center items-center rounded-md px-3 py-1.5 text-sm font-medium cursor-pointer transition-colors",
-                                                retention === option.value 
-                                                    ? "bg-background text-foreground shadow-sm" 
-                                                    : "hover:bg-muted/50 text-muted-foreground"
-                                            )}
-                                        >
-                                            {option.label}
-                                        </Label>
-                                    </div>
+                                    </Label>
                                 ))}
                             </RadioGroup>
                         </div>
