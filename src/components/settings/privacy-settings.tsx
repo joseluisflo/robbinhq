@@ -1,13 +1,24 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { Download } from "lucide-react";
+import { Download, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
 
 export function PrivacySettings() {
     const [retention, setRetention] = useState("90");
@@ -30,12 +41,12 @@ export function PrivacySettings() {
             <div className="space-y-2">
                 <Label htmlFor="data-retention">Data Retention Policy</Label>
                 <div className="w-full">
-                    <RadioGroup
+                     <RadioGroup
                         value={retention}
                         onValueChange={setRetention}
                         className="relative grid grid-cols-4 items-center justify-center rounded-lg bg-muted p-1 text-center font-medium text-sm"
                     >
-                        <div
+                         <div
                             className="absolute h-[calc(100%-0.5rem)] w-1/4 rounded-md bg-background shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                             style={{ transform: `translateX(${selectedIndex * 100}%)` }}
                         />
@@ -78,6 +89,71 @@ export function PrivacySettings() {
                     <Download className="mr-2 h-4 w-4" />
                     Export Data
                 </Button>
+            </div>
+
+            <div className="space-y-4 rounded-lg border border-destructive/50 p-4">
+                 <div>
+                    <p className="text-lg font-semibold text-destructive">Danger Zone</p>
+                    <p className="text-sm text-muted-foreground">These actions are irreversible. Please proceed with caution.</p>
+                </div>
+
+                <div className="flex flex-col space-y-4">
+                     <div className="flex items-center justify-between rounded-lg border border-dashed border-destructive/30 p-4">
+                        <div>
+                            <p className="font-medium">Delete all Chat Logs</p>
+                            <p className="text-sm text-muted-foreground">Permanently delete all conversation history for this agent.</p>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Logs
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will permanently delete all chat logs. This action cannot be undone.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
+                                    Confirm Delete
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-lg border border-dashed border-destructive/30 p-4">
+                        <div>
+                            <p className="font-medium">Delete all Captured Leads</p>
+                            <p className="text-sm text-muted-foreground">Permanently delete all leads captured by this agent.</p>
+                        </div>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Leads
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will permanently delete all captured leads. This action cannot be undone.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
+                                    Confirm Delete
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </div>
             </div>
         </div>
     );
