@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Agent, Message } from '@/lib/types';
 import { useChatManager } from '@/hooks/use-chat-manager';
 import { useLiveAgent } from '@/hooks/use-live-agent';
@@ -9,6 +8,9 @@ import { ChatHeader } from '@/components/chat/ChatHeader';
 import { ChatMessages } from '@/components/chat/ChatMessages';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { cn } from '@/lib/utils';
+import { v4 as uuidv4 } from 'uuid';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+
 
 interface ChatWidgetPublicProps {
   agent: Agent;
@@ -18,6 +20,30 @@ export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
   // If we are in an iframe, we are open by default.
   // The parent window (widget.js) will be responsible for hiding/showing the iframe itself.
   const [isWidgetOpen, setIsWidgetOpen] = useState(typeof window !== 'undefined' && window.self !== window.top);
+  
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // --- FIX STARTS HERE ---
+  // Generate a session ID if one isn't present in the URL.
+  // This ensures the public iframe works standalone.
+  const sessionId = useMemo(() => {
+    let currentSessionId = searchParams.get('sessionId');
+    if (!currentSessionId) {
+      currentSessionId = uuidv4();
+      // We need to append it to the URL for useChatManager to pick it up.
+      // This happens on the client-side.
+      if (typeof window !== 'undefined') {
+        const newUrl = `${pathname}?sessionId=${currentSessionId}`;
+        // Use replace to avoid adding to browser history
+        window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+      }
+    }
+    return currentSessionId;
+  }, [pathname, searchParams]);
+  // --- FIX ENDS HERE ---
+
 
   useEffect(() => {
     // If it's not in an iframe, it's a direct page load, so it should be "open".
