@@ -45,14 +45,15 @@ import { AccountSettings } from "./settings/account-settings"
 import { AgentSettings } from "./settings/agent-settings"
 import { LogSettings } from "./settings/log-settings"
 import { BillingSettings } from "./settings/billing-settings"
+import { PrivacySettings } from "./settings/privacy-settings"
 
 const navItems = [
     { name: "Account", icon: BadgeCheck },
     { name: "Agent", icon: Bot },
     { name: "Logs", icon: MessageSquare },
     { name: "Billing", icon: CreditCard },
-    { name: "Language & region", icon: Globe },
     { name: "Privacy & visibility", icon: Lock },
+    { name: "Language & region", icon: Globe },
     { name: "Advanced", icon: Settings },
 ];
 
@@ -124,9 +125,10 @@ export function SettingsDialog({ children, initialTab = "Account" }: { children:
               {activeTab === 'Agent' && <AgentSettings />}
               {activeTab === 'Logs' && <LogSettings />}
               {activeTab === 'Billing' && <BillingSettings />}
+              {activeTab === 'Privacy & visibility' && <PrivacySettings />}
 
 
-              {activeTab !== 'Account' && activeTab !== 'Agent' && activeTab !== 'Logs' && activeTab !== 'Billing' && (
+              {activeTab !== 'Account' && activeTab !== 'Agent' && activeTab !== 'Logs' && activeTab !== 'Billing' && activeTab !== 'Privacy & visibility' && (
                  <>
                     {/* Placeholder Content */}
                     <div className="text-center p-8">
