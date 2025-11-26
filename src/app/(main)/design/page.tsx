@@ -9,34 +9,18 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { ChatWidgetPreview } from '@/components/chat-widget-preview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Slider } from '@/components/ui/slider';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useActiveAgent } from '../layout';
 import type { Agent, AgentFile, TextSource } from '@/lib/types';
-import { LogoUploader } from '@/components/logo-uploader';
-import { Info, Loader2, Phone, PhoneOff } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { updateAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
-import { ColorPicker } from '@/components/custom/color-picker';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { useLiveAgent } from '@/hooks/use-live-agent';
+import { ChatDesignSettings } from '@/components/design/ChatDesignSettings';
+import { InCallDesignSettings } from '@/components/design/InCallDesignSettings';
 
 
 export default function DesignPage() {
@@ -297,266 +281,43 @@ export default function DesignPage() {
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto">
                     <TabsContent value="chat">
-                      <div className="p-6 space-y-6">
-                        <div className="space-y-2">
-                           <div className="flex items-center justify-between">
-                              <Label htmlFor="display-name-toggle">Display name</Label>
-                               <Switch 
-                                id="display-name-toggle" 
-                                checked={isDisplayNameEnabled}
-                                onCheckedChange={handleDisplayNameSwitchChange}
-                              />
-                           </div>
-                           <Input id="display-name" value={agentName} onChange={handleNameChange} />
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="logo-toggle">Logo</Label>
-                                <Switch id="logo-toggle" defaultChecked/>
-                            </div>
-                            <LogoUploader agent={activeAgent} onLogoChange={setLogoFile} isSaving={isSaving} />
-                        </div>
-
-                        <Separator />
-                        
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <Label htmlFor="welcome-message">
-                              Welcome Message
-                            </Label>
-                            <Switch
-                              checked={isWelcomeMessageEnabled}
-                              onCheckedChange={setIsWelcomeMessageEnabled}
-                            />
-                          </div>
-                          <Textarea
-                            id="welcome-message"
-                            placeholder="Set a welcome message for your agent..."
-                            value={welcomeMessage}
-                            onChange={(e) => setWelcomeMessage(e.target.value)}
-                            className="mt-2 min-h-[100px]"
-                            disabled={!isWelcomeMessageEnabled}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                           <Label htmlFor="placeholder">Chat Input Placeholder</Label>
-                           <Input 
-                            id="placeholder" 
-                            value={chatPlaceholder}
-                            onChange={(e) => setChatPlaceholder(e.target.value)}
-                           />
-                        </div>
-
-                        <Separator />
-
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <Label>Accent</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className="h-8 w-8 rounded-full p-0 border"
-                                  style={{ backgroundColor: themeColor }}
-                                />
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="end">
-                                  <ColorPicker
-                                      value={themeColor}
-                                      onChange={(newColor) => setThemeColor(newColor)}
-                                  />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                           <div className="flex items-center justify-between">
-                            <Label>Chat Bubble Button</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className="h-8 w-8 rounded-full p-0 border"
-                                  style={{ backgroundColor: chatButtonColor }}
-                                />
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="end">
-                                  <ColorPicker
-                                      value={chatButtonColor}
-                                      onChange={(newColor) => setChatButtonColor(newColor)}
-                                  />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                        </div>
-
-                        <Separator />
-                        
-                        <div className="space-y-6">
-                            <div className="space-y-2">
-                               <Label>Align chat bubble button</Label>
-                               <RadioGroup 
-                                    defaultValue="right"
-                                    value={chatBubbleAlignment}
-                                    onValueChange={(value: 'left' | 'right') => setChatBubbleAlignment(value)}
-                                    className="flex gap-4"
-                                >
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="left" id="align-left" />
-                                        <Label htmlFor="align-left" className="font-normal">Left align</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="right" id="align-right" />
-                                        <Label htmlFor="align-right" className="font-normal">Right align</Label>
-                                    </div>
-                                </RadioGroup>
-                            </div>
-                            <Separator />
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="feedback-toggle" className="font-medium flex items-center gap-2">
-                                Collect user feedback
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Info className="h-4 w-4 text-muted-foreground" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Collect user feedback by displaying a thumbs up or down button on agent messages.</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                              </Label>
-                              <Switch 
-                                id="feedback-toggle" 
-                                checked={isFeedbackEnabled}
-                                onCheckedChange={setIsFeedbackEnabled}
-                              />
-                            </div>
-                             <div className="flex items-center justify-between">
-                              <Label htmlFor="branding-toggle" className="font-medium flex items-center gap-2">
-                                Remove AgentVerse branding
-                                 <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Info className="h-4 w-4 text-muted-foreground" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Remove the "Powered by AgentVerse" branding from the chat widget.</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                              </Label>
-                              <Switch 
-                                id="branding-toggle" 
-                                checked={!isBrandingEnabled}
-                                onCheckedChange={(checked) => setIsBrandingEnabled(!checked)}
-                              />
-                            </div>
-                        </div>
-                      </div>
+                        <ChatDesignSettings
+                            agentName={agentName}
+                            handleNameChange={handleNameChange}
+                            isDisplayNameEnabled={isDisplayNameEnabled}
+                            handleDisplayNameSwitchChange={handleDisplayNameSwitchChange}
+                            activeAgent={activeAgent}
+                            onLogoChange={setLogoFile}
+                            isSaving={isSaving}
+                            isWelcomeMessageEnabled={isWelcomeMessageEnabled}
+                            setIsWelcomeMessageEnabled={setIsWelcomeMessageEnabled}
+                            welcomeMessage={welcomeMessage}
+                            setWelcomeMessage={setWelcomeMessage}
+                            chatPlaceholder={chatPlaceholder}
+                            setChatPlaceholder={setChatPlaceholder}
+                            themeColor={themeColor}
+                            setThemeColor={setThemeColor}
+                            chatButtonColor={chatButtonColor}
+                            setChatButtonColor={setChatButtonColor}
+                            chatBubbleAlignment={chatBubbleAlignment}
+                            setChatBubbleAlignment={setChatBubbleAlignment}
+                            isFeedbackEnabled={isFeedbackEnabled}
+                            setIsFeedbackEnabled={setIsFeedbackEnabled}
+                            isBrandingEnabled={isBrandingEnabled}
+                            setIsBrandingEnabled={setIsBrandingEnabled}
+                        />
                     </TabsContent>
                     <TabsContent value="in-call">
-                       <div className="p-6 space-y-6">
-                          <div className="space-y-6">
-                            <div>
-                               <h3 className="text-lg font-semibold">Voice Configuration</h3>
-                               <p className="text-sm text-muted-foreground">
-                                 Customize the agent's voice and how it behaves during calls.
-                               </p>
-                            </div>
-                            <div className="space-y-6 pl-2">
-                              <div className="space-y-2">
-                                <Label htmlFor="agent-voice">Agent Voice</Label>
-                                <Select value={agentVoice} onValueChange={(value) => setAgentVoice(value)}>
-                                  <SelectTrigger id="agent-voice">
-                                    <SelectValue placeholder="Select a voice" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="Zephyr">Zephyr</SelectItem>
-                                    <SelectItem value="Puck">Puck</SelectItem>
-                                    <SelectItem value="Charon">Charon</SelectItem>
-                                    <SelectItem value="Kore">Kore</SelectItem>
-                                    <SelectItem value="Fenrir">Fenrir</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="welcome-message-in-call">Welcome Message</Label>
-                                <Input 
-                                  id="welcome-message-in-call" 
-                                  placeholder="e.g., Hello, how can I help you today?" 
-                                  value={inCallWelcomeMessage}
-                                  onChange={(e) => setInCallWelcomeMessage(e.target.value)}
-                                />
-                              </div>
-                               <div className="flex items-center justify-between">
-                                <Label htmlFor="barge-in-toggle" className="font-medium flex items-center gap-2">
-                                    Enable Interruptions (Barge-in)
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Info className="h-4 w-4 text-muted-foreground" />
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Allow users to interrupt the agent while it's speaking.</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </Label>
-                                <Switch 
-                                    id="barge-in-toggle" 
-                                    checked={isBargeInEnabled}
-                                    onCheckedChange={setIsBargeInEnabled}
-                                />
-                                </div>
-                             </div>
-                          </div>
-                         
-                         <div className="space-y-4">
-                            <div>
-                                <h3 className="text-lg font-semibold">Orb Colors</h3>
-                            </div>
-                            <div className="space-y-4 pl-2">
-                                <div className="flex items-center justify-between">
-                                    <Label>Background</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 border" style={{ backgroundColor: orbColors.bg }} />
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="end">
-                                            <ColorPicker value={orbColors.bg} onChange={(color) => handleOrbColorChange('bg', color)} />
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <Label>Gradient Color 1</Label>
-                                     <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 border" style={{ backgroundColor: orbColors.c1 }} />
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="end">
-                                            <ColorPicker value={orbColors.c1} onChange={(color) => handleOrbColorChange('c1', color)} />
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <Label>Gradient Color 2</Label>
-                                     <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 border" style={{ backgroundColor: orbColors.c2 }} />
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="end">
-                                            <ColorPicker value={orbColors.c2} onChange={(color) => handleOrbColorChange('c2', color)} />
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                                 <div className="flex items-center justify-between">
-                                    <Label>Gradient Color 3</Label>
-                                     <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 border" style={{ backgroundColor: orbColors.c3 }} />
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="end">
-                                            <ColorPicker value={orbColors.c3} onChange={(color) => handleOrbColorChange('c3', color)} />
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                            </div>
-                         </div>
-                       </div>
+                       <InCallDesignSettings
+                            agentVoice={agentVoice}
+                            setAgentVoice={setAgentVoice}
+                            inCallWelcomeMessage={inCallWelcomeMessage}
+                            setInCallWelcomeMessage={setInCallWelcomeMessage}
+                            isBargeInEnabled={isBargeInEnabled}
+                            setIsBargeInEnabled={setIsBargeInEnabled}
+                            orbColors={orbColors}
+                            handleOrbColorChange={handleOrbColorChange}
+                       />
                     </TabsContent>
                 </div>
 
