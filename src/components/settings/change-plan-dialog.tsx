@@ -172,15 +172,15 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                 </ul>
               </div>
 
-              <div className="grid gap-2">
-                <Button className="w-full" type="button" onClick={handleContinue}>
-                  Continue
-                </Button>
-                <DialogClose asChild>
+              <div className="grid grid-cols-2 gap-2">
+                 <DialogClose asChild>
                   <Button className="w-full" type="button" variant="ghost">
                     Cancel
                   </Button>
                 </DialogClose>
+                <Button className="w-full" type="button" onClick={handleContinue}>
+                  Continue
+                </Button>
               </div>
             </form>
           </>

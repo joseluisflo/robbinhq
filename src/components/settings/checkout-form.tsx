@@ -150,12 +150,12 @@ export function CheckoutForm({ onGoBack }: CheckoutFormProps) {
             </div>
           )}
         </div>
-        <div className="grid gap-2 mt-4">
-            <Button className="w-full" type="button">
-                Subscribe
-            </Button>
+        <div className="grid grid-cols-2 gap-2 mt-4">
             <Button className="w-full" type="button" variant="ghost" onClick={onGoBack}>
                 Go Back
+            </Button>
+            <Button className="w-full" type="button">
+                Subscribe
             </Button>
         </div>
 
