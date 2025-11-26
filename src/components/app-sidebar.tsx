@@ -22,10 +22,12 @@ import {
   SidebarRail,
   SidebarGroupLabel,
   SidebarMenuSkeleton,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { DashboardIcon, AiChemistryIcon, PenToolIcon, MotionIcon, RocketIcon, ChatSimpleIcon, UserGroupIcon } from '@/components/lo-icons';
 import { useUser } from '@/firebase';
 import { useActiveAgent } from '@/app/(main)/layout';
+import { CreditUsageCard } from './credit-usage-card';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
@@ -136,6 +138,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
+        <div className="group-data-[collapsible=icon]:hidden px-2 pb-2">
+            <SidebarSeparator className="mb-4" />
+            <CreditUsageCard />
+        </div>
         <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
