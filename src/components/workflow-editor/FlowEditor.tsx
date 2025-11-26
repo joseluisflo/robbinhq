@@ -1,6 +1,7 @@
 'use client';
 import '@/app/react-flow.css';
 import { useParams } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { AddBlockPopover } from '@/components/add-block-popover';

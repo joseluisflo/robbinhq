@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  devIndicators: {
+    buildActivity: false,
+    appIsrStatus: false,
+  },
+  experimental: {
+    allowedDevOrigins: ["6000-firebase-studio-1762494871433.cluster-fsmcisrvfbb5cr5mvra3hr3qyg.cloudworkstations.dev"],
+  },
   async headers() {
     return [
       {
@@ -47,16 +54,6 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-  },
-  webpack: (config, { isServer }) => {
-    // Exclude 'async_hooks' from client-side bundles
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        async_hooks: false,
-      };
-    }
-    return config;
   },
 };
 
