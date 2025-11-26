@@ -176,9 +176,10 @@ export default function TrainingPage() {
           <div className="flex flex-col h-full">
             <Tabs defaultValue="instructions" className="flex flex-col flex-1 h-full">
                <div className="px-6 py-3 border-b flex items-center justify-between">
-                <TabsList className="grid w-full grid-cols-3 max-w-sm">
+                <TabsList className="grid w-full grid-cols-4 max-w-lg">
                   <TabsTrigger value="instructions">Instructions</TabsTrigger>
-                  <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
+                  <TabsTrigger value="texts">Texts</TabsTrigger>
+                  <TabsTrigger value="files">Files</TabsTrigger>
                   <TabsTrigger value="security">Security</TabsTrigger>
                 </TabsList>
               </div>
@@ -197,8 +198,8 @@ export default function TrainingPage() {
                         setTemperature={setTemperature}
                     />
                   </TabsContent>
-                  
-                   <TabsContent value="knowledge" className="mt-0 space-y-6">
+
+                  <TabsContent value="texts" className="mt-0 space-y-6">
                       <div className="flex items-center justify-between">
                           <h3 className="text-lg font-semibold">Texts</h3>
                            <AddTextDialog>
@@ -217,7 +218,10 @@ export default function TrainingPage() {
                         handleDeleteText={handleDeleteText}
                         handleDeleteFile={() => {}}
                     />
-                     <div className="flex items-center justify-between pt-6">
+                  </TabsContent>
+
+                   <TabsContent value="files" className="mt-0 space-y-6">
+                     <div className="flex items-center justify-between">
                           <h3 className="text-lg font-semibold">Files</h3>
                            <AddFileDialog>
                             <Button variant="outline" size="sm">
@@ -255,7 +259,7 @@ export default function TrainingPage() {
                 <Button variant="ghost" onClick={handleDiscardChanges} disabled={!isChanged || isSaving}>
                     Discard changes
                 </Button>
-                <Button onClick={handleSaveChanges} disabled={!isChanged || isSaving}>
+                <Button className="flex-1 max-w-xs" onClick={handleSaveChanges} disabled={!isChanged || isSaving}>
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save changes
                 </Button>
