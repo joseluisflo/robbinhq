@@ -60,9 +60,9 @@ export function CheckoutForm({ onGoBack }: CheckoutFormProps) {
 
       <form className="space-y-5">
         <div className="space-y-4">
-          <RadioGroup className="grid grid-cols-2" defaultValue="yearly">
+          <RadioGroup className="grid grid-cols-2 gap-2" defaultValue="yearly">
             {/* Monthly */}
-            <label className="relative flex cursor-pointer flex-col gap-1 rounded-md border border-input px-4 py-3 shadow-xs outline-none transition-[color,box-shadow] has-data-[state=checked]:border-primary/50 has-focus-visible:border-ring has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50">
+            <label className="relative flex cursor-pointer flex-col gap-1 rounded-md border border-input px-4 py-3 shadow-xs outline-none transition-[color,box-shadow] has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent has-focus-visible:border-ring has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50">
               <RadioGroupItem
                 className="sr-only after:absolute after:inset-0"
                 id="radio-monthly"
@@ -72,7 +72,7 @@ export function CheckoutForm({ onGoBack }: CheckoutFormProps) {
               <p className="text-muted-foreground text-sm">$32/month</p>
             </label>
             {/* Yearly */}
-            <label className="relative flex cursor-pointer flex-col gap-1 rounded-md border border-input px-4 py-3 shadow-xs outline-none transition-[color,box-shadow] has-data-[state=checked]:border-primary/50 has-focus-visible:border-ring has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50">
+            <label className="relative flex cursor-pointer flex-col gap-1 rounded-md border border-input px-4 py-3 shadow-xs outline-none transition-[color,box-shadow] has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent has-focus-visible:border-ring has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50">
               <RadioGroupItem
                 className="sr-only after:absolute after:inset-0"
                 id="radio-yearly"
@@ -150,8 +150,8 @@ export function CheckoutForm({ onGoBack }: CheckoutFormProps) {
             </div>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-2 mt-4">
-            <Button className="w-full" type="button" variant="ghost" onClick={onGoBack}>
+        <div className="grid grid-cols-2 gap-2">
+             <Button className="w-full" type="button" variant="ghost" onClick={onGoBack}>
                 Go Back
             </Button>
             <Button className="w-full" type="button">
