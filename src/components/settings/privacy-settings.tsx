@@ -1,13 +1,31 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Download } from "lucide-react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 export function PrivacySettings() {
+    const [retention, setRetention] = useState("90");
+
+    const retentionOptions = [
+        { value: "30", label: "30 days" },
+        { value: "90", label: "90 days" },
+        { value: "365", label: "1 year" },
+        { value: "forever", label: "Forever" },
+    ];
+
+    const getTranslateClass = () => {
+        const index = retentionOptions.findIndex(opt => opt.value === retention);
+        if (index === -1) return "translate-x-0";
+        return `translate-x-[${index * 100}%]`;
+    }
+
     return (
         <div className="space-y-8">
             <div>
@@ -25,17 +43,35 @@ export function PrivacySettings() {
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
                         <Label htmlFor="data-retention">Data Retention Policy</Label>
-                        <Select defaultValue="90">
-                            <SelectTrigger id="data-retention" className="w-full md:w-1/2">
-                                <SelectValue placeholder="Select retention period" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="30">30 days</SelectItem>
-                                <SelectItem value="90">90 days</SelectItem>
-                                <SelectItem value="365">1 year</SelectItem>
-                                <SelectItem value="forever">Forever</SelectItem>
-                            </SelectContent>
-                        </Select>
+                         <div className="inline-flex h-9 rounded-md bg-input/50 p-0.5">
+                            <RadioGroup
+                                value={retention}
+                                onValueChange={setRetention}
+                                className={cn(
+                                    "group relative inline-grid items-center gap-0 font-medium text-sm",
+                                    "after:absolute after:inset-y-0 after:rounded-sm after:bg-background after:shadow-xs after:transition-[transform] after:duration-300 after:ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                )}
+                                style={{
+                                    gridTemplateColumns: `repeat(${retentionOptions.length}, 1fr)`,
+                                    // @ts-ignore
+                                    "--tw-translate-x": `${retentionOptions.findIndex(opt => opt.value === retention) * 100}%`,
+                                }}
+                            >
+                                <div className="absolute inset-y-0 h-full w-1/4 transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                     style={{ transform: `translateX(${retentionOptions.findIndex(opt => opt.value === retention) * 100}%)` }}>
+                                    <div className="h-full w-full rounded-sm bg-background shadow-xs m-0.5"></div>
+                                </div>
+                                {retentionOptions.map((option) => (
+                                     <Label key={option.value} htmlFor={`retention-${option.value}`} className={cn(
+                                        "relative z-10 inline-flex h-full min-w-8 cursor-pointer select-none items-center justify-center whitespace-nowrap px-4 transition-colors",
+                                        retention === option.value ? "text-foreground" : "text-muted-foreground/70 hover:text-foreground"
+                                     )}>
+                                        {option.label}
+                                        <RadioGroupItem value={option.value} id={`retention-${option.value}`} className="sr-only" />
+                                    </Label>
+                                ))}
+                            </RadioGroup>
+                        </div>
                         <p className="text-sm text-muted-foreground">
                             Conversation logs will be automatically deleted after this period.
                         </p>
