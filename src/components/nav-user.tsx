@@ -1,4 +1,3 @@
-
 "use client"
 
 import {
@@ -47,6 +46,10 @@ export function NavUser({
   const auth = useAuth();
   const router = useRouter();
 
+  // For now, we'll assume the user is on a free plan.
+  // This would be replaced with actual user data from Firestore later.
+  const userPlan = 'free';
+
   const handleLogout = async () => {
     if (!auth) return;
     try {
@@ -85,7 +88,9 @@ export function NavUser({
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{user.displayName || 'User'}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                {userPlan === 'free' && (
+                  <span className="truncate text-xs">Free Plan</span>
+                )}
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -106,7 +111,11 @@ export function NavUser({
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{user.displayName || 'User'}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                   {userPlan === 'free' ? (
+                     <span className="truncate text-xs">Free Plan</span>
+                   ) : (
+                     <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                   )}
                 </div>
               </div>
             </DropdownMenuLabel>
