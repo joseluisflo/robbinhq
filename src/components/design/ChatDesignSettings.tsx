@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { ColorPicker } from '@/components/custom/color-picker';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
 import type { Agent } from '@/lib/types';
 

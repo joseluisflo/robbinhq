@@ -280,7 +280,7 @@ export default function DesignPage() {
                 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto">
-                    <TabsContent value="chat">
+                    <TabsContent value="chat" className="mt-0 data-[state=inactive]:hidden">
                         <ChatDesignSettings
                             agentName={agentName}
                             handleNameChange={handleNameChange}
@@ -307,7 +307,7 @@ export default function DesignPage() {
                             setIsBrandingEnabled={setIsBrandingEnabled}
                         />
                     </TabsContent>
-                    <TabsContent value="in-call">
+                    <TabsContent value="in-call" className="mt-0 data-[state=inactive]:hidden">
                        <InCallDesignSettings
                             agentVoice={agentVoice}
                             setAgentVoice={setAgentVoice}
@@ -337,12 +337,12 @@ export default function DesignPage() {
           {/* Preview Panel */}
           <ResizablePanel defaultSize={50} minSize={30}>
             <div className="flex h-full flex-col">
-              <TabsContent value="chat" className="flex-1 mt-0">
+              <TabsContent value="chat" className="flex-1 mt-0 data-[state=inactive]:hidden">
                 <div className="flex h-full items-center justify-center p-8 bg-muted/30">
                     <ChatWidgetPreview agent={agentForPreview} mode="chat" />
                 </div>
               </TabsContent>
-              <TabsContent value="in-call" className="flex-1 mt-0">
+              <TabsContent value="in-call" className="flex-1 mt-0 data-[state=inactive]:hidden">
                  <div className="flex h-full items-center justify-center p-8 bg-muted/30">
                     <ChatWidgetPreview agent={{...agentForPreview, orbColors}} mode="in-call" />
                  </div>
