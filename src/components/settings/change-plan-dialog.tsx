@@ -1,7 +1,8 @@
+
 "use client";
 
 import { CheckIcon, RefreshCcwIcon } from "lucide-react";
-import { useId } from "react";
+import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,156 +16,181 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { CheckoutForm } from "./checkout-form";
 
 export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const id = useId();
+  const [step, setStep] = useState(1);
+  const [isSubscribed, setIsSubscribed] = useState(false); // Simulación, esto vendría del estado del usuario
+
+  const handleContinue = () => {
+    if (step < 2) {
+      setStep(step + 1);
+    }
+  }
+
+  const handleGoBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
+  }
+
   return (
-    <Dialog>
+    <Dialog onOpenChange={(open) => !open && setStep(1)}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
       <DialogContent>
-        <div className="mb-2 flex flex-col gap-2">
-          <div
-            aria-hidden="true"
-            className="flex size-11 shrink-0 items-center justify-center rounded-full border"
-          >
-            <RefreshCcwIcon className="opacity-80" size={16} />
-          </div>
-          <DialogHeader>
-            <DialogTitle className="text-left">Change your plan</DialogTitle>
-            <DialogDescription className="text-left">
-              Pick one of the following plans.
-            </DialogDescription>
-          </DialogHeader>
-        </div>
-
-        <form className="space-y-5">
-          <RadioGroup className="gap-2" defaultValue="2">
-            {/* Radio card #1 */}
-            <div className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
-              <RadioGroupItem
-                aria-describedby={`${id}-1-description`}
-                className="order-1 after:absolute after:inset-0"
-                id={`${id}-1`}
-                value="1"
-              />
-              <div className="grid grow gap-1">
-                <Label htmlFor={`${id}-1`}>Essential</Label>
-                <p
-                  className="text-muted-foreground text-xs"
-                  id={`${id}-1-description`}
-                >
-                  $4 per member/month
-                </p>
+        {step === 1 && (
+          <>
+            <div className="mb-2 flex flex-col gap-2">
+              <div
+                aria-hidden="true"
+                className="flex size-11 shrink-0 items-center justify-center rounded-full border"
+              >
+                <RefreshCcwIcon className="opacity-80" size={16} />
               </div>
+              <DialogHeader>
+                <DialogTitle className="text-left">Change your plan</DialogTitle>
+                <DialogDescription className="text-left">
+                  Pick one of the following plans.
+                </DialogDescription>
+              </DialogHeader>
             </div>
-            {/* Radio card #2 */}
-            <div className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
-              <RadioGroupItem
-                aria-describedby={`${id}-2-description`}
-                className="order-1 after:absolute after:inset-0"
-                id={`${id}-2`}
-                value="2"
-              />
-              <div className="grid grow gap-1">
-                <Label htmlFor={`${id}-2`}>Standard</Label>
-                <p
-                  className="text-muted-foreground text-xs"
-                  id={`${id}-2-description`}
-                >
-                  $19 per member/month
-                </p>
-              </div>
-            </div>
-            {/* Radio card #3 */}
-            <div className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
-              <RadioGroupItem
-                aria-describedby={`${id}-3-description`}
-                className="order-1 after:absolute after:inset-0"
-                id={`${id}-3`}
-                value="3"
-              />
-              <div className="grid grow gap-1">
-                <Label htmlFor={`${id}-3`}>Enterprise</Label>
-                <p
-                  className="text-muted-foreground text-xs"
-                  id={`${id}-3-description`}
-                >
-                  $32 per member/month
-                </p>
-              </div>
-            </div>
-          </RadioGroup>
 
-          <div className="space-y-3">
-            <p>
-              <strong className="font-medium text-sm">Features include:</strong>
-            </p>
-            <ul className="space-y-2 text-muted-foreground text-sm">
-              <li className="flex gap-2">
-                <CheckIcon
-                  aria-hidden="true"
-                  className="mt-0.5 shrink-0 text-primary"
-                  size={16}
-                />
-                Create unlimited projects.
-              </li>
-              <li className="flex gap-2">
-                <CheckIcon
-                  aria-hidden="true"
-                  className="mt-0.5 shrink-0 text-primary"
-                  size={16}
-                />
-                Remove watermarks.
-              </li>
-              <li className="flex gap-2">
-                <CheckIcon
-                  aria-hidden="true"
-                  className="mt-0.5 shrink-0 text-primary"
-                  size={16}
-                />
-                Add unlimited users and free viewers.
-              </li>
-              <li className="flex gap-2">
-                <CheckIcon
-                  aria-hidden="true"
-                  className="mt-0.5 shrink-0 text-primary"
-                  size={16}
-                />
-                Upload unlimited files.
-              </li>
-              <li className="flex gap-2">
-                <CheckIcon
-                  aria-hidden="true"
-                  className="mt-0.5 shrink-0 text-primary"
-                  size={16}
-                />
-                7-day money back guarantee.
-              </li>
-              <li className="flex gap-2">
-                <CheckIcon
-                  aria-hidden="true"
-                  className="mt-0.5 shrink-0 text-primary"
-                  size={16}
-                />
-                Advanced permissions.
-              </li>
-            </ul>
-          </div>
+            <form className="space-y-5">
+              <RadioGroup className="gap-2" defaultValue="2">
+                {/* Radio card #1 */}
+                <div className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
+                  <RadioGroupItem
+                    aria-describedby={`${id}-1-description`}
+                    className="order-1 after:absolute after:inset-0"
+                    id={`${id}-1`}
+                    value="1"
+                  />
+                  <div className="grid grow gap-1">
+                    <Label htmlFor={`${id}-1`}>Essential</Label>
+                    <p
+                      className="text-muted-foreground text-xs"
+                      id={`${id}-1-description`}
+                    >
+                      $4 per member/month
+                    </p>
+                  </div>
+                </div>
+                {/* Radio card #2 */}
+                <div className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
+                  <RadioGroupItem
+                    aria-describedby={`${id}-2-description`}
+                    className="order-1 after:absolute after:inset-0"
+                    id={`${id}-2`}
+                    value="2"
+                  />
+                  <div className="grid grow gap-1">
+                    <Label htmlFor={`${id}-2`}>Standard</Label>
+                    <p
+                      className="text-muted-foreground text-xs"
+                      id={`${id}-2-description`}
+                    >
+                      $19 per member/month
+                    </p>
+                  </div>
+                </div>
+                {/* Radio card #3 */}
+                <div className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
+                  <RadioGroupItem
+                    aria-describedby={`${id}-3-description`}
+                    className="order-1 after:absolute after:inset-0"
+                    id={`${id}-3`}
+                    value="3"
+                  />
+                  <div className="grid grow gap-1">
+                    <Label htmlFor={`${id}-3`}>Enterprise</Label>
+                    <p
+                      className="text-muted-foreground text-xs"
+                      id={`${id}-3-description`}
+                    >
+                      $32 per member/month
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
 
-          <div className="grid gap-2">
-            <Button className="w-full" type="button">
-              Change plan
-            </Button>
-            <DialogClose asChild>
-              <Button className="w-full" type="button" variant="ghost">
-                Cancel
-              </Button>
-            </DialogClose>
-          </div>
-        </form>
+              <div className="space-y-3">
+                <p>
+                  <strong className="font-medium text-sm">Features include:</strong>
+                </p>
+                <ul className="space-y-2 text-muted-foreground text-sm">
+                  <li className="flex gap-2">
+                    <CheckIcon
+                      aria-hidden="true"
+                      className="mt-0.5 shrink-0 text-primary"
+                      size={16}
+                    />
+                    Create unlimited projects.
+                  </li>
+                  <li className="flex gap-2">
+                    <CheckIcon
+                      aria-hidden="true"
+                      className="mt-0.5 shrink-0 text-primary"
+                      size={16}
+                    />
+                    Remove watermarks.
+                  </li>
+                  <li className="flex gap-2">
+                    <CheckIcon
+                      aria-hidden="true"
+                      className="mt-0.5 shrink-0 text-primary"
+                      size={16}
+                    />
+                    Add unlimited users and free viewers.
+                  </li>
+                  <li className="flex gap-2">
+                    <CheckIcon
+                      aria-hidden="true"
+                      className="mt-0.5 shrink-0 text-primary"
+                      size={16}
+                    />
+                    Upload unlimited files.
+                  </li>
+                  <li className="flex gap-2">
+                    <CheckIcon
+                      aria-hidden="true"
+                      className="mt-0.5 shrink-0 text-primary"
+                      size={16}
+                    />
+                    7-day money back guarantee.
+                  </li>
+                  <li className="flex gap-2">
+                    <CheckIcon
+                      aria-hidden="true"
+                      className="mt-0.5 shrink-0 text-primary"
+                      size={16}
+                    />
+                    Advanced permissions.
+                  </li>
+                </ul>
+              </div>
+
+              <div className="grid gap-2">
+                <Button className="w-full" type="button" onClick={handleContinue}>
+                  Continue
+                </Button>
+                <DialogClose asChild>
+                  <Button className="w-full" type="button" variant="ghost">
+                    Cancel
+                  </Button>
+                </DialogClose>
+              </div>
+            </form>
+          </>
+        )}
+
+        {step === 2 && (
+          <CheckoutForm onGoBack={handleGoBack} />
+        )}
       </DialogContent>
     </Dialog>
   );
 }
+
