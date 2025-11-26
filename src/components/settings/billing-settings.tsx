@@ -4,7 +4,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Download } from "lucide-react";
 
 function UsageMeter({ title, used, total }: { title: string, used: number, total: number }) {
     const remaining = total - used;
@@ -21,6 +22,24 @@ function UsageMeter({ title, used, total }: { title: string, used: number, total
         </div>
     );
 }
+
+const invoices = [
+    {
+        date: "July 15, 2024",
+        description: "Subscription - Pro Plan",
+        amount: "$99.00",
+    },
+    {
+        date: "June 15, 2024",
+        description: "Subscription - Pro Plan",
+        amount: "$99.00",
+    },
+    {
+        date: "May 15, 2024",
+        description: "Subscription - Pro Plan",
+        amount: "$99.00",
+    },
+];
 
 
 export function BillingSettings() {
@@ -48,6 +67,41 @@ export function BillingSettings() {
                      <UsageMeter title="Agents" used={1} total={3} />
                      <UsageMeter title="Knowledge Storage" used={50} total={250} />
                 </CardContent>
+            </Card>
+
+            <div>
+                <h3 className="text-xl font-semibold">Billing History</h3>
+                 <p className="text-sm text-muted-foreground">
+                    View and download your past invoices.
+                </p>
+            </div>
+
+            <Card>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Fecha</TableHead>
+                            <TableHead>Descripción</TableHead>
+                            <TableHead className="text-right">Monto</TableHead>
+                            <TableHead className="w-[120px]"></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {invoices.map((invoice, index) => (
+                            <TableRow key={index}>
+                                <TableCell className="font-medium">{invoice.date}</TableCell>
+                                <TableCell>{invoice.description}</TableCell>
+                                <TableCell className="text-right">{invoice.amount}</TableCell>
+                                <TableCell className="text-right">
+                                    <Button variant="outline" size="sm">
+                                        <Download className="h-4 w-4 mr-2" />
+                                        Descargar
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </Card>
         </div>
     );
