@@ -4,29 +4,11 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from 'recharts';
 import { Bot, CheckCircle, Clock } from 'lucide-react';
 import { useUser } from '@/firebase';
-
-const data = [
-  { name: 'Jan', tasks: 30 },
-  { name: 'Feb', tasks: 45 },
-  { name: 'Mar', tasks: 60 },
-  { name: 'Apr', tasks: 55 },
-  { name: 'May', tasks: 70 },
-  { name: 'Jun', tasks: 85 },
-];
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -71,41 +53,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Task Completion Overview</CardTitle>
-          <CardDescription>Monthly completed tasks by all agents.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data}>
-              <XAxis
-                dataKey="name"
-                stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => `${value}`}
-              />
-              <Tooltip
-                cursor={{ fill: 'hsl(var(--accent))' }}
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                }}
-              />
-              <Bar dataKey="tasks" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
     </div>
   );
 }
