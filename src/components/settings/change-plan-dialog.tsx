@@ -1,4 +1,3 @@
-
 "use client";
 
 import { CheckIcon, RefreshCcwIcon, XIcon } from "lucide-react";
@@ -37,7 +36,7 @@ const plans = {
   essential: {
     id: 'essential',
     name: 'Essential',
-    price: '$15 Per month',
+    price: '$15 per month',
     features: [
       { text: '1500 Credits', included: true },
       { text: 'Unlimited Agents', included: true },
@@ -50,7 +49,7 @@ const plans = {
   pro: {
     id: 'pro',
     name: 'Pro',
-    price: '$29 Per month',
+    price: '$29 per month',
     features: [
       { text: '5000 Credits', included: true },
       { text: 'Unlimited Agents', included: true },
@@ -149,7 +148,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                       className="text-muted-foreground text-xs"
                       id={`${id}-2-description`}
                     >
-                      $15 Per month
+                      $15 per month
                     </p>
                   </div>
                 </div>
@@ -167,7 +166,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                       className="text-muted-foreground text-xs"
                       id={`${id}-3-description`}
                     >
-                      $29 Per month
+                      $29 per month
                     </p>
                   </div>
                 </div>
@@ -206,10 +205,9 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
         )}
 
         {step === 2 && (
-          <CheckoutForm onGoBack={handleGoBack} />
+          <CheckoutForm onGoBack={handleGoBack} plan={selectedPlan}/>
         )}
       </DialogContent>
     </Dialog>
   );
 }
-

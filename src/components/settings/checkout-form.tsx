@@ -1,8 +1,7 @@
-
 "use client";
 
 import { CreditCardIcon, StoreIcon } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useMemo } from "react";
 import { usePaymentInputs } from "react-payment-inputs";
 import images, { type CardImages } from "react-payment-inputs/images";
 
@@ -19,9 +18,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface CheckoutFormProps {
     onGoBack: () => void;
+    plan: {
+        id: string;
+        name: string;
+        price: string;
+        features: { text: string; included: boolean }[];
+    };
 }
 
-export function CheckoutForm({ onGoBack }: CheckoutFormProps) {
+export function CheckoutForm({ onGoBack, plan }: CheckoutFormProps) {
   const id = useId();
   const {
     meta,
@@ -33,6 +38,15 @@ export function CheckoutForm({ onGoBack }: CheckoutFormProps) {
   const couponInputRef = useRef<HTMLInputElement>(null);
   const [showCouponInput, setShowCouponInput] = useState(false);
   const [couponCode, setCouponCode] = useState("");
+
+  const { monthlyPrice, yearlyPrice } = useMemo(() => {
+    const priceMatch = plan.price.match(/\$(\d+)/);
+    const price = priceMatch ? parseInt(priceMatch[1], 10) : 0;
+    return {
+        monthlyPrice: price,
+        yearlyPrice: price * 10,
+    };
+  }, [plan]);
 
   // Auto-focus the coupon input when it's shown
   useEffect(() => {
@@ -69,7 +83,7 @@ export function CheckoutForm({ onGoBack }: CheckoutFormProps) {
                 value="monthly"
               />
               <p className="font-medium text-foreground text-sm">Monthly</p>
-              <p className="text-muted-foreground text-sm">$32/month</p>
+              <p className="text-muted-foreground text-sm">${monthlyPrice}/month</p>
             </label>
             {/* Yearly */}
             <label className="relative flex cursor-pointer flex-col gap-1 rounded-md border border-input px-4 py-3 shadow-xs outline-none transition-[color,box-shadow] has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent has-focus-visible:border-ring has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50">
@@ -82,7 +96,7 @@ export function CheckoutForm({ onGoBack }: CheckoutFormProps) {
                 <p className="font-medium text-foreground text-sm">Yearly</p>
                 <Badge>Popular</Badge>
               </div>
-              <p className="text-muted-foreground text-sm">$320/month</p>
+              <p className="text-muted-foreground text-sm">${yearlyPrice}/year</p>
             </label>
           </RadioGroup>
           <div className="*:not-first:mt-2">
