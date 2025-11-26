@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
@@ -54,13 +55,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { Lead, ChatSession } from '@/lib/types';
+import type { Lead } from '@/lib/types';
 import { useActiveAgent } from '../layout';
 import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeSessionsForLeads } from '@/app/actions/leads';
 import { Timestamp } from 'firebase/firestore';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
+import { exportAgentData } from '@/app/actions/export';
 
 const columns: ColumnDef<Lead>[] = [
   {
@@ -151,6 +153,7 @@ export default function LeadsPage() {
   ]);
   
   const [isAnalyzing, startAnalysis] = useTransition();
+  const [isExporting, startExporting] = useTransition();
   const { user } = useUser();
   const firestore = useFirestore();
   const { activeAgent } = useActiveAgent();
@@ -162,13 +165,6 @@ export default function LeadsPage() {
   }, [user, firestore, activeAgent?.id]);
   
   const { data: leads, loading } = useCollection<Lead>(leadsQuery);
-
-  const sessionsQuery = useMemo(() => {
-    if (!user || !activeAgent?.id) return null;
-    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'sessions'));
-  }, [user, firestore, activeAgent?.id]);
-  
-  const { data: sessions } = useCollection<ChatSession>(sessionsQuery);
 
   const table = useReactTable({
     data: leads || [],
@@ -200,64 +196,26 @@ export default function LeadsPage() {
   }
 
   const handleExport = () => {
-    if (!leads || leads.length === 0) {
-      toast({
-        title: 'No leads to export',
-        description: 'There is no data to export to a CSV file.',
-        variant: 'destructive',
-      });
-      return;
-    }
+    if (!user || !activeAgent?.id) return;
     
-    const sessionsMap = new Map(sessions?.map(session => [session.id, session]));
+    startExporting(async () => {
+        toast({ title: "Exporting data...", description: "This may take a moment." });
+        const result = await exportAgentData(user.uid, activeAgent.id!);
 
-    const headers = [
-        'Lead Name', 'Lead Email', 'Lead Phone', 'Lead Summary', 'Lead Captured At',
-        'Session ID', 'Session Title', 'Source', 'Last Activity',
-        'Visitor IP', 'Visitor City', 'Visitor Country', 
-        'Browser', 'OS', 'Device Type'
-    ];
-
-    const rows = leads.map(lead => {
-        const session = lead.sessionId ? sessionsMap.get(lead.sessionId) : undefined;
-        
-        const leadData = [
-            lead.name || 'N/A',
-            lead.email || 'N/A',
-            lead.phone || 'N/A',
-            `"${(lead.summary || 'N/A').replace(/"/g, '""')}"`,
-            lead.createdAt ? format((lead.createdAt as Timestamp).toDate(), 'yyyy-MM-dd HH:mm:ss') : 'N/A',
-        ];
-
-        const sessionData = [
-            lead.sessionId || 'N/A',
-            session?.title || 'N/A',
-            'Widget', // Source is static for now
-            session?.lastActivity ? format((session.lastActivity as Timestamp).toDate(), 'yyyy-MM-dd HH:mm:ss') : 'N/A',
-            session?.visitorInfo?.ip || 'N/A',
-            session?.visitorInfo?.location?.city || 'N/A',
-            session?.visitorInfo?.location?.country || 'N/A',
-            `${session?.visitorInfo?.browser?.name || ''} ${session?.visitorInfo?.browser?.version || ''}`.trim() || 'N/A',
-            `${session?.visitorInfo?.os?.name || ''} ${session?.visitorInfo?.os?.version || ''}`.trim() || 'N/A',
-            session?.visitorInfo?.device?.type || 'Desktop'
-        ];
-
-        return [...leadData, ...sessionData].join(',');
+        if (result.error) {
+            toast({ title: "Export Failed", description: result.error, variant: "destructive" });
+        } else {
+            const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `agent_${activeAgent.id}_export.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            toast({ title: "Export Successful", description: "Your agent data has been downloaded." });
+        }
     });
-
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n" 
-      + rows.join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "leads_with_details.csv");
-    document.body.appendChild(link);
-
-    link.click();
-    document.body.removeChild(link);
-    toast({ title: 'Export successful!', description: 'Your leads have been downloaded as leads_with_details.csv.' });
   };
 
   return (
@@ -268,8 +226,8 @@ export default function LeadsPage() {
           <p className="text-muted-foreground">View and manage leads captured by your agents.</p>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleExport} disabled={!leads || leads.length === 0}>
-                <Download className="mr-2 h-4 w-4" />
+            <Button variant="outline" onClick={handleExport} disabled={isExporting || !leads || leads.length === 0}>
+                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                 Export
             </Button>
             <Button onClick={handleAnalyze} disabled={isAnalyzing}>
