@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import {
   Card,
   CardHeader,
@@ -16,58 +15,18 @@ import { Switch } from '@/components/ui/switch';
 import { Info, Copy } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useUser } from '@/firebase';
-import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-
-type EmbedType = 'chat-widget' | 'iframe';
+import { useDeployChat } from '@/hooks/use-deploy-chat';
 
 export default function DeployChatPage() {
   const { activeAgent } = useActiveAgent();
-  const { user } = useUser();
-  const { toast } = useToast();
-  const [baseUrl, setBaseUrl] = useState('');
-  const [snippet, setSnippet] = useState('');
-  const [embedType, setEmbedType] = useState<EmbedType>('chat-widget');
-
-  useEffect(() => {
-    // This ensures window is defined, as it's only available on the client
-    setBaseUrl(window.location.origin);
-  }, []);
-
-  useEffect(() => {
-    if (!baseUrl || !activeAgent || !user) {
-      setSnippet('');
-      return;
-    }
-
-    if (embedType === 'chat-widget') {
-      const script = `<script src="${baseUrl}/widget.js" data-user-id="${user.uid}" data-agent-id="${activeAgent.id}" defer></script>`;
-      setSnippet(script);
-    } else {
-      const iframeSrc = `${baseUrl}/widget/${user.uid}/${activeAgent.id}`;
-      const iframeTag = `<iframe\n  src="${iframeSrc}"\n  width="400"\n  height="600"\n  style="border:none; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);"\n></iframe>`;
-      setSnippet(iframeTag);
-    }
-  }, [baseUrl, activeAgent, user, embedType]);
-
-
-  const handleCopy = () => {
-    if (!snippet) return;
-    navigator.clipboard.writeText(snippet);
-    toast({
-      title: 'Copied to clipboard!',
-      description: 'You can now paste the code into your website\'s HTML.',
-    });
-  };
+  const {
+    snippet,
+    embedType,
+    setEmbedType,
+    handleCopy,
+  } = useDeployChat();
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
@@ -108,7 +67,7 @@ export default function DeployChatPage() {
         <h3 className="text-lg font-semibold">Embed type</h3>
         <RadioGroup
           value={embedType}
-          onValueChange={(value: EmbedType) => setEmbedType(value)}
+          onValueChange={setEmbedType}
           className="space-y-4"
         >
           <Label
