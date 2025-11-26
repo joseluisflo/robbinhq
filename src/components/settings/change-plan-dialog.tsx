@@ -1,7 +1,7 @@
 
 "use client";
 
-import { CheckIcon, RefreshCcwIcon } from "lucide-react";
+import { CheckIcon, RefreshCcwIcon, XIcon } from "lucide-react";
 import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -18,10 +18,55 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CheckoutForm } from "./checkout-form";
 
+type PlanId = 'free' | 'essential' | 'pro';
+
+const plans = {
+  free: {
+    id: 'free',
+    name: 'Free',
+    price: '$0 per month',
+    features: [
+      { text: '150 credits', included: true },
+      { text: '1 Agent', included: true },
+      { text: '400kb Training Data', included: true },
+      { text: '2 Channel Deploy', included: true },
+      { text: 'Limited Data retention', included: true },
+      { text: 'Watermark', included: true },
+    ],
+  },
+  essential: {
+    id: 'essential',
+    name: 'Essential',
+    price: '$15 Per month',
+    features: [
+      { text: '1500 Credits', included: true },
+      { text: 'Unlimited Agents', included: true },
+      { text: '40MB Training Data', included: true },
+      { text: '3 Channel Deploy', included: true },
+      { text: 'Unlimited Data retention', included: true },
+      { text: 'No Watermark', included: true },
+    ],
+  },
+  pro: {
+    id: 'pro',
+    name: 'Pro',
+    price: '$29 Per month',
+    features: [
+      { text: '5000 Credits', included: true },
+      { text: 'Unlimited Agents', included: true },
+      { text: '40MB Training Data', included: true },
+      { text: '3 Channel Deploy', included: true },
+      { text: 'Unlimited Data Retention', included: true },
+      { text: 'No watermark', included: true },
+    ],
+  },
+};
+
+
 export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const id = useId();
   const [step, setStep] = useState(1);
-  const [isSubscribed, setIsSubscribed] = useState(false); // Simulación, esto vendría del estado del usuario
+  const [selectedPlanId, setSelectedPlanId] = useState<PlanId>('free');
 
   const handleContinue = () => {
     if (step < 2) {
@@ -35,8 +80,16 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const selectedPlan = plans[selectedPlanId];
+
+
   return (
-    <Dialog onOpenChange={(open) => !open && setStep(1)}>
+    <Dialog onOpenChange={(open) => {
+        if (!open) {
+            setStep(1);
+            setSelectedPlanId('free');
+        }
+    }}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -59,14 +112,18 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
             </div>
 
             <form className="space-y-5">
-              <RadioGroup className="gap-2" defaultValue="1">
+              <RadioGroup 
+                className="gap-2" 
+                defaultValue={selectedPlanId}
+                onValueChange={(value: PlanId) => setSelectedPlanId(value)}
+              >
                 {/* Radio card #1 */}
                 <div className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
                   <RadioGroupItem
                     aria-describedby={`${id}-1-description`}
                     className="order-1 after:absolute after:inset-0"
                     id={`${id}-1`}
-                    value="1"
+                    value="free"
                   />
                   <div className="grid grow gap-1">
                     <Label htmlFor={`${id}-1`}>Free</Label>
@@ -84,7 +141,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                     aria-describedby={`${id}-2-description`}
                     className="order-1 after:absolute after:inset-0"
                     id={`${id}-2`}
-                    value="2"
+                    value="essential"
                   />
                   <div className="grid grow gap-1">
                     <Label htmlFor={`${id}-2`}>Essential</Label>
@@ -102,7 +159,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                     aria-describedby={`${id}-3-description`}
                     className="order-1 after:absolute after:inset-0"
                     id={`${id}-3`}
-                    value="3"
+                    value="pro"
                   />
                   <div className="grid grow gap-1">
                     <Label htmlFor={`${id}-3`}>Pro</Label>
@@ -121,54 +178,16 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                   <strong className="font-medium text-sm">Features include:</strong>
                 </p>
                 <ul className="space-y-2 text-muted-foreground text-sm">
-                  <li className="flex gap-2">
-                    <CheckIcon
-                      aria-hidden="true"
-                      className="mt-0.5 shrink-0 text-primary"
-                      size={16}
-                    />
-                    Create unlimited projects.
-                  </li>
-                  <li className="flex gap-2">
-                    <CheckIcon
-                      aria-hidden="true"
-                      className="mt-0.5 shrink-0 text-primary"
-                      size={16}
-                    />
-                    Remove watermarks.
-                  </li>
-                  <li className="flex gap-2">
-                    <CheckIcon
-                      aria-hidden="true"
-                      className="mt-0.5 shrink-0 text-primary"
-                      size={16}
-                    />
-                    Add unlimited users and free viewers.
-                  </li>
-                  <li className="flex gap-2">
-                    <CheckIcon
-                      aria-hidden="true"
-                      className="mt-0.5 shrink-0 text-primary"
-                      size={16}
-                    />
-                    Upload unlimited files.
-                  </li>
-                  <li className="flex gap-2">
-                    <CheckIcon
-                      aria-hidden="true"
-                      className="mt-0.5 shrink-0 text-primary"
-                      size={16}
-                    />
-                    7-day money back guarantee.
-                  </li>
-                  <li className="flex gap-2">
-                    <CheckIcon
-                      aria-hidden="true"
-                      className="mt-0.5 shrink-0 text-primary"
-                      size={16}
-                    />
-                    Advanced permissions.
-                  </li>
+                  {selectedPlan.features.map((feature, index) => (
+                    <li key={index} className="flex gap-2">
+                      {feature.included ? (
+                        <CheckIcon aria-hidden="true" className="mt-0.5 shrink-0 text-primary" size={16} />
+                      ) : (
+                        <XIcon aria-hidden="true" className="mt-0.5 shrink-0 text-muted-foreground/50" size={16} />
+                      )}
+                      <span className={!feature.included ? 'text-muted-foreground/50' : ''}>{feature.text}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
 
@@ -193,3 +212,4 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
     </Dialog>
   );
 }
+
