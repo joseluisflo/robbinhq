@@ -76,7 +76,7 @@ export function CheckoutForm({ onGoBack, plan }: CheckoutFormProps) {
         <div className="space-y-4">
           <RadioGroup className="grid grid-cols-2 gap-2" defaultValue="yearly">
             {/* Monthly */}
-            <label className="relative flex cursor-pointer flex-col gap-1 rounded-md border border-input px-4 py-3 shadow-xs outline-none transition-[color,box-shadow] has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent has-focus-visible:border-ring has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50">
+            <label className="relative flex cursor-pointer flex-col gap-1 rounded-md border border-input p-4 shadow-xs outline-none transition-[color,box-shadow] has-data-[state=checked]:border-foreground has-data-[state=checked]:border-2 has-focus-visible:border-ring has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50">
               <RadioGroupItem
                 className="sr-only after:absolute after:inset-0"
                 id="radio-monthly"
@@ -86,7 +86,7 @@ export function CheckoutForm({ onGoBack, plan }: CheckoutFormProps) {
               <p className="text-muted-foreground text-sm">${monthlyPrice}/month</p>
             </label>
             {/* Yearly */}
-            <label className="relative flex cursor-pointer flex-col gap-1 rounded-md border border-input px-4 py-3 shadow-xs outline-none transition-[color,box-shadow] has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent has-focus-visible:border-ring has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50">
+            <label className="relative flex cursor-pointer flex-col gap-1 rounded-md border border-input p-4 shadow-xs outline-none transition-[color,box-shadow] has-data-[state=checked]:border-foreground has-data-[state=checked]:border-2 has-focus-visible:border-ring has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50">
               <RadioGroupItem
                 className="sr-only after:absolute after:inset-0"
                 id="radio-yearly"
