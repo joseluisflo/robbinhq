@@ -6,57 +6,60 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bot, CheckCircle, Clock, ArrowUpRight } from 'lucide-react';
+import { Bot, CheckCircle, Clock, ArrowUpRight, Zap, MessageSquare } from 'lucide-react';
 import { useUser } from '@/firebase';
 
 const cards = [
   {
-    title: 'Total Agents',
-    subtitle: 'All time',
-    value: '3',
-    badge: {
-      color: 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
-      icon: Bot,
-      iconColor: 'text-blue-500',
-      text: '+2',
-    },
-    subtext: (
-      <span className="text-blue-600 font-medium">
-        +2 <span className="text-muted-foreground font-normal">since last month</span>
-      </span>
-    ),
-  },
-  {
-    title: 'Tasks Completed',
-    subtitle: 'Last 7 days',
-    value: '128',
+    title: 'Resolved Interactions',
+    subtitle: 'Last 30 days',
+    value: '243',
     badge: {
       color: 'bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400',
       icon: ArrowUpRight,
       iconColor: 'text-green-500',
-      text: '+18.2%',
+      text: '+15%',
     },
     subtext: (
       <span className="text-green-600 font-medium">
-        +32 <span className="text-muted-foreground font-normal">vs prev. 7 days</span>
+        +32 <span className="text-muted-foreground font-normal">vs prev. 30 days</span>
       </span>
     ),
+    icon: MessageSquare,
+  },
+  {
+    title: 'Time Saved',
+    subtitle: 'Last 30 days',
+    value: '12 hours',
+    badge: {
+      color: 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
+      icon: ArrowUpRight,
+      iconColor: 'text-blue-500',
+      text: '+15%',
+    },
+    subtext: (
+      <span className="text-blue-600 font-medium">
+        +1.5 hours <span className="text-muted-foreground font-normal">vs prev. 30 days</span>
+      </span>
+    ),
+    icon: Clock,
   },
     {
-    title: 'Active Tasks',
-    subtitle: 'Currently running',
-    value: '2',
+    title: 'Immediate Responses',
+    subtitle: 'Last 30 days',
+    value: '98%',
     badge: {
       color: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-950 dark:text-yellow-400',
-      icon: Clock,
+      icon: ArrowUpRight,
       iconColor: 'text-yellow-500',
-      text: 'Live',
+      text: '+2%',
     },
     subtext: (
       <span className="text-muted-foreground font-medium">
-        Your agents are working now.
+        Maintained high customer satisfaction.
       </span>
     ),
+    icon: Zap,
   },
 ];
 
