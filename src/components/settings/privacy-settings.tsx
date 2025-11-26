@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -92,13 +93,13 @@ export function PrivacySettings() {
             </div>
 
             <div className="space-y-4 rounded-lg border border-destructive/50 p-4">
-                 <div>
+                <div>
                     <p className="text-lg font-semibold text-destructive">Danger Zone</p>
                     <p className="text-sm text-muted-foreground">These actions are irreversible. Please proceed with caution.</p>
                 </div>
 
-                <div className="flex flex-col space-y-4">
-                     <div className="flex items-center justify-between rounded-lg border border-dashed border-destructive/30 p-4">
+                <div className="space-y-4">
+                     <div className="flex items-center justify-between border-t border-dashed border-destructive/30 pt-4">
                         <div>
                             <p className="font-medium">Delete all Chat Logs</p>
                             <p className="text-sm text-muted-foreground">Permanently delete all conversation history for this agent.</p>
@@ -126,7 +127,7 @@ export function PrivacySettings() {
                         </AlertDialog>
                     </div>
 
-                    <div className="flex items-center justify-between rounded-lg border border-dashed border-destructive/30 p-4">
+                    <div className="flex items-center justify-between border-t border-dashed border-destructive/30 pt-4">
                         <div>
                             <p className="font-medium">Delete all Captured Leads</p>
                             <p className="text-sm text-muted-foreground">Permanently delete all leads captured by this agent.</p>
