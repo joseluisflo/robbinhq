@@ -25,6 +25,8 @@ import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { updateAgent } from "@/app/actions/agents";
 import type { Agent } from "@/lib/types";
+import { deleteAgentChatLogs } from "@/app/actions/logs";
+import { deleteAgentLeads } from "@/app/actions/leads";
 
 
 export function PrivacySettings() {
@@ -34,7 +36,10 @@ export function PrivacySettings() {
     
     const [retention, setRetention] = useState<'30' | '90' | '365' | 'forever'>("90");
     const [anonymize, setAnonymize] = useState(false);
+    
     const [isSaving, startSaving] = useTransition();
+    const [isDeletingLogs, startDeletingLogs] = useTransition();
+    const [isDeletingLeads, startDeletingLeads] = useTransition();
 
     const isChanged = retention !== (activeAgent?.dataRetentionPolicy || '90') || anonymize !== (activeAgent?.anonymizeData || false);
 
@@ -67,6 +72,30 @@ export function PrivacySettings() {
             }
         });
     };
+
+    const handleDeleteLogs = () => {
+        if (!user || !activeAgent?.id) return;
+        startDeletingLogs(async () => {
+            const result = await deleteAgentChatLogs(user.uid, activeAgent.id!);
+            if ('error' in result) {
+                toast({ title: "Error", description: result.error, variant: "destructive" });
+            } else {
+                toast({ title: "Success", description: "All chat logs for this agent have been deleted." });
+            }
+        });
+    }
+
+     const handleDeleteLeads = () => {
+        if (!user || !activeAgent?.id) return;
+        startDeletingLeads(async () => {
+            const result = await deleteAgentLeads(user.uid, activeAgent.id!);
+            if ('error' in result) {
+                toast({ title: "Error", description: result.error, variant: "destructive" });
+            } else {
+                toast({ title: "Success", description: "All captured leads for this agent have been deleted." });
+            }
+        });
+    }
 
 
     const retentionOptions = [
@@ -158,7 +187,7 @@ export function PrivacySettings() {
                         </div>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="sm">
+                                <Button variant="destructive" size="sm" disabled={isDeletingLogs || isDeletingLeads}>
                                     <Trash2 className="mr-2 h-4 w-4" /> Delete Logs
                                 </Button>
                             </AlertDialogTrigger>
@@ -166,12 +195,13 @@ export function PrivacySettings() {
                                 <AlertDialogHeader>
                                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This will permanently delete all chat logs. This action cannot be undone.
+                                    This will permanently delete all chat logs for this agent. This action cannot be undone.
                                 </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
+                                <AlertDialogAction onClick={handleDeleteLogs} className="bg-destructive hover:bg-destructive/90" disabled={isDeletingLogs}>
+                                    {isDeletingLogs && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Confirm Delete
                                 </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -186,7 +216,7 @@ export function PrivacySettings() {
                         </div>
                          <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="sm">
+                                <Button variant="destructive" size="sm" disabled={isDeletingLogs || isDeletingLeads}>
                                     <Trash2 className="mr-2 h-4 w-4" /> Delete Leads
                                 </Button>
                             </AlertDialogTrigger>
@@ -194,12 +224,13 @@ export function PrivacySettings() {
                                 <AlertDialogHeader>
                                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This will permanently delete all captured leads. This action cannot be undone.
+                                    This will permanently delete all captured leads for this agent. This action cannot be undone.
                                 </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
+                                <AlertDialogAction onClick={handleDeleteLeads} className="bg-destructive hover:bg-destructive/90" disabled={isDeletingLeads}>
+                                    {isDeletingLeads && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Confirm Delete
                                 </AlertDialogAction>
                                 </AlertDialogFooter>
