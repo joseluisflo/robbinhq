@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -10,8 +11,8 @@ import { AddFileDialog } from '@/components/add-file-dialog';
 import type { TextSource, AgentFile } from '@/lib/types';
 
 interface KnowledgeSourcesProps {
-  textSources: TextSource[] | null;
-  fileSources: AgentFile[] | null;
+  textSources: TextSource[];
+  fileSources: AgentFile[];
   textsLoading: boolean;
   filesLoading: boolean;
   handleDeleteText: (id: string) => void;
@@ -144,3 +145,5 @@ export function KnowledgeSources({
     </div>
   );
 }
+
+    
