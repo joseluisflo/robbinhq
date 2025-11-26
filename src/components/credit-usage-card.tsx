@@ -1,3 +1,4 @@
+
 'use client';
 
 import { ArrowUp } from 'lucide-react';
@@ -25,12 +26,8 @@ export function CreditUsageCard() {
         <p className="text-xs text-muted-foreground">
           Resets on Nov 30, 2025 at 6:00 PM
         </p>
-        <Button className="w-full mt-3 h-9 bg-transparent border-2 border-transparent text-foreground font-semibold relative
-                           bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 bg-clip-border
-                           hover:text-white
-                           before:absolute before:inset-0 before:z-[-1] before:bg-card before:rounded-full"
-        >
-          <ArrowUp className="h-4 w-4 mr-2 rounded-full bg-foreground text-background p-0.5" />
+        <Button className="w-full mt-3 h-9 font-semibold">
+          <ArrowUp className="h-4 w-4 mr-2 rounded-full bg-primary-foreground text-primary p-0.5" />
           Upgrade
         </Button>
       </CardContent>
