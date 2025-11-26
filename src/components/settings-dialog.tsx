@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import * as React from "react"
@@ -7,7 +6,6 @@ import {
   Bell,
   Bot,
   CreditCard,
-  Globe,
   Lock,
   Paintbrush,
   Settings,
@@ -53,7 +51,6 @@ const navItems = [
     { name: "Logs", icon: MessageSquare },
     { name: "Billing", icon: CreditCard },
     { name: "Privacy & visibility", icon: Lock },
-    { name: "Language & region", icon: Globe },
     { name: "Advanced", icon: Settings },
 ];
 
