@@ -82,7 +82,7 @@ export function KnowledgeSources({
 
   if (sourceType === 'file') {
     return (
-      <div className="flex flex-col mt-6">
+      <div className="flex flex-col">
         {filesLoading ? (
           <div className="text-center py-12">
             <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />

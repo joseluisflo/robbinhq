@@ -22,7 +22,9 @@ import { deleteAgentFile } from '@/app/actions/files';
 import { InstructionSettings } from '@/components/training/InstructionSettings';
 import { KnowledgeSources } from '@/components/training/KnowledgeSources';
 import { SecuritySettings } from '@/components/training/SecuritySettings';
-
+import { AddTextDialog } from '@/components/add-text-dialog';
+import { AddFileDialog } from '@/components/add-file-dialog';
+import { PlusCircle } from 'lucide-react';
 
 export default function TrainingPage() {
   const { activeAgent, setActiveAgent } = useActiveAgent();
@@ -173,11 +175,10 @@ export default function TrainingPage() {
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="flex flex-col h-full">
             <Tabs defaultValue="instructions" className="flex flex-col flex-1 h-full">
-               <div className="px-6 py-3 border-b">
-                <TabsList className="grid w-full grid-cols-4">
+               <div className="px-6 py-3 border-b flex items-center justify-between">
+                <TabsList className="grid w-full grid-cols-3 max-w-sm">
                   <TabsTrigger value="instructions">Instructions</TabsTrigger>
-                  <TabsTrigger value="texts">Texts</TabsTrigger>
-                  <TabsTrigger value="files">Files</TabsTrigger>
+                  <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
                   <TabsTrigger value="security">Security</TabsTrigger>
                 </TabsList>
               </div>
@@ -196,9 +197,18 @@ export default function TrainingPage() {
                         setTemperature={setTemperature}
                     />
                   </TabsContent>
-
-                  <TabsContent value="texts" className="mt-0">
-                     <KnowledgeSources
+                  
+                   <TabsContent value="knowledge" className="mt-0 space-y-6">
+                      <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold">Texts</h3>
+                           <AddTextDialog>
+                            <Button variant="outline" size="sm">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Add text
+                            </Button>
+                        </AddTextDialog>
+                      </div>
+                      <KnowledgeSources
                         sourceType="text"
                         textSources={textSources || []}
                         fileSources={[]}
@@ -207,8 +217,15 @@ export default function TrainingPage() {
                         handleDeleteText={handleDeleteText}
                         handleDeleteFile={() => {}}
                     />
-                  </TabsContent>
-                   <TabsContent value="files" className="mt-0">
+                     <div className="flex items-center justify-between pt-6">
+                          <h3 className="text-lg font-semibold">Files</h3>
+                           <AddFileDialog>
+                            <Button variant="outline" size="sm">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Upload files
+                            </Button>
+                        </AddFileDialog>
+                      </div>
                      <KnowledgeSources
                         sourceType="file"
                         textSources={[]}
