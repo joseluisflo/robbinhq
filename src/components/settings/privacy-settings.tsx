@@ -21,17 +21,19 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useActiveAgent } from "@/app/(main)/layout";
-import { useUser } from "@/firebase";
+import { useUser, useFirestore, useCollection, query, collection } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { updateAgent } from "@/app/actions/agents";
-import type { Agent } from "@/lib/types";
+import type { Agent, ChatSession } from "@/lib/types";
 import { deleteAgentChatLogs } from "@/app/actions/logs";
 import { deleteAgentLeads } from "@/app/actions/leads";
+import { exportAgentData } from "@/app/actions/export";
 
 
 export function PrivacySettings() {
     const { activeAgent, setActiveAgent } = useActiveAgent();
     const { user } = useUser();
+    const firestore = useFirestore();
     const { toast } = useToast();
     
     const [retention, setRetention] = useState<'30' | '90' | '365' | 'forever'>("90");
@@ -40,6 +42,7 @@ export function PrivacySettings() {
     const [isSaving, startSaving] = useTransition();
     const [isDeletingLogs, startDeletingLogs] = useTransition();
     const [isDeletingLeads, startDeletingLeads] = useTransition();
+    const [isExporting, startExporting] = useTransition();
 
     const isChanged = retention !== (activeAgent?.dataRetentionPolicy || '90') || anonymize !== (activeAgent?.anonymizeData || false);
 
@@ -96,6 +99,27 @@ export function PrivacySettings() {
             }
         });
     }
+    
+     const handleExport = () => {
+        if (!user || !activeAgent?.id) return;
+        startExporting(async () => {
+            toast({ title: "Exporting data...", description: "This may take a moment." });
+            const result = await exportAgentData(user.uid, activeAgent.id!);
+            if (result.error) {
+                toast({ title: "Export Failed", description: result.error, variant: "destructive" });
+            } else {
+                const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `agent_${activeAgent.id}_export.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                toast({ title: "Export Successful", description: "Your agent data has been downloaded." });
+            }
+        });
+     };
 
 
     const retentionOptions = [
@@ -124,8 +148,8 @@ export function PrivacySettings() {
                          <div
                             className="absolute h-[calc(100%-0.5rem)] rounded-md bg-background shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                             style={{ 
-                                width: `calc((100% - 0.5rem) / 4)`,
-                                transform: `translateX(calc(${selectedIndex * 100}% + ${selectedIndex * 0.125}rem))` 
+                                width: `calc((100% - 0.75rem) / 4)`,
+                                transform: `translateX(calc(${selectedIndex * 100}% + ${selectedIndex * 0.25}rem))` 
                             }}
                         />
                         {retentionOptions.map((option) => (
@@ -158,6 +182,7 @@ export function PrivacySettings() {
                     id="anonymization-toggle" 
                     checked={anonymize}
                     onCheckedChange={setAnonymize}
+                    disabled={isSaving}
                 />
             </div>
             <div className="flex items-center justify-between rounded-lg border p-4">
@@ -167,8 +192,8 @@ export function PrivacySettings() {
                         Download a CSV file with all conversations and leads.
                     </p>
                 </div>
-                <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
+                <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                     Export Data
                 </Button>
             </div>
