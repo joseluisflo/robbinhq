@@ -83,9 +83,9 @@ export function BillingSettings() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Fecha</TableHead>
-                            <TableHead>Descripción</TableHead>
-                            <TableHead className="text-right">Monto</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
                             <TableHead className="w-[120px]"></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -98,7 +98,7 @@ export function BillingSettings() {
                                 <TableCell className="text-right">
                                     <Button variant="outline" size="sm">
                                         <Download className="h-4 w-4 mr-2" />
-                                        Descargar
+                                        Download
                                     </Button>
                                 </TableCell>
                             </TableRow>
