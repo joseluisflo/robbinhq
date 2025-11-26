@@ -36,6 +36,7 @@ import { User, signOut } from "firebase/auth"
 import { useAuth } from "@/firebase"
 import { useRouter } from "next/navigation"
 import { SettingsDialog } from "./settings-dialog"
+import { ChangePlanDialog } from "./settings/change-plan-dialog"
 
 export function NavUser({
   user,
@@ -111,10 +112,12 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
+              <ChangePlanDialog>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <Sparkles />
+                  Upgrade to Pro
+                </DropdownMenuItem>
+              </ChangePlanDialog>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
