@@ -1,23 +1,20 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Download, Calendar, MoreHorizontal } from 'lucide-react';
+import { Download, Calendar, MoreHorizontal, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { useActiveAgent } from '@/app/(main)/layout';
+import { useUser, useFirestore, useCollection, collection, query, where, Timestamp } from '@/firebase';
+import { subDays, format } from 'date-fns';
+import { Skeleton } from '../ui/skeleton';
+import type { ChatSession, EmailSession } from '@/lib/types';
 
-const interactionData = [
-  { date: '1 Jul', total: 62, widget: 40, email: 15, phone: 7 },
-  { date: '2 Jul', total: 75, widget: 50, email: 18, phone: 7 },
-  { date: '3 Jul', total: 88, widget: 55, email: 23, phone: 10 },
-  { date: '4 Jul', total: 80, widget: 52, email: 20, phone: 8 },
-  { date: '5 Jul', total: 95, widget: 60, email: 25, phone: 10 },
-  { date: '6 Jul', total: 110, widget: 70, email: 30, phone: 10 },
-  { date: '7 Jul', total: 120, widget: 78, email: 32, phone: 10 },
-];
 
 const chartConfig = {
   total: {
@@ -39,6 +36,70 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function InteractionChart() {
+  const { user } = useUser();
+  const { activeAgent } = useActiveAgent();
+  const firestore = useFirestore();
+
+  const sevenDaysAgo = useMemo(() => subDays(new Date(), 7), []);
+  const sevenDaysAgoTimestamp = useMemo(() => Timestamp.fromDate(sevenDaysAgo), [sevenDaysAgo]);
+
+  const chatSessionsQuery = useMemo(() => {
+    if (!user || !activeAgent?.id) return null;
+    return query(
+      collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'sessions'),
+      where('createdAt', '>=', sevenDaysAgoTimestamp)
+    );
+  }, [user, firestore, activeAgent?.id, sevenDaysAgoTimestamp]);
+  const { data: chatSessions, loading: chatLoading } = useCollection<ChatSession>(chatSessionsQuery);
+
+  const emailSessionsQuery = useMemo(() => {
+    if (!user || !activeAgent?.id) return null;
+    return query(
+      collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'emailSessions'),
+      where('createdAt', '>=', sevenDaysAgoTimestamp)
+    );
+  }, [user, firestore, activeAgent?.id, sevenDaysAgoTimestamp]);
+  const { data: emailSessions, loading: emailLoading } = useCollection<EmailSession>(emailSessionsQuery);
+  
+  const loading = chatLoading || emailLoading;
+
+  const interactionData = useMemo(() => {
+    if (!chatSessions || !emailSessions) return [];
+
+    const dataByDate: Record<string, { date: string; total: number; widget: number; email: number, phone: number }> = {};
+
+    for (let i = 6; i >= 0; i--) {
+      const date = subDays(new Date(), i);
+      const formattedDate = format(date, 'd MMM');
+      dataByDate[formattedDate] = { date: formattedDate, total: 0, widget: 0, email: 0, phone: 0 };
+    }
+
+    chatSessions.forEach(session => {
+      if (session.createdAt) {
+        const date = (session.createdAt as Timestamp).toDate();
+        const formattedDate = format(date, 'd MMM');
+        if (dataByDate[formattedDate]) {
+          dataByDate[formattedDate].widget++;
+          dataByDate[formattedDate].total++;
+        }
+      }
+    });
+    
+    emailSessions.forEach(session => {
+        if (session.createdAt) {
+            const date = (session.createdAt as Timestamp).toDate();
+            const formattedDate = format(date, 'd MMM');
+            if (dataByDate[formattedDate]) {
+                dataByDate[formattedDate].email++;
+                dataByDate[formattedDate].total++;
+            }
+        }
+    });
+
+    return Object.values(dataByDate);
+  }, [chatSessions, emailSessions]);
+
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -68,7 +129,12 @@ export function InteractionChart() {
         </div>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+       {loading ? (
+           <div className="h-[300px] w-full flex items-center justify-center">
+             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+           </div>
+        ) : (
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
           <AreaChart
             accessibilityLayer
             data={interactionData}
@@ -84,7 +150,6 @@ export function InteractionChart() {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => value.slice(0, 3)}
             />
             <YAxis 
               tickLine={false}
@@ -131,8 +196,23 @@ export function InteractionChart() {
               stroke="var(--color-total)"
               stackId="a"
             />
+             <Area
+              dataKey="widget"
+              type="natural"
+              fill="transparent"
+              stroke="var(--color-widget)"
+              stackId="b"
+            />
+             <Area
+              dataKey="email"
+              type="natural"
+              fill="transparent"
+              stroke="var(--color-email)"
+              stackId="c"
+            />
           </AreaChart>
         </ChartContainer>
+       )}
       </CardContent>
     </Card>
   );
