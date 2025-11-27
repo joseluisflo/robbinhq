@@ -5,11 +5,11 @@ import { AppHeader } from '@/components/layout/app-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useUser, useCollection, useFirestore, collection, query } from '@/firebase';
+import { useUser, useCollection, useFirestore, collection, query, doc, useDoc } from '@/firebase';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { CreateAgentDialog } from '@/components/create-agent-dialog';
-import type { Agent } from '@/lib/types';
+import type { Agent, userProfile } from '@/lib/types';
 
 // 1. Create a context to hold the active agent state
 interface ActiveAgentContextType {
@@ -17,6 +17,7 @@ interface ActiveAgentContextType {
   setActiveAgent: (agent: Agent | null) => void;
   agents: Agent[];
   agentsLoading: boolean;
+  userProfile: userProfile | null;
 }
 
 const ActiveAgentContext = createContext<ActiveAgentContextType | undefined>(undefined);
@@ -49,6 +50,12 @@ export default function AppLayout({
 
   const { data: agents, loading: agentsLoading } = useCollection<Agent>(agentsQuery);
 
+  const userProfileRef = useMemo(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+  const { data: userProfile, loading: profileLoading } = useDoc<userProfile>(userProfileRef);
+
   const [needsAgent, setNeedsAgent] = useState(false);
 
   useEffect(() => {
@@ -78,7 +85,7 @@ export default function AppLayout({
 
   const noPadding = isTrainingPage || isDesignPage || isWorkflowDetailPage || isChatLogsPage;
 
-  const loading = userLoading || agentsLoading;
+  const loading = userLoading || agentsLoading || profileLoading;
 
   if (loading && !agents) {
     return (
@@ -93,7 +100,7 @@ export default function AppLayout({
   }
   
   return (
-    <ActiveAgentContext.Provider value={{ activeAgent, setActiveAgent, agents: agents || [], agentsLoading }}>
+    <ActiveAgentContext.Provider value={{ activeAgent, setActiveAgent, agents: agents || [], agentsLoading, userProfile }}>
       <SidebarProvider>
         {needsAgent && (
           <CreateAgentDialog 

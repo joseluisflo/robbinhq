@@ -24,7 +24,10 @@ import { useActiveAgent } from "@/app/(main)/layout"
 
 export function AgentSwitcher() {
   const { isMobile } = useSidebar()
-  const { agents, activeAgent, setActiveAgent } = useActiveAgent();
+  const { agents, activeAgent, setActiveAgent, userProfile } = useActiveAgent();
+
+  const isFreePlan = userProfile?.planId === 'free';
+  const hasReachedAgentLimit = isFreePlan && agents.length >= 1;
 
   if (!activeAgent && agents.length === 0) {
     return (
@@ -106,7 +109,13 @@ export function AgentSwitcher() {
             ))}
             <DropdownMenuSeparator />
               <CreateAgentDialog>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="gap-2 p-2">
+                <DropdownMenuItem 
+                  onSelect={(e) => {
+                    if (hasReachedAgentLimit) e.preventDefault();
+                  }} 
+                  className="gap-2 p-2"
+                  disabled={hasReachedAgentLimit}
+                >
                   <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                     <Plus className="size-4" />
                   </div>
