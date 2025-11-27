@@ -22,12 +22,11 @@ import { deleteAgentFile } from '@/app/actions/files';
 import { InstructionSettings } from '@/components/training/InstructionSettings';
 import { KnowledgeSources } from '@/components/training/KnowledgeSources';
 import { SecuritySettings } from '@/components/training/SecuritySettings';
-import { AddTextDialog } from '@/components/add-text-dialog';
-import { AddFileDialog } from '@/components/add-file-dialog';
-import { PlusCircle } from 'lucide-react';
+import { useKnowledgeUsage } from '@/hooks/use-knowledge-usage';
+
 
 export default function TrainingPage() {
-  const { activeAgent, setActiveAgent } = useActiveAgent();
+  const { activeAgent, setActiveAgent, userProfile } = useActiveAgent();
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -56,6 +55,9 @@ export default function TrainingPage() {
   }, [user, activeAgent, firestore]);
 
   const { data: fileSources, loading: filesLoading } = useCollection<AgentFile>(filesQuery);
+  
+  const { isLimitReached, currentUsageKB, usageLimitKB } = useKnowledgeUsage(textSources, fileSources, userProfile);
+
 
   const isChanged =
     activeAgent?.instructions !== instructions ||
@@ -200,15 +202,6 @@ export default function TrainingPage() {
                   </TabsContent>
 
                   <TabsContent value="texts" className="mt-0 space-y-6">
-                      <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-semibold">Texts</h3>
-                           <AddTextDialog>
-                            <Button variant="outline" size="sm">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Add text
-                            </Button>
-                        </AddTextDialog>
-                      </div>
                       <KnowledgeSources
                         sourceType="text"
                         textSources={textSources || []}
@@ -217,19 +210,13 @@ export default function TrainingPage() {
                         filesLoading={false}
                         handleDeleteText={handleDeleteText}
                         handleDeleteFile={() => {}}
+                        isLimitReached={isLimitReached}
+                        currentUsageKB={currentUsageKB}
+                        usageLimitKB={usageLimitKB}
                     />
                   </TabsContent>
 
                    <TabsContent value="files" className="mt-0 space-y-6">
-                     <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-semibold">Files</h3>
-                           <AddFileDialog>
-                            <Button variant="outline" size="sm">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Upload files
-                            </Button>
-                        </AddFileDialog>
-                      </div>
                      <KnowledgeSources
                         sourceType="file"
                         textSources={[]}
@@ -238,6 +225,9 @@ export default function TrainingPage() {
                         filesLoading={filesLoading}
                         handleDeleteText={() => {}}
                         handleDeleteFile={handleDeleteFile}
+                        isLimitReached={isLimitReached}
+                        currentUsageKB={currentUsageKB}
+                        usageLimitKB={usageLimitKB}
                     />
                   </TabsContent>
 

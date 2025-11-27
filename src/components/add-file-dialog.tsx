@@ -17,6 +17,10 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useActiveAgent } from '@/app/(main)/layout';
 import { useUser } from '@/firebase';
+import { useKnowledgeUsage } from '@/hooks/use-knowledge-usage';
+import { collection, query } from 'firebase/firestore';
+import { useCollection, useFirestore } from '@/firebase';
+import type { TextSource, AgentFile } from '@/lib/types';
 
 function formatBytes(bytes: number, decimals = 2) {
   if (!+bytes) return '0 Bytes';
@@ -45,8 +49,17 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { activeAgent } = useActiveAgent();
+  const { activeAgent, userProfile } = useActiveAgent();
   const { user } = useUser();
+  const firestore = useFirestore();
+
+  // --- Knowledge Usage ---
+  const textsQuery = query(collection(firestore, 'users', user!.uid, 'agents', activeAgent!.id!, 'texts'));
+  const { data: textSources } = useCollection<TextSource>(textsQuery);
+  const filesQuery = query(collection(firestore, 'users', user!.uid, 'agents', activeAgent!.id!, 'files'));
+  const { data: fileSources } = useCollection<AgentFile>(filesQuery);
+  const { currentUsageKB, usageLimitKB } = useKnowledgeUsage(textSources, fileSources, userProfile);
+  // --- End Knowledge Usage ---
 
   const triggerFileProcessing = async (fileId: string, agentId: string, token: string) => {
     try {
@@ -83,15 +96,16 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
       });
       return;
     }
-
+    
+    let totalNewSizeKB = 0;
     const addedFiles: File[] = [];
     let hasError = false;
 
     Array.from(newFiles).forEach((file) => {
-      if (file.size > 100 * 1024 * 1024) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit per file
         toast({
           title: 'File too large',
-          description: `"${file.name}" exceeds the 100MB limit.`,
+          description: `"${file.name}" exceeds the 10MB limit.`,
           variant: 'destructive',
         });
         hasError = true;
@@ -104,8 +118,18 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
         hasError = true;
       } else {
         addedFiles.push(file);
+        totalNewSizeKB += file.size / 1024;
       }
     });
+
+    if (currentUsageKB + totalNewSizeKB > usageLimitKB) {
+        toast({
+            title: 'Storage limit exceeded',
+            description: "Uploading these files would exceed your plan's storage limit.",
+            variant: 'destructive',
+        });
+        hasError = true;
+    }
 
     if (!hasError) {
       setFiles((prevFiles) => [...prevFiles, ...addedFiles]);
@@ -235,7 +259,7 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
               <Upload className="h-6 w-6" />
             </div>
             <p className="font-semibold text-foreground">Drag & drop or click to browse</p>
-            <p className="text-xs">Max 10 files · Up to 100MB</p>
+            <p className="text-xs">Max 10 files · Up to 10MB/file</p>
           </div>
           <input
             ref={inputRef}
