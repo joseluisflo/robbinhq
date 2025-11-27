@@ -1,20 +1,15 @@
 "use client";
 
-import { CreditCardIcon, StoreIcon } from "lucide-react";
-import { useEffect, useId, useRef, useState, useMemo } from "react";
-import { usePaymentInputs } from "react-payment-inputs";
-import images, { type CardImages } from "react-payment-inputs/images";
+import { CreditCardIcon, StoreIcon, Loader2 } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface CheckoutFormProps {
     onGoBack: () => void;
@@ -22,38 +17,53 @@ interface CheckoutFormProps {
         id: string;
         name: string;
         price: string;
-        features: { text: string; included: boolean }[];
     };
+    setPaymentStatus: (status: string) => void;
+    setStep: (step: number) => void;
 }
 
-export function CheckoutForm({ onGoBack, plan }: CheckoutFormProps) {
-  const id = useId();
-  const {
-    meta,
-    getCardNumberProps,
-    getExpiryDateProps,
-    getCVCProps,
-    getCardImageProps,
-  } = usePaymentInputs();
-  const couponInputRef = useRef<HTMLInputElement>(null);
-  const [showCouponInput, setShowCouponInput] = useState(false);
-  const [couponCode, setCouponCode] = useState("");
+export function CheckoutForm({ onGoBack, plan, setPaymentStatus, setStep }: CheckoutFormProps) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const { monthlyPrice, yearlyPrice } = useMemo(() => {
-    const priceMatch = plan.price.match(/\$(\d+)/);
-    const price = priceMatch ? parseInt(priceMatch[1], 10) : 0;
-    return {
-        monthlyPrice: price,
-        yearlyPrice: price * 10,
-    };
-  }, [plan]);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-  // Auto-focus the coupon input when it's shown
-  useEffect(() => {
-    if (showCouponInput && couponInputRef.current) {
-      couponInputRef.current.focus();
+    if (!stripe || !elements) {
+      return;
     }
-  }, [showCouponInput]);
+
+    setIsLoading(true);
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        // Return URL is not strictly needed if we handle result on this page
+        return_url: `${window.location.origin}/payment-status`,
+      },
+      // Redirect is handled manually below based on status
+      redirect: 'if_required', 
+    });
+
+    if (error) {
+      if (error.type === "card_error" || error.type === "validation_error") {
+        setMessage(error.message || "An unexpected error occurred.");
+      } else {
+        setMessage("An unexpected error occurred.");
+      }
+      setPaymentStatus('error');
+      setStep(3);
+    } else {
+      // The payment has been processed!
+      // The webhook will handle the backend update. We can show success here.
+      setPaymentStatus('succeeded');
+      setStep(3);
+    }
+
+    setIsLoading(false);
+  };
 
   return (
     <>
@@ -65,112 +75,25 @@ export function CheckoutForm({ onGoBack, plan }: CheckoutFormProps) {
           <StoreIcon className="opacity-80" size={16} />
         </div>
         <DialogHeader>
-          <DialogTitle className="text-left">Confirm and pay</DialogTitle>
+          <DialogTitle className="text-left">Confirm and pay - {plan.name} Plan</DialogTitle>
           <DialogDescription className="text-left">
             Pay securely and cancel any time.
           </DialogDescription>
         </DialogHeader>
       </div>
 
-      <form className="space-y-5">
-        <div className="space-y-4">
-          <RadioGroup className="grid grid-cols-2 gap-2" defaultValue="yearly">
-            {/* Monthly */}
-            <label className="relative flex cursor-pointer flex-col gap-1 rounded-md border border-input p-4 shadow-xs outline-none transition-[color,box-shadow] has-data-[state=checked]:border-foreground has-data-[state=checked]:border-2 has-focus-visible:border-ring has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50">
-              <RadioGroupItem
-                className="sr-only after:absolute after:inset-0"
-                id="radio-monthly"
-                value="monthly"
-              />
-              <p className="font-medium text-foreground text-sm">Monthly</p>
-              <p className="text-muted-foreground text-sm">${monthlyPrice}/month</p>
-            </label>
-            {/* Yearly */}
-            <label className="relative flex cursor-pointer flex-col gap-1 rounded-md border border-input p-4 shadow-xs outline-none transition-[color,box-shadow] has-data-[state=checked]:border-foreground has-data-[state=checked]:border-2 has-focus-visible:border-ring has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50">
-              <RadioGroupItem
-                className="sr-only after:absolute after:inset-0"
-                id="radio-yearly"
-                value="yearly"
-              />
-              <div className="inline-flex items-start justify-between gap-2">
-                <p className="font-medium text-foreground text-sm">Yearly</p>
-                <Badge>Popular</Badge>
-              </div>
-              <p className="text-muted-foreground text-sm">${yearlyPrice}/year</p>
-            </label>
-          </RadioGroup>
-          <div className="*:not-first:mt-2">
-            <Label htmlFor={`name-${id}`}>Name on card</Label>
-            <Input id={`name-${id}`} required type="text" />
-          </div>
-          <div className="*:not-first:mt-2">
-            <legend className="font-medium text-foreground text-sm">
-              Card Details
-            </legend>
-            <div className="rounded-md shadow-xs">
-              <div className="relative focus-within:z-10">
-                <Input
-                  className="peer rounded-b-none pe-9 shadow-none [direction:inherit]"
-                  {...getCardNumberProps()}
-                />
-                <div className="pointer-events-none absolute inset-y-0 end-0 flex items-center justify-center pe-3 text-muted-foreground/80 peer-disabled:opacity-50">
-                  {meta.cardType ? (
-                    <svg
-                      className="overflow-hidden rounded-sm"
-                      {...getCardImageProps({
-                        images: images as unknown as CardImages,
-                      })}
-                      width={20}
-                    />
-                  ) : (
-                    <CreditCardIcon aria-hidden="true" size={16} />
-                  )}
-                </div>
-              </div>
-              <div className="-mt-px flex">
-                <div className="min-w-0 flex-1 focus-within:z-10">
-                  <Input
-                    className="rounded-e-none rounded-t-none shadow-none [direction:inherit]"
-                    {...getExpiryDateProps()}
-                  />
-                </div>
-                <div className="-ms-px min-w-0 flex-1 focus-within:z-10">
-                  <Input
-                    className="rounded-s-none rounded-t-none shadow-none [direction:inherit]"
-                    {...getCVCProps()}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          {!showCouponInput ? (
-            <button
-              className="text-sm underline hover:no-underline"
-              onClick={() => setShowCouponInput(true)}
-              type="button"
-            >
-              + Add coupon
-            </button>
-          ) : (
-            <div className="*:not-first:mt-2">
-              <Label htmlFor={`coupon-${id}`}>Coupon code</Label>
-              <Input
-                id={`coupon-${id}`}
-                onChange={(e) => setCouponCode(e.target.value)}
-                placeholder="Enter your code"
-                ref={couponInputRef}
-                value={couponCode}
-              />
-            </div>
-          )}
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <PaymentElement id="payment-element" />
+
+        {message && <div id="payment-message" className="text-red-500 text-sm">{message}</div>}
+
         <div className="grid grid-cols-2 gap-2">
-             <Button className="w-full" type="button" variant="ghost" onClick={onGoBack}>
-                Go Back
-            </Button>
-            <Button className="w-full" type="button">
-                Subscribe
-            </Button>
+          <Button className="w-full" type="button" variant="ghost" onClick={onGoBack} disabled={isLoading}>
+            Go Back
+          </Button>
+          <Button className="w-full" type="submit" disabled={isLoading || !stripe || !elements}>
+            {isLoading ? <Loader2 className="animate-spin" /> : `Pay ${plan.price.split(' ')[0]}`}
+          </Button>
         </div>
 
         <p className="text-center text-muted-foreground text-xs mt-4">

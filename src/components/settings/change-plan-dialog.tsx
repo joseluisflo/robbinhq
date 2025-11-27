@@ -1,12 +1,12 @@
 "use client";
 
-import { CheckIcon, RefreshCcwIcon, XIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { CheckIcon, RefreshCcwIcon, XIcon, Loader2 } from "lucide-react";
+import { useId, useState, useTransition } from "react";
+import { loadStripe } from "@stripe/stripe-js";
 
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -16,6 +16,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CheckoutForm } from "./checkout-form";
+import { createPaymentIntent } from "@/app/actions/stripe";
+import { useUser } from "@/firebase";
+import { useToast } from "@/hooks/use-toast";
+import { Elements } from "@stripe/react-stripe-js";
+import { PaymentStatus } from "./payment-status";
 
 type PlanId = 'free' | 'essential' | 'pro';
 
@@ -28,8 +33,8 @@ const plans = {
       { text: '150 credits', included: true },
       { text: '1 Agent', included: true },
       { text: '400kb Training Data', included: true },
-      { text: '2 Channel Deploy', included: true },
-      { text: 'Limited Data retention', included: true },
+      { text: '2 Channel Deploy', included: false },
+      { text: 'Limited Data retention', included: false },
       { text: 'Watermark', included: true },
     ],
   },
@@ -61,32 +66,52 @@ const plans = {
   },
 };
 
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
+);
 
 export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const id = useId();
   const [step, setStep] = useState(1);
   const [selectedPlanId, setSelectedPlanId] = useState<PlanId>('free');
+  const [isProcessing, startTransition] = useTransition();
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
 
+  const { user } = useUser();
+  const { toast } = useToast();
+  
   const handleContinue = () => {
-    if (step < 2) {
-      setStep(step + 1);
+    if (step === 1 && selectedPlanId !== 'free' && user) {
+        startTransition(async () => {
+            const result = await createPaymentIntent({ userId: user.uid, planId: selectedPlanId });
+            if (result.error) {
+                toast({ title: "Error", description: result.error, variant: "destructive" });
+            } else {
+                setClientSecret(result.clientSecret);
+                setStep(2);
+            }
+        });
     }
   }
 
   const handleGoBack = () => {
     if (step > 1) {
       setStep(step - 1);
+      setClientSecret(null);
+      setPaymentStatus(null);
     }
   }
 
   const selectedPlan = plans[selectedPlanId];
-
 
   return (
     <Dialog onOpenChange={(open) => {
         if (!open) {
             setStep(1);
             setSelectedPlanId('free');
+            setClientSecret(null);
+            setPaymentStatus(null);
         }
     }}>
       <DialogTrigger asChild>
@@ -116,60 +141,23 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                 defaultValue={selectedPlanId}
                 onValueChange={(value: PlanId) => setSelectedPlanId(value)}
               >
-                {/* Radio card #1 */}
-                <div className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
-                  <RadioGroupItem
-                    aria-describedby={`${id}-1-description`}
-                    className="order-1 after:absolute after:inset-0"
-                    id={`${id}-1`}
-                    value="free"
-                  />
-                  <div className="grid grow gap-1">
-                    <Label htmlFor={`${id}-1`}>Free</Label>
-                    <p
-                      className="text-muted-foreground text-xs"
-                      id={`${id}-1-description`}
-                    >
-                      $0 per month
-                    </p>
+                {/* Plans Radio Cards */}
+                {Object.values(plans).map(plan => (
+                  <div key={plan.id} className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
+                    <RadioGroupItem
+                      aria-describedby={`${id}-${plan.id}-description`}
+                      className="order-1 after:absolute after:inset-0"
+                      id={`${id}-${plan.id}`}
+                      value={plan.id}
+                    />
+                    <div className="grid grow gap-1">
+                      <Label htmlFor={`${id}-${plan.id}`}>{plan.name}</Label>
+                      <p className="text-muted-foreground text-xs" id={`${id}-${plan.id}-description`}>
+                        {plan.price}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                {/* Radio card #2 */}
-                <div className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
-                  <RadioGroupItem
-                    aria-describedby={`${id}-2-description`}
-                    className="order-1 after:absolute after:inset-0"
-                    id={`${id}-2`}
-                    value="essential"
-                  />
-                  <div className="grid grow gap-1">
-                    <Label htmlFor={`${id}-2`}>Essential</Label>
-                    <p
-                      className="text-muted-foreground text-xs"
-                      id={`${id}-2-description`}
-                    >
-                      $15 per month
-                    </p>
-                  </div>
-                </div>
-                {/* Radio card #3 */}
-                <div className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
-                  <RadioGroupItem
-                    aria-describedby={`${id}-3-description`}
-                    className="order-1 after:absolute after:inset-0"
-                    id={`${id}-3`}
-                    value="pro"
-                  />
-                  <div className="grid grow gap-1">
-                    <Label htmlFor={`${id}-3`}>Pro</Label>
-                    <p
-                      className="text-muted-foreground text-xs"
-                      id={`${id}-3-description`}
-                    >
-                      $29 per month
-                    </p>
-                  </div>
-                </div>
+                ))}
               </RadioGroup>
 
               <div className="space-y-3">
@@ -190,23 +178,30 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                 </ul>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                 <DialogClose asChild>
-                  <Button className="w-full" type="button" variant="ghost">
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button className="w-full" type="button" onClick={handleContinue}>
-                  Continue
+              <div className="grid grid-cols-1">
+                <Button className="w-full" type="button" onClick={handleContinue} disabled={isProcessing || selectedPlanId === 'free'}>
+                   {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Continue"}
                 </Button>
               </div>
             </form>
           </>
         )}
 
-        {step === 2 && (
-          <CheckoutForm onGoBack={handleGoBack} plan={selectedPlan}/>
+        {step === 2 && clientSecret && (
+          <Elements options={{ clientSecret }} stripe={stripePromise}>
+            <CheckoutForm 
+              onGoBack={handleGoBack} 
+              plan={selectedPlan}
+              setPaymentStatus={setPaymentStatus}
+              setStep={setStep}
+            />
+          </Elements>
         )}
+        
+        {step === 3 && paymentStatus && (
+           <PaymentStatus status={paymentStatus} planName={selectedPlan.name} />
+        )}
+
       </DialogContent>
     </Dialog>
   );
