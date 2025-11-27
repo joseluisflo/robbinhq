@@ -95,6 +95,7 @@ export async function analyzeSessionsForLeads(userId: string, agentId: string): 
           summary: extractionResult.summary,
           sessionId: sessionDoc.id,
           createdAt: FieldValue.serverTimestamp(),
+          source: 'Widget',
         });
         leadsFound++;
       }

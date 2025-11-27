@@ -39,13 +39,21 @@ export function LeadsOverview() {
 
     const newPercent = totalLeads > 0 ? (newLeadsCount / totalLeads) * 100 : 0;
     const returningPercent = totalLeads > 0 ? (returningLeadsCount / totalLeads) * 100 : 0;
+    
+    const sourceCounts = leads.reduce((acc, lead) => {
+        const source = lead.source || 'Unknown';
+        acc[source] = (acc[source] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const topSource = Object.keys(sourceCounts).reduce((a, b) => sourceCounts[a] > sourceCounts[b] ? a : b, 'N/A');
 
     return {
         newLeads: newLeadsCount,
         returningLeads: returningLeadsCount,
         newPercent: newPercent,
         returningPercent: returningPercent,
-        topSource: 'Widget', // Hardcoded for now
+        topSource: topSource,
         leadQuality: 8.2, // Hardcoded for now
     };
   }, [leads]);

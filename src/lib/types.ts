@@ -96,6 +96,7 @@ export type Lead = {
   summary?: string;
   sessionId?: string;
   createdAt?: any;
+  source?: 'Widget' | 'Email' | 'Phone';
 };
 
 export type TextSource = {
