@@ -200,6 +200,23 @@ async function addLogStep(logRef: FirebaseFirestore.DocumentReference, descripti
 }
 
 
+async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId: string): Promise<{ agent: Agent, agentRef: FirebaseFirestore.DocumentReference, ownerId: string } | null> {
+    const usersSnapshot = await firestore.collection('users').get();
+    for (const userDoc of usersSnapshot.docs) {
+        const agentRef = firestore.collection('users').doc(userDoc.id).collection('agents').doc(agentId);
+        const agentDoc = await agentRef.get();
+        if (agentDoc.exists) {
+            return {
+                agent: agentDoc.data() as Agent,
+                agentRef: agentRef,
+                ownerId: userDoc.id,
+            };
+        }
+    }
+    return null;
+}
+
+
 export async function getAgentResponse(input: AgentResponseInput): Promise<AgentResponse> {
   const { userId, agentId, message, runId, sessionId } = input;
   if (!agentId || !sessionId) {
@@ -209,19 +226,13 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
   const firestore = firebaseAdmin.firestore();
   
   try {
-    // --- AGENT FINDER LOGIC ---
-    // Use a collectionGroup query to find the agent by its ID, which is more robust.
-    const agentQuerySnapshot = await firestore.collectionGroup('agents').where('__name__', '==', agentId).limit(1).get();
-    
-    if (agentQuerySnapshot.empty) {
-        return { error: 'Agent not found.' };
+    const agentInfo = await findAgentAndOwner(firestore, agentId);
+
+    if (!agentInfo) {
+      return { error: 'Agent not found.' };
     }
-    const agentDoc = agentQuerySnapshot.docs[0];
-    const agent = agentDoc.data() as Agent;
-    const agentRef = agentDoc.ref;
-    // The actual owner of the agent, needed for credit deduction and other user-specific logic.
-    const agentOwnerUserId = agentRef.parent.parent!.id; 
-    // --- END AGENT FINDER ---
+
+    const { agent, agentRef, ownerId: agentOwnerUserId } = agentInfo;
 
     const sessionRef = agentRef.collection('sessions').doc(sessionId);
     const messagesPath = sessionRef.collection('messages').path;
@@ -384,9 +395,9 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
     console.error('Failed to get agent response:', e);
     // Log error to Firestore if possible
     try {
-        const agentRefQuery = await firestore.collectionGroup('agents').where('__name__', '==', agentId).limit(1).get();
-        if(!agentRefQuery.empty) {
-            const agentRef = agentRefQuery.docs[0].ref;
+        const agentRefQuery = await findAgentAndOwner(firestore, agentId);
+        if(agentRefQuery) {
+            const { agentRef } = agentRefQuery;
             const logRef = await getOrCreateInteractionLog(firestore, agentRef, sessionId, "Failed Interaction", 'Chat');
             await addLogStep(logRef, `Critical Error: ${e.message}`);
             await logRef.update({ status: 'error' });
