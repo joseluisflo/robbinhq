@@ -1,5 +1,15 @@
 
 
+export type userProfile = {
+  id?: string;
+  displayName: string;
+  email: string;
+  photoURL?: string;
+  credits?: number;
+  planId?: 'free' | 'essential' | 'pro';
+  creditResetDate?: any;
+};
+
 export type Task = {
   id: string;
   name: string;
@@ -208,3 +218,5 @@ export type ConfigurationLog = {
     timestamp: any;
     actor: string;
 };
+
+    

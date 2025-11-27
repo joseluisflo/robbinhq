@@ -19,6 +19,20 @@
           "type": "string",
           "format": "uri",
           "description": "URL of the user's profile picture."
+        },
+        "credits": {
+            "type": "number",
+            "description": "The user's current credit balance."
+        },
+        "planId": {
+            "type": "string",
+            "enum": ["free", "essential", "pro"],
+            "description": "The ID of the user's subscription plan."
+        },
+        "creditResetDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date when the user's credits will be reset or replenished."
         }
       },
       "required": ["displayName", "email"]
@@ -121,6 +135,15 @@
             "type": "string",
             "format": "email",
             "description": "Email address to forward to for human handoff."
+        },
+        "dataRetentionPolicy": {
+            "type": "string",
+            "enum": ["30", "90", "365", "forever"],
+            "description": "How long to retain conversation data."
+        },
+        "anonymizeData": {
+            "type": "boolean",
+            "description": "Whether to anonymize visitor data."
         }
       },
       "required": ["name", "userId", "createdAt"]
@@ -311,6 +334,11 @@
           "type": "string",
           "format": "date-time",
           "description": "The timestamp when the lead was created."
+        },
+        "source": {
+          "type": "string",
+          "enum": ["Widget", "Email", "Phone"],
+          "description": "The source channel where the lead was captured."
         }
       }
     },
@@ -479,3 +507,5 @@
     }
   }
 }
+
+    
