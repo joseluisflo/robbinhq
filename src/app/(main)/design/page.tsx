@@ -24,7 +24,7 @@ import { InCallDesignSettings } from '@/components/design/InCallDesignSettings';
 
 
 export default function DesignPage() {
-  const { activeAgent, setActiveAgent } = useActiveAgent();
+  const { activeAgent, setActiveAgent, userProfile } = useActiveAgent();
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -262,6 +262,8 @@ export default function DesignPage() {
       toggleCall(agentForPreview);
     }
   };
+  
+  const isFreePlan = userProfile?.planId === 'free';
 
   return (
     <div className="h-full flex-1 flex flex-col">
@@ -305,6 +307,7 @@ export default function DesignPage() {
                             setIsFeedbackEnabled={setIsFeedbackEnabled}
                             isBrandingEnabled={isBrandingEnabled}
                             setIsBrandingEnabled={setIsBrandingEnabled}
+                            isFreePlan={isFreePlan}
                         />
                     </TabsContent>
                     <TabsContent value="in-call" className="mt-0 data-[state=inactive]:hidden">

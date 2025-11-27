@@ -39,6 +39,7 @@ interface ChatDesignSettingsProps {
     setIsFeedbackEnabled: (checked: boolean) => void;
     isBrandingEnabled: boolean;
     setIsBrandingEnabled: (checked: boolean) => void;
+    isFreePlan: boolean;
 }
 
 export function ChatDesignSettings({
@@ -64,7 +65,8 @@ export function ChatDesignSettings({
     isFeedbackEnabled,
     setIsFeedbackEnabled,
     isBrandingEnabled,
-    setIsBrandingEnabled
+    setIsBrandingEnabled,
+    isFreePlan,
 }: ChatDesignSettingsProps) {
     return (
         <div className="p-6 space-y-6">
@@ -215,6 +217,7 @@ export function ChatDesignSettings({
                         id="branding-toggle"
                         checked={!isBrandingEnabled}
                         onCheckedChange={(checked) => setIsBrandingEnabled(!checked)}
+                        disabled={isFreePlan}
                     />
                 </div>
             </div>
