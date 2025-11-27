@@ -54,14 +54,15 @@ export async function deductCredits(
     return await firestore.runTransaction(async (transaction) => {
       const userDoc = await transaction.get(userRef);
       if (!userDoc.exists) {
-        throw new Error('User not found.');
+        throw new Error('User profile not found.');
       }
 
       const userData = userDoc.data() as userProfile;
-      const currentCredits = userData.credits || 0;
+      const currentCredits = userData.credits ?? 0;
 
       if (currentCredits < amount) {
-        throw new Error('Insufficient credits.');
+        // This error message is for internal logging, not for the end-user.
+        throw new Error('Insufficient credits to perform this action.');
       }
 
       transaction.update(userRef, {
@@ -104,5 +105,3 @@ export async function addCredits(
         return { success: false, error: 'Failed to update user credits.' };
     }
 }
-
-    

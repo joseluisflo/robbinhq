@@ -343,7 +343,8 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       if (!creditResult.success) {
         await addLogStep(logRef, `Credit deduction failed: ${creditResult.error}`);
         await logRef.update({ status: 'error' });
-        return { error: creditResult.error || "An error occurred with your credit balance." };
+        // Return a user-friendly generic message instead of the internal error
+        return { error: "Oops! It seems I'm having a little trouble on my end. Please try again in a moment." };
       }
       
       await addLogStep(logRef, "Searching knowledge base for answer (cost: 1 credit).");
