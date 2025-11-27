@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -30,14 +31,14 @@ const allChannels = [
     description: 'Connect to an email address',
     icon: Mail,
     href: '/deploy/email',
-    requiredPlan: 'free',
+    requiredPlan: 'essential',
   },
   {
     name: 'Phone',
     description: 'Integrate with a phone number',
     icon: Phone,
     href: '/deploy/phone',
-    requiredPlan: 'essential', // or 'pro'
+    requiredPlan: 'essential',
   },
 ];
 
