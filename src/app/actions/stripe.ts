@@ -1,3 +1,4 @@
+
 'use server';
 
 import Stripe from 'stripe';
@@ -64,7 +65,7 @@ export async function createPaymentIntent({
       automatic_payment_methods: {
         enabled: true,
       },
-      // Optionally, add metadata to link the payment to the user and plan
+      // Add metadata to link the payment to the user and plan
       metadata: {
         firebaseUID: userId,
         planId: planId,

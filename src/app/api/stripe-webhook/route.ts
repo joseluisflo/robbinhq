@@ -1,3 +1,4 @@
+
 'use server';
 
 import { NextResponse } from 'next/server';
@@ -50,20 +51,18 @@ export async function POST(request: Request) {
     case 'payment_intent.succeeded':
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
       
-      const stripeCustomerId = paymentIntent.customer as string;
+      const userId = paymentIntent.metadata?.firebaseUID;
       const planId = paymentIntent.metadata?.planId as 'free' | 'essential' | 'pro';
-      const userId = paymentIntent.metadata?.firebaseUID as string;
 
-      if (!stripeCustomerId || !planId || !userId) {
-        console.error('Webhook Error: Missing metadata from payment intent.');
-        return NextResponse.json({ error: 'Missing metadata' }, { status: 400 });
+      if (!userId || !planId) {
+        console.error('Webhook Error: Missing firebaseUID or planId in payment intent metadata.');
+        return NextResponse.json({ error: 'Missing required metadata from payment intent.' }, { status: 400 });
       }
 
       try {
         const firestore = firebaseAdmin.firestore();
         const userRef = firestore.collection('users').doc(userId);
         
-        // Calculate the next credit reset date (30th of the month)
         const now = new Date();
         const nextResetDate = new Date(now.getFullYear(), now.getMonth(), 30, 23, 59, 59);
         if (now > nextResetDate) {
@@ -84,17 +83,9 @@ export async function POST(request: Request) {
       }
       break;
     
-    case 'checkout.session.completed':
-       const session = event.data.object as Stripe.Checkout.Session;
-       // This event is useful for one-time checkouts. 
-       // We're handling payment_intent.succeeded for more general purpose use.
-       // You can add logic here if you use Stripe Checkout pages.
-       console.log(`Checkout session ${session.id} completed!`);
-      break;
-
-    // TODO: Handle other events like subscription renewals or cancellations
-    // case 'invoice.payment_succeeded':
-    //   ...
+    // You can add more event handlers here if needed
+    // case 'checkout.session.completed':
+    //    ...
     //   break;
 
     default:
