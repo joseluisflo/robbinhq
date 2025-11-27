@@ -372,21 +372,41 @@ export default function DashboardPage() {
                       cursor={false}
                       content={
                         <ChartTooltipContent
-                          label="Interactions"
                           indicator="dot"
-                          formatter={(value, name) => {
-                            const config = chartConfig[name as keyof typeof chartConfig];
-                            return <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{backgroundColor: config.color}}/>{config.label}: <span className="font-bold">{value}</span></div>
-                          }}
+                          formatter={(value, name, item) => (
+                            <div className="flex items-center gap-2">
+                              <div className={cn("w-2 h-2 rounded-full", 
+                                  name === 'widget' ? 'bg-[--color-widget]' : 
+                                  name === 'email' ? 'bg-[--color-email]' : 
+                                  name === 'phone' ? 'bg-[--color-phone]' :
+                                  'bg-[--color-total]'
+                                )} />
+                              <span className="capitalize">{name}</span>: <span className="font-bold">{value}</span>
+                            </div>
+                          )}
                         />
                       }
                     />
+                     <defs>
+                        <linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">
+                          <stop
+                            offset="5%"
+                            stopColor="var(--color-total)"
+                            stopOpacity={0.8}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor="var(--color-total)"
+                            stopOpacity={0.1}
+                          />
+                        </linearGradient>
+                      </defs>
                     <Area
                       dataKey="total"
                       type="natural"
-                      fill="var(--color-total)"
-                      fillOpacity={0.4}
+                      fill="url(#fillTotal)"
                       stroke="var(--color-total)"
+                      stackId="a"
                     />
                   </AreaChart>
                 </ChartContainer>
@@ -395,7 +415,5 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
 
     
