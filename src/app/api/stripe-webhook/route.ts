@@ -47,15 +47,15 @@ export async function POST(request: Request) {
 
   // Handle the event
   switch (event.type) {
-    case 'checkout.session.completed':
-      const session = event.data.object as Stripe.Checkout.Session;
+    case 'payment_intent.succeeded':
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
       
-      const stripeCustomerId = session.customer as string;
-      const planId = session.metadata?.planId as 'free' | 'essential' | 'pro';
-      const userId = session.metadata?.firebaseUID as string;
+      const stripeCustomerId = paymentIntent.customer as string;
+      const planId = paymentIntent.metadata?.planId as 'free' | 'essential' | 'pro';
+      const userId = paymentIntent.metadata?.firebaseUID as string;
 
       if (!stripeCustomerId || !planId || !userId) {
-        console.error('Webhook Error: Missing metadata from checkout session.');
+        console.error('Webhook Error: Missing metadata from payment intent.');
         return NextResponse.json({ error: 'Missing metadata' }, { status: 400 });
       }
 
@@ -82,6 +82,14 @@ export async function POST(request: Request) {
         console.error('Error updating user profile in Firestore:', error);
         return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
       }
+      break;
+    
+    case 'checkout.session.completed':
+       const session = event.data.object as Stripe.Checkout.Session;
+       // This event is useful for one-time checkouts. 
+       // We're handling payment_intent.succeeded for more general purpose use.
+       // You can add logic here if you use Stripe Checkout pages.
+       console.log(`Checkout session ${session.id} completed!`);
       break;
 
     // TODO: Handle other events like subscription renewals or cancellations
