@@ -1,141 +1,115 @@
 
 (function() {
-    // Configuration
+    // Check if the script is already running
+    if (window.agentVerseWidget) {
+        return;
+    }
+    window.agentVerseWidget = true;
+
+    // --- Get user and agent IDs from the script tag ---
     const scriptTag = document.currentScript;
     const userId = scriptTag.getAttribute('data-user-id');
     const agentId = scriptTag.getAttribute('data-agent-id');
-    const bubbleAlignment = scriptTag.getAttribute('data-bubble-alignment') || 'right';
-    const chatButtonColor = scriptTag.getAttribute('data-chat-button-color') || '#16a34a';
+    const sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     if (!userId || !agentId) {
-        console.error('AgentVerse Widget: User ID or Agent ID is missing.');
+        console.error("AgentVerse Widget: User ID or Agent ID is missing from the script tag.");
         return;
     }
     
-    const API_BASE_URL = window.location.origin;
-    const IFRAME_SRC = `${API_BASE_URL}/widget/${userId}/${agentId}`;
-    const SESSION_ID_KEY = `agentverse_session_${agentId}`;
+    // Use the script's src to determine the base URL dynamically
+    const scriptSrc = new URL(scriptTag.src);
+    const baseUrl = scriptSrc.origin;
 
-    let iframe = null;
-    let chatBubble = null;
+    // --- Create the main elements ---
+    const bubbleButton = document.createElement('div');
+    const iframeContainer = document.createElement('div');
+    const iframe = document.createElement('iframe');
+
+    // --- State ---
+    let isOpen = false;
+
+    // --- Styling ---
+    const bubbleSize = '60px';
+    const bubbleIcon = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: white;">
+            <path d="M12.0045 10.5H12.0135M16 10.5H16.009M8.009 10.5H8.01797"></path>
+            <path d="M2 10.5C2 9.72921 2.01346 8.97679 2.03909 8.2503C2.12282 5.87683 2.16469 4.69009 3.13007 3.71745C4.09545 2.74481 5.3157 2.6926 7.7562 2.58819C9.09517 2.5309 10.5209 2.5 12 2.5C13.4791 2.5 14.9048 2.5309 16.2438 2.58819C18.6843 2.6926 19.9046 2.74481 20.8699 3.71745C21.8353 4.69009 21.8772 5.87683 21.9609 8.2503C21.9865 8.97679 22 9.72921 22 10.5C22 11.2708 21.9865 12.0232 21.9609 12.7497C21.8772 15.1232 21.8353 16.3099 20.8699 17.2826C19.9046 18.2552 18.6843 18.3074 16.2437 18.4118C15.5098 18.4432 14.7498 18.4667 13.9693 18.4815C13.2282 18.4955 12.8576 18.5026 12.532 18.6266C12.2064 18.7506 11.9325 18.9855 11.3845 19.4553L9.20503 21.3242C9.07273 21.4376 8.90419 21.5 8.72991 21.5C8.32679 21.5 8 21.1732 8 20.7701V18.4219C7.91842 18.4186 7.83715 18.4153 7.75619 18.4118C5.31569 18.3074 4.09545 18.2552 3.13007 17.2825C2.16469 16.3099 2.12282 15.1232 2.03909 12.7497C2.01346 12.0232 2 11.2708 2 10.5Z"></path>
+        </svg>
+    `;
+
+    Object.assign(bubbleButton.style, {
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        width: bubbleSize,
+        height: bubbleSize,
+        backgroundColor: '#16a34a', // Default color, will be updated
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        transition: 'transform 0.2s ease',
+        zIndex: '999998',
+    });
+    bubbleButton.innerHTML = bubbleIcon;
     
-    // Session Management
-    function getSessionId() {
-        let sessionId = localStorage.getItem(SESSION_ID_KEY);
-        if (!sessionId) {
-            sessionId = generateUUID();
-            localStorage.setItem(SESSION_ID_KEY, sessionId);
-        }
-        return sessionId;
-    }
+    Object.assign(iframeContainer.style, {
+        position: 'fixed',
+        bottom: '100px',
+        right: '20px',
+        width: '400px',
+        height: '650px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        display: 'none',
+        zIndex: '999999',
+    });
 
-    function generateUUID() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
+    Object.assign(iframe.style, {
+        width: '100%',
+        height: '100%',
+        border: 'none',
+    });
+    iframe.src = `${baseUrl}/widget/${userId}/${agentId}?sessionId=${sessionId}`;
 
-    // Create and manage the chat bubble
-    function createChatBubble() {
-        chatBubble = document.createElement('button');
-        chatBubble.id = 'agentverse-bubble';
-        chatBubble.setAttribute('aria-label', 'Open Chat');
-        chatBubble.style.position = 'fixed';
-        chatBubble.style.bottom = '20px';
-        chatBubble.style.width = '60px';
-        chatBubble.style.height = '60px';
-        chatBubble.style.borderRadius = '50%';
-        chatBubble.style.backgroundColor = chatButtonColor;
-        chatBubble.style.border = 'none';
-        chatBubble.style.cursor = 'pointer';
-        chatBubble.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)';
-        chatBubble.style.display = 'flex';
-        chatBubble.style.alignItems = 'center';
-        chatBubble.style.justifyContent = 'center';
-        chatBubble.style.transition = 'transform 0.2s ease-out';
-        chatBubble.style.zIndex = '9998';
-
-        if (bubbleAlignment === 'left') {
-            chatBubble.style.left = '20px';
-        } else {
-            chatBubble.style.right = '20px';
-        }
-        
-        // Using a more robust SVG icon
-        chatBubble.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" role="img">
-                <path d="M12 1.75C13.4892 1.75 14.9255 1.78112 16.2754 1.83887L16.3418 1.8418C17.509 1.89169 18.4719 1.93277 19.2588 2.0918C20.0995 2.26171 20.7921 2.57464 21.4023 3.18945C22.6167 4.41312 22.6298 5.95045 22.71 8.22363C22.7359 8.95905 22.75 9.72053 22.75 10.5C22.75 11.2795 22.7359 12.0409 22.71 12.7764C22.6298 15.0495 22.6167 16.5869 21.4023 17.8105C20.7921 18.4254 20.0995 18.7383 19.2588 18.9082C18.4718 19.0672 17.5091 19.1083 16.3418 19.1582L16.2754 19.1611C15.5355 19.1928 14.7696 19.2165 13.9834 19.2314C13.1863 19.2466 12.9733 19.2607 12.7988 19.3271C12.6239 19.3938 12.4615 19.5198 11.873 20.0244L9.69336 21.8936C9.4251 22.1236 9.08286 22.25 8.72949 22.25C7.91249 22.2498 7.25022 21.5875 7.25 20.7705V19.1396C6.26419 19.0959 5.43456 19.0483 4.74121 18.9082C3.90049 18.7383 3.20788 18.4254 2.59766 17.8105C1.38331 16.5869 1.37023 15.0495 1.29004 12.7764C1.26409 12.0409 1.25 11.2795 1.25 10.5C1.25 9.72053 1.26409 8.95905 1.29004 8.22363C1.37023 5.95046 1.38331 4.41312 2.59766 3.18945C3.20788 2.57464 3.90049 2.26171 4.74121 2.0918C5.52815 1.93277 6.49097 1.89169 7.6582 1.8418L7.72461 1.83887C9.0745 1.78112 10.5108 1.75 12 1.75ZM8.00879 9.5C7.45662 9.50013 7.00879 9.9478 7.00879 10.5C7.00879 11.0522 7.45662 11.4999 8.00879 11.5H8.01758L8.12012 11.4951C8.62432 11.4439 9.01758 11.0177 9.01758 10.5C9.01758 9.98227 8.62432 9.55615 8.12012 9.50488L8.01758 9.5H8.00879ZM12.0039 9.5C11.4519 9.50032 11.0039 9.94791 11.0039 10.5C11.0039 11.0521 11.4519 11.4997 12.0039 11.5H12.0137C12.5658 11.4998 13.0137 11.0521 13.0137 10.5C13.0137 9.94785 12.5658 9.50022 12.0137 9.5H12.0039ZM16 9.5C15.4478 9.50013 15 9.9478 15 10.5C15 11.0522 15.4478 11.4999 16 11.5H16.0088C16.5611 11.5 17.0088 11.0523 17.0088 10.5C17.0088 9.94773 16.5611 9.50002 16.0088 9.5H16Z" fill="white"></path>
-            </svg>
-        `;
-
-        chatBubble.addEventListener('click', toggleIframe);
-        document.body.appendChild(chatBubble);
-    }
+    // --- Append to body ---
+    iframeContainer.appendChild(iframe);
+    document.body.appendChild(bubbleButton);
+    document.body.appendChild(iframeContainer);
     
-    // Create and manage the iframe
-    function createIframe() {
-        iframe = document.createElement('iframe');
-        iframe.id = 'agentverse-iframe';
-        iframe.src = `${IFRAME_SRC}?sessionId=${getSessionId()}`;
-        iframe.style.position = 'fixed';
-        iframe.style.bottom = '90px';
-        iframe.style.width = '400px';
-        iframe.style.height = '650px';
-        iframe.style.border = 'none';
-        iframe.style.borderRadius = '1rem';
-        iframe.style.boxShadow = '0 8px 32px rgba(0,0,0,0.2)';
-        iframe.style.display = 'none';
-        iframe.style.opacity = '0';
-        iframe.style.transform = 'translateY(20px)';
-        iframe.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
-        iframe.style.zIndex = '9999';
-        
-        if (bubbleAlignment === 'left') {
-            iframe.style.left = '20px';
-        } else {
-            iframe.style.right = '20px';
+    // --- Fetch agent details to get theme ---
+    fetch(`${baseUrl}/widget/${userId}/${agentId}/config`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.themeColor) {
+                bubbleButton.style.backgroundColor = data.themeColor;
+            }
+        }).catch(err => console.error("Could not fetch agent config:", err));
+
+
+    // --- Event Listeners ---
+    const toggleWidget = () => {
+        isOpen = !isOpen;
+        iframeContainer.style.display = isOpen ? 'block' : 'none';
+        if (isOpen) {
+             iframe.contentWindow.postMessage({ type: 'AV_WIDGET_OPEN' }, '*');
         }
+    };
 
-        document.body.appendChild(iframe);
-    }
+    bubbleButton.addEventListener('click', toggleWidget);
 
-    function toggleIframe() {
-        if (!iframe) createIframe();
-
-        const isVisible = iframe.style.display === 'block';
-        if (isVisible) {
-            iframe.style.opacity = '0';
-            iframe.style.transform = 'translateY(20px)';
-            setTimeout(() => {
-                iframe.style.display = 'none';
-            }, 300);
-        } else {
-            iframe.style.display = 'block';
-            setTimeout(() => {
-                iframe.style.opacity = '1';
-                iframe.style.transform = 'translateY(0)';
-            }, 10);
-        }
-    }
-    
-    // Message handling from iframe
     window.addEventListener('message', (event) => {
-        if (event.origin !== API_BASE_URL) {
-            return;
-        }
+        // Close from within the iframe
         if (event.data?.type === 'AV_WIDGET_CLOSE') {
-            toggleIframe();
+            if (isOpen) {
+                toggleWidget();
+            }
         }
     });
 
-    // Initialize
-    if (document.readyState === 'complete') {
-        createChatBubble();
-    } else {
-        window.addEventListener('load', createChatBubble);
-    }
-
 })();
 
-    
