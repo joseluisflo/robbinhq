@@ -11,6 +11,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { headers } from 'next/headers';
 import UAParser from 'ua-parser-js';
+import { deductCredits, getUserCredits } from '@/lib/credit-service';
 
 export async function createAgent(userId: string, name: string, description: string): Promise<{ id: string } | { error: string }> {
   if (!userId || !name || !description) {
@@ -301,6 +302,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
 
     if (selectedWorkflowId) {
       await addLogStep(logRef, `Triggering workflow: "${selectedWorkflowId}"`);
+      // Workflow credit logic is handled inside runOrResumeWorkflow
       const workflowResult = await runOrResumeWorkflow({
         userId,
         agentId,
@@ -336,7 +338,16 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         finalResult: workflowResult.context?.finalResult,
       };
     } else {
-      await addLogStep(logRef, "Searching knowledge base for answer.");
+      // Standard Chat: Deduct 1 credit for a simple chat response.
+      const creditResult = await deductCredits(userId, 1);
+      if (!creditResult.success) {
+        await addLogStep(logRef, `Credit deduction failed: ${creditResult.error}`);
+        await logRef.update({ status: 'error' });
+        return { error: creditResult.error || "An error occurred with your credit balance." };
+      }
+      
+      await addLogStep(logRef, "Searching knowledge base for answer (cost: 1 credit).");
+
       const textsSnapshot = await agentRef.collection('texts').get();
       const filesSnapshot = await agentRef.collection('files').get();
 

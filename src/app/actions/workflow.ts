@@ -15,6 +15,7 @@ import type { Workflow, WorkflowRun, WorkflowBlock } from '@/lib/types';
 import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import { deductCredits } from '@/lib/credit-service';
 
 // This server action needs userId, agentId, and workflowId to construct Firestore paths.
 // These will need to be passed from the client that calls this action.
@@ -40,6 +41,22 @@ const stepRegistry = new Map<string, (params: any, context: any) => Promise<any>
   ['Set variable', setVariableStep],
   // 'Condition' and 'Loop' will require special handling within the engine
 ]);
+
+// Define credit costs for each block type
+const blockCosts: Record<string, number> = {
+    'Trigger': 0,
+    'Condition': 0,
+    'Loop': 0,
+    'Set variable': 0,
+    'Wait for User Reply': 0,
+    'Ask a question': 1,
+    'Show Multiple Choice': 1,
+    'Send Email': 1,
+    'Send SMS': 1,
+    'Search web': 2,
+    'Create PDF': 2,
+};
+
 
 function resolvePlaceholders(value: any, context: Record<string, any>): any {
     if (typeof value !== 'string') return value;
@@ -136,6 +153,19 @@ export async function runOrResumeWorkflow(
       run.currentStepIndex++;
       continue;
     }
+
+    // --- CREDIT DEDUCTION ---
+    const cost = blockCosts[currentBlock.type] ?? 0;
+    if (cost > 0) {
+        const creditResult = await deductCredits(userId, cost);
+        if (!creditResult.success) {
+            run.status = 'failed';
+            run.context.error = `Credit deduction failed: ${creditResult.error || 'Insufficient credits.'}`;
+            break; // Exit loop if credits can't be deducted
+        }
+    }
+    // --- END CREDIT DEDUCTION ---
+
 
     const stepFunction = stepRegistry.get(currentBlock.type);
     if (!stepFunction) {
