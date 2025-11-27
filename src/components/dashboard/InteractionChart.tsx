@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
@@ -11,7 +11,7 @@ import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '
 import { useActiveAgent } from '@/app/(main)/layout';
 import { useUser, useFirestore, useCollection, collection, query, where } from '@/firebase';
 import { Timestamp } from 'firebase/firestore';
-import { subDays, format } from 'date-fns';
+import { subDays, format, eachDayOfInterval } from 'date-fns';
 import { Skeleton } from '../ui/skeleton';
 import type { ChatSession, EmailSession } from '@/lib/types';
 
@@ -35,44 +35,60 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+type TimeRange = "7d" | "30d" | "90d";
+
 export function InteractionChart() {
   const { user } = useUser();
   const { activeAgent } = useActiveAgent();
   const firestore = useFirestore();
+  const [timeRange, setTimeRange] = useState<TimeRange>("7d");
 
-  const sevenDaysAgo = useMemo(() => subDays(new Date(), 7), []);
-  const sevenDaysAgoTimestamp = useMemo(() => Timestamp.fromDate(sevenDaysAgo), [sevenDaysAgo]);
+  const days = useMemo(() => {
+    switch(timeRange) {
+        case '30d': return 30;
+        case '90d': return 90;
+        default: return 7;
+    }
+  }, [timeRange]);
+
+  const dateRange = useMemo(() => {
+    const end = new Date();
+    const start = subDays(end, days - 1);
+    return { start, end };
+  }, [days]);
+
+  const startDateTimestamp = useMemo(() => Timestamp.fromDate(dateRange.start), [dateRange.start]);
 
   const chatSessionsQuery = useMemo(() => {
     if (!user || !activeAgent?.id) return null;
     return query(
       collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'sessions'),
-      where('createdAt', '>=', sevenDaysAgoTimestamp)
+      where('createdAt', '>=', startDateTimestamp)
     );
-  }, [user, firestore, activeAgent?.id, sevenDaysAgoTimestamp]);
+  }, [user, firestore, activeAgent?.id, startDateTimestamp]);
   const { data: chatSessions, loading: chatLoading } = useCollection<ChatSession>(chatSessionsQuery);
 
   const emailSessionsQuery = useMemo(() => {
     if (!user || !activeAgent?.id) return null;
     return query(
       collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'emailSessions'),
-      where('createdAt', '>=', sevenDaysAgoTimestamp)
+      where('createdAt', '>=', startDateTimestamp)
     );
-  }, [user, firestore, activeAgent?.id, sevenDaysAgoTimestamp]);
+  }, [user, firestore, activeAgent?.id, startDateTimestamp]);
   const { data: emailSessions, loading: emailLoading } = useCollection<EmailSession>(emailSessionsQuery);
   
   const loading = chatLoading || emailLoading;
 
   const interactionData = useMemo(() => {
     if (!chatSessions || !emailSessions) return [];
-
+    
+    const allDates = eachDayOfInterval(dateRange);
     const dataByDate: Record<string, { date: string; total: number; widget: number; email: number, phone: number }> = {};
 
-    for (let i = 6; i >= 0; i--) {
-      const date = subDays(new Date(), i);
-      const formattedDate = format(date, 'd MMM');
-      dataByDate[formattedDate] = { date: formattedDate, total: 0, widget: 0, email: 0, phone: 0 };
-    }
+    allDates.forEach(date => {
+        const formattedDate = format(date, 'd MMM');
+        dataByDate[formattedDate] = { date: formattedDate, total: 0, widget: 0, email: 0, phone: 0 };
+    });
 
     chatSessions.forEach(session => {
       if (session.createdAt) {
@@ -97,7 +113,7 @@ export function InteractionChart() {
     });
 
     return Object.values(dataByDate);
-  }, [chatSessions, emailSessions]);
+  }, [chatSessions, emailSessions, dateRange]);
 
 
   return (
@@ -105,7 +121,7 @@ export function InteractionChart() {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Interaction History</CardTitle>
         <div className="flex gap-2">
-          <Select defaultValue="7d">
+          <Select value={timeRange} onValueChange={(value: TimeRange) => setTimeRange(value)}>
             <SelectTrigger className="w-32">
               <SelectValue placeholder="Select range" />
             </SelectTrigger>
@@ -139,11 +155,19 @@ export function InteractionChart() {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              tickFormatter={(value, index) => {
+                 // Show fewer labels on smaller ranges to prevent clutter
+                if (days <= 10) return value;
+                // Show roughly 7-8 labels for larger ranges
+                const interval = Math.ceil(days / 7);
+                return index % interval === 0 ? value : "";
+              }}
             />
             <YAxis 
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              allowDecimals={false}
             />
             <ChartTooltip
               cursor={false}
