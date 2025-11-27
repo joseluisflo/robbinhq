@@ -13,9 +13,9 @@ import { Skeleton } from './ui/skeleton';
 import { format } from 'date-fns';
 
 const PLAN_CREDITS = {
-  free: 2000,
-  essential: 15000,
-  pro: 50000,
+  free: 150,
+  essential: 2000,
+  pro: 5000,
 };
 
 

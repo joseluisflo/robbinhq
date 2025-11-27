@@ -1,12 +1,13 @@
 
+
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
 
 const PLAN_CREDITS = {
-  free: 2000,
-  essential: 15000,
-  pro: 50000,
+  free: 150,
+  essential: 2000,
+  pro: 5000,
 };
 
 export async function createUserProfile(userId: string, name: string, email: string): Promise<{ success: boolean } | { error: string }> {
