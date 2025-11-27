@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -10,7 +11,8 @@ import { cn } from '@/lib/utils';
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useUser, useFirestore, useCollection, collection, query, where, Timestamp } from '@/firebase';
+import { useUser, useFirestore, useCollection, collection, query, where } from '@/firebase';
+import { Timestamp } from 'firebase/firestore';
 import { subDays, format } from 'date-fns';
 import { Skeleton } from '../ui/skeleton';
 import type { ChatSession, EmailSession } from '@/lib/types';
