@@ -3,12 +3,16 @@
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
+import Stripe from 'stripe';
 
 const PLAN_CREDITS = {
   free: 150,
   essential: 2000,
   pro: 5000,
 };
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+
 
 export async function createUserProfile(userId: string, name: string, email: string): Promise<{ success: boolean } | { error: string }> {
   if (!userId || !name || !email) {
@@ -17,6 +21,19 @@ export async function createUserProfile(userId: string, name: string, email: str
 
   try {
     const firestore = firebaseAdmin.firestore();
+    
+    // Create a customer in Stripe
+    const customer = await stripe.customers.create({
+        email: email,
+        name: name,
+        metadata: {
+            firebaseUID: userId,
+        },
+    });
+
+    if (!customer) {
+        throw new Error('Failed to create Stripe customer.');
+    }
     
     // Calculate the next credit reset date (30th of the month)
     const now = new Date();
@@ -36,6 +53,7 @@ export async function createUserProfile(userId: string, name: string, email: str
         planId: initialPlanId,
         credits: initialCredits,
         creditResetDate: nextResetDate,
+        stripeCustomerId: customer.id,
     }, { merge: true }); 
 
     return { success: true };

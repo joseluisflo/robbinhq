@@ -8,6 +8,7 @@ export type userProfile = {
   credits?: number;
   planId?: 'free' | 'essential' | 'pro';
   creditResetDate?: any;
+  stripeCustomerId?: string;
 };
 
 export type Task = {
