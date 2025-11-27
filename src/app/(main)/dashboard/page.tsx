@@ -16,9 +16,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Bot, CheckCircle, Clock, ArrowUpRight, Zap, MessageSquare, Info, Separator } from 'lucide-react';
+import { Bot, CheckCircle, Clock, ArrowUpRight, Zap, MessageSquare, Info, Separator, Download, Calendar, MoreHorizontal } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
+import {
+  AreaChart,
+  Area,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  CartesianGrid,
+} from 'recharts';
+import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 
 const cards = [
@@ -93,6 +103,35 @@ const creditsUsageData = {
     phone: { percent: 15, color: 'bg-amber-400', textColor: 'text-amber-600' },
   },
 };
+
+const interactionData = [
+  { date: '1 Jul', total: 62, widget: 40, email: 15, phone: 7 },
+  { date: '2 Jul', total: 75, widget: 50, email: 18, phone: 7 },
+  { date: '3 Jul', total: 88, widget: 55, email: 23, phone: 10 },
+  { date: '4 Jul', total: 80, widget: 52, email: 20, phone: 8 },
+  { date: '5 Jul', total: 95, widget: 60, email: 25, phone: 10 },
+  { date: '6 Jul', total: 110, widget: 70, email: 30, phone: 10 },
+  { date: '7 Jul', total: 120, widget: 78, email: 32, phone: 10 },
+];
+
+const chartConfig = {
+  total: {
+    label: 'Total',
+    color: 'hsl(var(--chart-1))',
+  },
+  widget: {
+    label: 'Widget',
+    color: 'hsl(var(--chart-2))',
+  },
+  email: {
+    label: 'Email',
+    color: 'hsl(var(--chart-3))',
+  },
+  phone: {
+    label: 'Phone',
+    color: 'hsl(var(--chart-4))',
+  },
+} satisfies ChartConfig;
 
 
 export default function DashboardPage() {
@@ -270,6 +309,84 @@ export default function DashboardPage() {
                 </CardContent>
              </Card>
         </div>
+        
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Interaction History</CardTitle>
+               <div className="flex gap-2">
+                    <Select defaultValue="7d">
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Select range" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7d">Last 7 days</SelectItem>
+                        <SelectItem value="30d">Last 30 days</SelectItem>
+                        <SelectItem value="90d">Last 90 days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem><Download className="mr-2 h-4 w-4"/>Export Data</DropdownMenuItem>
+                            <DropdownMenuItem><Calendar className="mr-2 h-4 w-4"/>Change Period</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+               </div>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                  <AreaChart
+                    accessibilityLayer
+                    data={interactionData}
+                    margin={{
+                      left: -20,
+                      right: 20,
+                      top: 10,
+                    }}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tickFormatter={(value) => value.slice(0, 3)}
+                    />
+                    <YAxis 
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={
+                        <ChartTooltipContent
+                          label="Interactions"
+                          indicator="dot"
+                          formatter={(value, name) => {
+                            const config = chartConfig[name as keyof typeof chartConfig];
+                            return <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{backgroundColor: config.color}}/>{config.label}: <span className="font-bold">{value}</span></div>
+                          }}
+                        />
+                      }
+                    />
+                    <Area
+                      dataKey="total"
+                      type="natural"
+                      fill="var(--color-total)"
+                      fillOpacity={0.4}
+                      stroke="var(--color-total)"
+                    />
+                  </AreaChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
     </div>
   );
 }
+
+    
