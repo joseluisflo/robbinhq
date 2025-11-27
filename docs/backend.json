@@ -280,6 +280,43 @@
             "type": "string",
             "format": "date-time",
             "description": "The timestamp when this chat session was last analyzed for lead generation."
+        },
+        "visitorInfo": {
+          "type": "object",
+          "properties": {
+            "ip": { "type": ["string", "null"] },
+            "userAgent": { "type": ["string", "null"] },
+            "location": {
+              "type": "object",
+              "properties": {
+                "city": { "type": ["string", "null"] },
+                "region": { "type": ["string", "null"] },
+                "country": { "type": ["string", "null"] }
+              }
+            },
+            "browser": {
+              "type": "object",
+              "properties": {
+                "name": { "type": ["string", "null"] },
+                "version": { "type": ["string", "null"] }
+              }
+            },
+            "os": {
+              "type": "object",
+              "properties": {
+                "name": { "type": ["string", "null"] },
+                "version": { "type": ["string", "null"] }
+              }
+            },
+            "device": {
+              "type": "object",
+              "properties": {
+                "vendor": { "type": ["string", "null"] },
+                "model": { "type": ["string", "null"] },
+                "type": { "type": ["string", "null"] }
+              }
+            }
+          }
         }
       },
       "required": ["title", "createdAt", "lastActivity"]
@@ -507,5 +544,3 @@
     }
   }
 }
-
-    

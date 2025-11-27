@@ -141,22 +141,22 @@ export type ChatSession = {
     ip: string;
     userAgent: string;
     location?: {
-      city: string;
-      region: string;
-      country: string;
+      city: string | null;
+      region: string | null;
+      country: string | null;
     };
     browser?: {
-      name: string;
-      version: string;
+      name: string | null;
+      version: string | null;
     };
     os?: {
-      name: string;
-      version: string;
+      name: string | null;
+      version: string | null;
     };
     device?: {
-      vendor: string;
-      model: string;
-      type: string;
+      vendor: string | null;
+      model: string | null;
+      type: string | null;
     };
   }
 }

@@ -273,9 +273,23 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         try {
             if (userAgent !== 'Unknown') {
                 const parser = new UAParser(userAgent);
-                visitorInfo.browser = parser.getBrowser();
-                visitorInfo.os = parser.getOS();
-                visitorInfo.device = parser.getDevice();
+                const browser = parser.getBrowser();
+                const os = parser.getOS();
+                const device = parser.getDevice();
+                
+                visitorInfo.browser = {
+                    name: browser.name || null,
+                    version: browser.version || null
+                };
+                visitorInfo.os = {
+                    name: os.name || null,
+                    version: os.version || null
+                };
+                visitorInfo.device = {
+                    vendor: device.vendor || null,
+                    model: device.model || null,
+                    type: device.type || null
+                };
             }
         } catch (e) {
              console.warn("Could not parse User Agent:", userAgent, e);
