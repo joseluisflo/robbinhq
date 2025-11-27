@@ -1,22 +1,88 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUser, useFirestore, useCollection, collection, query } from '@/firebase';
+import { useActiveAgent } from '@/app/(main)/layout';
+import type { Lead } from '@/lib/types';
+import { Timestamp } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const leadsData = {
-  newLeads: 54,
-  returningLeads: 198,
-  newPercent: 21.43,
-  returningPercent: 78.57,
-  topSource: 'Widget',
-  leadQuality: 8.2,
-};
 
 export function LeadsOverview() {
+  const { user } = useUser();
+  const { activeAgent } = useActiveAgent();
+  const firestore = useFirestore();
+
+  const leadsQuery = useMemo(() => {
+    if (!user || !activeAgent?.id) return null;
+    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'leads'));
+  }, [user, firestore, activeAgent?.id]);
+  
+  const { data: leads, loading } = useCollection<Lead>(leadsQuery);
+
+  const leadsData = useMemo(() => {
+    if (!leads) return null;
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoTimestamp = Timestamp.fromDate(thirtyDaysAgo);
+
+    const newLeadsCount = leads.filter(lead => lead.createdAt && (lead.createdAt as Timestamp) > thirtyDaysAgoTimestamp).length;
+    const totalLeads = leads.length;
+    const returningLeadsCount = totalLeads - newLeadsCount;
+
+    const newPercent = totalLeads > 0 ? (newLeadsCount / totalLeads) * 100 : 0;
+    const returningPercent = totalLeads > 0 ? (returningLeadsCount / totalLeads) * 100 : 0;
+
+    return {
+        newLeads: newLeadsCount,
+        returningLeads: returningLeadsCount,
+        newPercent: newPercent,
+        returningPercent: returningPercent,
+        topSource: 'Widget', // Hardcoded for now
+        leadQuality: 8.2, // Hardcoded for now
+    };
+  }, [leads]);
+
+  if (loading || !leadsData) {
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between border-0 pt-6 pb-5">
+                <CardTitle>Leads Overview</CardTitle>
+                 <Select defaultValue="this-month" disabled>
+                    <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Select range" />
+                    </SelectTrigger>
+                </Select>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="flex items-stretch gap-x-6 mb-4">
+                    <div className="flex-1 space-y-2">
+                        <Skeleton className="h-8 w-24" />
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-2.5 w-full mt-1" />
+                    </div>
+                     <div className="flex-1 space-y-2 border-s border-muted ps-6">
+                        <Skeleton className="h-8 w-20" />
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-2.5 w-full mt-1" />
+                    </div>
+                </div>
+                <div className="pt-4 border-t">
+                    <Skeleton className="h-8 w-full" />
+                </div>
+            </CardContent>
+        </Card>
+    );
+  }
+  
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between border-0 pt-6 pb-5">
@@ -28,7 +94,6 @@ export function LeadsOverview() {
           <SelectContent>
             <SelectItem value="this-month">This Month</SelectItem>
             <SelectItem value="last-month">Last Month</SelectItem>
-            <SelectItem value="this-year">This Year</SelectItem>
             <SelectItem value="last-year">Last Year</SelectItem>
           </SelectContent>
         </Select>
@@ -39,7 +104,7 @@ export function LeadsOverview() {
             <div className="flex items-center gap-1 mb-1">
               <span className="text-2xl font-bold text-foreground">{leadsData.newLeads}</span>
               <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
-                {leadsData.newPercent}%
+                {leadsData.newPercent.toFixed(0)}%
               </Badge>
             </div>
             <span className="text-sm text-muted-foreground font-medium">New leads</span>
