@@ -1,16 +1,15 @@
+
 'use client';
 
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { useUser, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { Timestamp } from 'firebase/firestore';
-import { useDoc } from '@/firebase/firestore/use-doc';
-import type { userProfile } from '@/lib/types';
+import { useActiveAgent } from '@/app/(main)/layout';
 import { Skeleton } from './ui/skeleton';
 import { format } from 'date-fns';
+import type { Timestamp } from 'firebase/firestore';
+import { ChangePlanDialog } from './settings/change-plan-dialog';
 
 const PLAN_CREDITS = {
   free: 150,
@@ -20,26 +19,20 @@ const PLAN_CREDITS = {
 
 
 export function CreditUsageCard() {
-  const { user } = useUser();
-  const firestore = useFirestore();
-
-  const userProfileRef = useMemo(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
-
-  const { data: userProfile, loading } = useDoc<userProfile>(userProfileRef);
+  const { userProfile, agentsLoading: profileLoading } = useActiveAgent();
 
   const planId = userProfile?.planId || 'free';
   const totalCredits = PLAN_CREDITS[planId] || PLAN_CREDITS.free;
-  const currentCredits = userProfile?.credits ?? totalCredits;
-  const usedCredits = totalCredits - currentCredits;
+  const currentCredits = userProfile?.credits ?? 0;
+  
+  // Ensure usedCredits doesn't go below 0 if currentCredits > totalCredits (e.g., admin grant)
+  const usedCredits = Math.max(0, totalCredits - currentCredits);
   const percentage = totalCredits > 0 ? (usedCredits / totalCredits) * 100 : 0;
   
   const resetDate = userProfile?.creditResetDate ? (userProfile.creditResetDate as Timestamp).toDate() : null;
-  const formattedResetDate = resetDate ? format(resetDate, "MMM d, yyyy 'at' p") : 'N/A';
+  const formattedResetDate = resetDate ? format(resetDate, "MMM d") : 'N/A';
 
-  if (loading) {
+  if (profileLoading) {
     return (
         <Card>
             <CardHeader className="p-2 space-y-1">
@@ -69,9 +62,11 @@ export function CreditUsageCard() {
         <p className="text-xs text-muted-foreground">
           Resets on {formattedResetDate}
         </p>
-        <Button className="w-full mt-3 h-9 font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
-          Upgrade
-        </Button>
+        <ChangePlanDialog>
+            <Button className="w-full mt-3 h-9 font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
+                Upgrade
+            </Button>
+        </ChangePlanDialog>
       </CardContent>
     </Card>
   );
