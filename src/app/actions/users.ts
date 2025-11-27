@@ -1,6 +1,13 @@
+
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
+
+const PLAN_CREDITS = {
+  free: 2000,
+  essential: 15000,
+  pro: 50000,
+};
 
 export async function createUserProfile(userId: string, name: string, email: string): Promise<{ success: boolean } | { error: string }> {
   if (!userId || !name || !email) {
@@ -9,10 +16,26 @@ export async function createUserProfile(userId: string, name: string, email: str
 
   try {
     const firestore = firebaseAdmin.firestore();
+    
+    // Calculate the next credit reset date (30th of the month)
+    const now = new Date();
+    const nextResetDate = new Date(now.getFullYear(), now.getMonth(), 30, 23, 59, 59);
+    
+    // If it's already past the 30th of this month, set it for the next month
+    if (now > nextResetDate) {
+      nextResetDate.setMonth(nextResetDate.getMonth() + 1);
+    }
+    
+    const initialPlanId = 'free';
+    const initialCredits = PLAN_CREDITS[initialPlanId];
+
     await firestore.collection('users').doc(userId).set({
         displayName: name,
         email: email,
-    }, { merge: true }); // Use merge to avoid overwriting agents subcollection if it somehow gets created first.
+        planId: initialPlanId,
+        credits: initialCredits,
+        creditResetDate: nextResetDate,
+    }, { merge: true }); 
 
     return { success: true };
   } catch (e: any) {
