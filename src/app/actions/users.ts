@@ -73,3 +73,25 @@ export async function updateUserProfile(userId: string, data: { displayName?: st
     return { error: e.message || 'Failed to update user profile in Firestore.' };
   }
 }
+
+export async function addCredits(
+  userId: string,
+  amount: number
+): Promise<{ success: boolean; error?: string }> {
+    if (!userId || !amount || amount <= 0) {
+        return { success: false, error: 'Invalid user ID or amount.' };
+    }
+
+    const firestore = firebaseAdmin.firestore();
+    const userRef = firestore.collection('users').doc(userId);
+
+    try {
+        await userRef.set({
+            credits: amount
+        }, { merge: true });
+        return { success: true };
+    } catch (error: any) {
+         console.error(`Failed to add ${amount} credits for user ${userId}:`, error);
+        return { success: false, error: 'Failed to update user credits.' };
+    }
+}
