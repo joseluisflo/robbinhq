@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useUser, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, type Timestamp } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import type { userProfile } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
@@ -35,7 +35,7 @@ export function CreditUsageCard() {
   const usedCredits = totalCredits - currentCredits;
   const percentage = totalCredits > 0 ? (usedCredits / totalCredits) * 100 : 0;
   
-  const resetDate = userProfile?.creditResetDate?.toDate();
+  const resetDate = userProfile?.creditResetDate ? (userProfile.creditResetDate as Timestamp).toDate() : null;
   const formattedResetDate = resetDate ? format(resetDate, "MMM d, yyyy 'at' p") : 'N/A';
 
   if (loading) {
