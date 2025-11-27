@@ -31,7 +31,7 @@ import { exportAgentData } from "@/app/actions/export";
 
 
 export function PrivacySettings() {
-    const { activeAgent, setActiveAgent } = useActiveAgent();
+    const { activeAgent, setActiveAgent, userProfile } = useActiveAgent();
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -44,6 +44,7 @@ export function PrivacySettings() {
     const [isDeletingLeads, startDeletingLeads] = useTransition();
     const [isExporting, startExporting] = useTransition();
 
+    const isFreePlan = userProfile?.planId === 'free';
     const isChanged = retention !== (activeAgent?.dataRetentionPolicy || '90') || anonymize !== (activeAgent?.anonymizeData || false);
 
     useEffect(() => {
@@ -144,6 +145,7 @@ export function PrivacySettings() {
                         value={retention}
                         onValueChange={(v) => setRetention(v as '30' | '90' | '365' | 'forever')}
                         className="relative grid grid-cols-4 items-center justify-center rounded-lg bg-muted p-1 text-center font-medium text-sm"
+                        disabled={isFreePlan}
                     >
                          <div
                             className="absolute h-[calc(100%-0.5rem)] rounded-md bg-background shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
@@ -158,17 +160,21 @@ export function PrivacySettings() {
                                 htmlFor={`retention-${option.value}`}
                                 className={cn(
                                     "relative z-10 flex h-full cursor-pointer select-none items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors",
-                                    retention === option.value ? "text-foreground" : "text-muted-foreground"
+                                    retention === option.value ? "text-foreground" : "text-muted-foreground",
+                                    isFreePlan && "cursor-not-allowed opacity-50"
                                 )}
                             >
                                 {option.label}
-                                <RadioGroupItem value={option.value} id={`retention-${option.value}`} className="sr-only" />
+                                <RadioGroupItem value={option.value} id={`retention-${option.value}`} className="sr-only" disabled={isFreePlan} />
                             </Label>
                         ))}
                     </RadioGroup>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    Conversation logs will be automatically deleted after this period.
+                    {isFreePlan 
+                      ? "Upgrade to Essential or Pro to customize data retention."
+                      : "Conversation logs will be automatically deleted after this period."
+                    }
                 </p>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-4">
