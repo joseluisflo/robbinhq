@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { generateAgentInstructions } from '@/ai/flows/agent-instruction-generation';
@@ -260,9 +261,9 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
                 const geoResponse = await fetch(`https://get.geojs.io/v1/ip/geo/${ip}.json`);
                 const geoData = await geoResponse.json();
                 visitorInfo.location = {
-                    city: geoData.city,
-                    region: geoData.region,
-                    country: geoData.country,
+                    city: geoData.city || null,
+                    region: geoData.region || null,
+                    country: geoData.country || null,
                 };
             }
         } catch (e) {
