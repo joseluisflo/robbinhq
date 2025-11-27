@@ -15,8 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Bot, CheckCircle, Clock, ArrowUpRight, Zap, MessageSquare, Info, Separator, Download, Calendar, MoreHorizontal } from 'lucide-react';
+import { Bot, CheckCircle, Clock, ArrowUpRight, Zap, MessageSquare, Info, Download, Calendar, MoreHorizontal } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
 import {
@@ -28,7 +35,7 @@ import {
   Tooltip as RechartsTooltip,
   CartesianGrid,
 } from 'recharts';
-import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 
 const cards = [
@@ -388,5 +395,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
