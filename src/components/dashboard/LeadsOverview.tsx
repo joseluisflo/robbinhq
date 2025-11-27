@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -54,7 +55,6 @@ export function LeadsOverview() {
         newPercent: newPercent,
         returningPercent: returningPercent,
         topSource: topSource,
-        leadQuality: 8.2, // Hardcoded for now
     };
   }, [leads]);
 
@@ -148,22 +148,6 @@ export function LeadsOverview() {
           <div className="flex flex-col flex-1 gap-0.5">
             <span className="text-xs text-muted-foreground">Top Source</span>
             <span className="text-sm font-medium text-foreground">{leadsData.topSource}</span>
-          </div>
-          <div className="flex flex-col flex-1 gap-0.5 ps-6 border-l border-muted">
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              Lead Quality
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="size-3.5 text-muted-foreground cursor-pointer" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <span>An internal score based on interaction depth.</span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </span>
-            <span className="text-sm font-medium text-foreground">{leadsData.leadQuality} / 10</span>
           </div>
         </div>
       </CardContent>
