@@ -54,6 +54,7 @@ export async function createAgent(userId: string, name: string, description: str
       chatBubbleAlignment: 'right',
       chatInputPlaceholder: 'Ask anything',
       isFeedbackEnabled: true,
+      isBargeInEnabled: true,
       isBrandingEnabled: true,
       agentVoice: 'Zephyr',
     };
@@ -201,24 +202,31 @@ async function addLogStep(logRef: FirebaseFirestore.DocumentReference, descripti
 
 export async function getAgentResponse(input: AgentResponseInput): Promise<AgentResponse> {
   const { userId, agentId, message, runId, sessionId } = input;
-  if (!userId || !agentId || !sessionId) {
+  if (!agentId || !sessionId) {
     return { error: 'Sorry, I cannot respond without an agent context.' };
   }
   
   const firestore = firebaseAdmin.firestore();
   
   try {
-    const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+    // --- AGENT FINDER LOGIC ---
+    // Use a collectionGroup query to find the agent by its ID, which is more robust.
+    const agentQuerySnapshot = await firestore.collectionGroup('agents').where('__name__', '==', agentId).limit(1).get();
+    
+    if (agentQuerySnapshot.empty) {
+        return { error: 'Agent not found.' };
+    }
+    const agentDoc = agentQuerySnapshot.docs[0];
+    const agent = agentDoc.data() as Agent;
+    const agentRef = agentDoc.ref;
+    // The actual owner of the agent, needed for credit deduction and other user-specific logic.
+    const agentOwnerUserId = agentRef.parent.parent!.id; 
+    // --- END AGENT FINDER ---
+
     const sessionRef = agentRef.collection('sessions').doc(sessionId);
     const messagesPath = sessionRef.collection('messages').path;
 
     await saveMessage(firestore, messagesPath, { sender: 'user', text: message });
-
-    const agentDoc = await agentRef.get();
-    if (!agentDoc.exists) {
-      return { error: 'Agent not found.' };
-    }
-    const agent = agentDoc.data() as Agent;
 
     // --- LOGGING ---
     const logTitle = `Conversation with Visitor`; // Simplified title
@@ -304,7 +312,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       await addLogStep(logRef, `Triggering workflow: "${selectedWorkflowId}"`);
       // Workflow credit logic is handled inside runOrResumeWorkflow
       const workflowResult = await runOrResumeWorkflow({
-        userId,
+        userId: agentOwnerUserId,
         agentId,
         workflowId: selectedWorkflowId,
         runId,
@@ -339,7 +347,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       };
     } else {
       // Standard Chat: Deduct 1 credit for a simple chat response.
-      const creditResult = await deductCredits(userId, 1);
+      const creditResult = await deductCredits(agentOwnerUserId, 1);
       if (!creditResult.success) {
         await addLogStep(logRef, `Credit deduction failed: ${creditResult.error}`);
         await logRef.update({ status: 'error' });
@@ -376,10 +384,13 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
     console.error('Failed to get agent response:', e);
     // Log error to Firestore if possible
     try {
-        const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
-        const logRef = await getOrCreateInteractionLog(firestore, agentRef, sessionId, "Failed Interaction", 'Chat');
-        await addLogStep(logRef, `Critical Error: ${e.message}`);
-        await logRef.update({ status: 'error' });
+        const agentRefQuery = await firestore.collectionGroup('agents').where('__name__', '==', agentId).limit(1).get();
+        if(!agentRefQuery.empty) {
+            const agentRef = agentRefQuery.docs[0].ref;
+            const logRef = await getOrCreateInteractionLog(firestore, agentRef, sessionId, "Failed Interaction", 'Chat');
+            await addLogStep(logRef, `Critical Error: ${e.message}`);
+            await logRef.update({ status: 'error' });
+        }
     } catch (logError) {
         console.error("Failed to even write the error log:", logError);
     }

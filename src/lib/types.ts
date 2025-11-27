@@ -45,6 +45,7 @@ export type Agent = {
   chatBubbleAlignment?: 'left' | 'right';
   chatInputPlaceholder?: string;
   isFeedbackEnabled?: boolean;
+  isBargeInEnabled?: boolean;
   isBrandingEnabled?: boolean;
   agentVoice?: string;
   orbColors?: {
