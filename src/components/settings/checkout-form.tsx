@@ -37,13 +37,11 @@ export function CheckoutForm({ onGoBack, plan, setPaymentStatus, setStep }: Chec
 
     setIsLoading(true);
 
-    const { error } = await stripe.confirmPayment({
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        // Return URL is not strictly needed if we handle result on this page
-        return_url: `${window.location.origin}/payment-status`,
+        // We don't need a return_url as we will handle the result on this page.
       },
-      // Redirect is handled manually below based on status
       redirect: 'if_required', 
     });
 
@@ -54,14 +52,15 @@ export function CheckoutForm({ onGoBack, plan, setPaymentStatus, setStep }: Chec
         setMessage("An unexpected error occurred.");
       }
       setPaymentStatus('error');
-      setStep(3);
     } else {
-      // The payment has been processed!
-      // The webhook will handle the backend update. We can show success here.
-      setPaymentStatus('succeeded');
-      setStep(3);
+      if (paymentIntent && paymentIntent.status === 'succeeded') {
+        setPaymentStatus('succeeded');
+      } else {
+        setPaymentStatus(paymentIntent?.status || 'error');
+      }
     }
-
+    
+    setStep(3); // Move to the status step regardless of outcome
     setIsLoading(false);
   };
 
