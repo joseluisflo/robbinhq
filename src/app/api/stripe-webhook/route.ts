@@ -7,6 +7,11 @@ import { firebaseAdmin } from '@/firebase/admin';
 import type { userProfile } from '@/lib/types';
 import { headers } from 'next/headers';
 
+// Force Node.js runtime to ensure Stripe webhook processing
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
