@@ -1,4 +1,4 @@
-import { Cpu, Lock, Sparkles, Zap } from 'lucide-react'
+import { Cpu, Lock, Sparkles, Zap, Waypoints, AreaChart, Database, Shield } from 'lucide-react'
 import Image from 'next/image'
 
 export default function FeaturesSection() {
@@ -37,32 +37,31 @@ export default function FeaturesSection() {
                 <div className="relative mx-auto grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 lg:grid-cols-4">
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                            <Zap className="size-4" />
-                            <h3 className="text-sm font-medium">Faaast</h3>
+                            <Waypoints className="size-4" />
+                            <h3 className="text-sm font-medium">Workflows</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">It supports an entire helping developers and innovate.</p>
+                        <p className="text-muted-foreground text-sm">Automate complex tasks and processes effortlessly.</p>
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                            <Cpu className="size-4" />
-                            <h3 className="text-sm font-medium">Powerful</h3>
+                            <AreaChart className="size-4" />
+                            <h3 className="text-sm font-medium">Analytics</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">It supports an entire helping developers and businesses.</p>
+                        <p className="text-muted-foreground text-sm">Gain insights from interactions and performance.</p>
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                            <Lock className="size-4" />
+                            <Database className="size-4" />
+                            <h3 className="text-sm font-medium">Your Data</h3>
+                        </div>
+                        <p className="text-muted-foreground text-sm">Maintain full ownership and control always.</p>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                            <Shield className="size-4" />
                             <h3 className="text-sm font-medium">Security</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">It supports an helping developers businesses innovate.</p>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <Sparkles className="size-4" />
-
-                            <h3 className="text-sm font-medium">AI Powered</h3>
-                        </div>
-                        <p className="text-muted-foreground text-sm">It supports an helping developers businesses innovate.</p>
+                        <p className="text-muted-foreground text-sm">Enterprise-grade protection for your information.</p>
                     </div>
                 </div>
             </div>
