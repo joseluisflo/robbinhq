@@ -5,36 +5,60 @@ import { Bold, Calendar1, Ellipsis, Italic, Strikethrough, Underline } from 'luc
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
-export default function FeaturesSection() {
+interface FeatureCardProps {
+    title: string;
+    description: string;
+    illustration: 'code' | 'schedule';
+}
+
+interface FeaturesFourProps {
+    title: string;
+    description: string;
+    card1: FeatureCardProps;
+    card2: FeatureCardProps;
+}
+
+export default function FeaturesFour({ title, description, card1, card2 }: FeaturesFourProps) {
     return (
         <section>
             <div className="bg-muted/50 py-24">
                 <div className="mx-auto w-full max-w-5xl px-6">
                     <div>
-                        <h2 className="text-foreground mt-4 text-4xl font-semibold">Personal AI, with you Anywhere</h2>
-                        <p className="text-muted-foreground mb-12 mt-4 text-balance text-lg">Quick AI lives a single hotkey away - ready to quickly appear as a floating window above your other apps. Get instant assistance whether you're browsing, coding, or writing documents.</p>
+                        <h2 className="text-foreground mt-4 text-4xl font-semibold">{title}</h2>
+                        <p className="text-muted-foreground mb-12 mt-4 text-balance text-lg">{description}</p>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <Card className="p-6">
                             <div className="flex aspect-video items-center justify-center">
-                                <CodeIllustration className="w-full" />
+                                {card1.illustration === 'code' ? (
+                                    <CodeIllustration className="w-full" />
+                                ) : (
+                                    <ScheduleIllustation
+                                        className="border"
+                                        variant="mixed"
+                                    />
+                                )}
                             </div>
                             <div className="text-center">
-                                <h3 className="text-foreground text-xl font-semibold">Marketing Campaigns</h3>
-                                <p className="text-muted-foreground mt-4 text-balance text-lg">Effortlessly plan and execute your marketing campaigns organized.</p>
+                                <h3 className="text-foreground text-xl font-semibold">{card1.title}</h3>
+                                <p className="text-muted-foreground mt-4 text-balance text-lg">{card1.description}</p>
                             </div>
                         </Card>
-                        <Card className="p-6">
+                         <Card className="p-6">
                             <div className="flex aspect-video items-center justify-center">
-                                <ScheduleIllustation
-                                    className="border"
-                                    variant="mixed"
-                                />
+                                {card2.illustration === 'code' ? (
+                                    <CodeIllustration className="w-full" />
+                                ) : (
+                                    <ScheduleIllustation
+                                        className="border"
+                                        variant="mixed"
+                                    />
+                                )}
                             </div>
                             <div className="text-center">
-                                <h3 className="text-foreground text-xl font-semibold">AI Meeting Scheduler</h3>
-                                <p className="text-muted-foreground mt-4 text-balance text-lg">Effortlessly book and manage your meetings. Stay on top of your schedule.</p>
+                                <h3 className="text-foreground text-xl font-semibold">{card2.title}</h3>
+                                <p className="text-muted-foreground mt-4 text-balance text-lg">{card2.description}</p>
                             </div>
                         </Card>
                     </div>
