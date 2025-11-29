@@ -2,7 +2,7 @@
 
 import HeroSection from '@/components/landing/hero-section-three';
 import FeaturesFour from '@/components/landing/features-four';
-import TestimonialsThree from '@/components/landing/testimonials-three';
+import Testimonials from '@/components/landing/testimonials';
 import FeaturesSix from '@/components/landing/features-6';
 import ContentThree from '@/components/landing/content-3';
 import CallToAction from '@/components/landing/call-to-action';
@@ -16,7 +16,7 @@ export default function Home() {
       <main className="flex-1">
         <HeroSection />
         <FeaturesFour />
-        <TestimonialsThree />
+        <Testimonials />
         <FeaturesSix />
         <ContentThree />
         <CallToAction />
