@@ -10,7 +10,7 @@ export default function HeroSection() {
             <HeroHeader />
             <main className="bg-muted/50 overflow-hidden">
                 <section>
-                    <div className="relative py-24">
+                    <div className="relative pt-32 pb-24">
                         <div className="mx-auto max-w-5xl px-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                                 <h1 className="text-4xl font-bold lg:text-5xl">Build 10x Faster with Mist</h1>
