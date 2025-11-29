@@ -41,28 +41,28 @@ export default function FeaturesSection() {
                             <AutomationIcon variant="duotone" className="size-4" style={{ color: '#00a6f4' }} />
                             <h3 className="text-sm font-medium">Workflows</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">Automate complex tasks and processes effortlessly with our intuitive builder.</p>
+                        <p className="text-muted-foreground text-sm">Automate complex tasks and processes effortlessly.</p>
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
                             <Chart01Icon variant="duotone" className="size-4" style={{ color: '#f48700' }} />
                             <h3 className="text-sm font-medium">Analytics</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">Gain powerful insights from every single customer interaction.</p>
+                        <p className="text-muted-foreground text-sm">Gain powerful insights from every customer interaction.</p>
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
                             <DatabaseIcon variant="duotone" className="size-4" style={{ color: '#32e48c' }} />
                             <h3 className="text-sm font-medium">Your Data</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">Maintain full ownership and control, ensuring your data remains yours.</p>
+                        <p className="text-muted-foreground text-sm">Maintain full ownership and control over data.</p>
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
                             <ShieldIcon variant="duotone" className="size-4" style={{ color: '#e751aa' }} />
                             <h3 className="text-sm font-medium">Security</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">Enterprise-grade protection for all of your valuable information.</p>
+                        <p className="text-muted-foreground text-sm">Enterprise-grade protection for all your valuable information.</p>
                     </div>
                 </div>
             </div>
