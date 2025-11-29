@@ -16,7 +16,7 @@ export default function Home() {
       <main className="flex-1">
         <HeroSection />
         <FeaturesFour 
-            title="Give Your Agent a Brain"
+            title="First: Give Your Agent a Brain"
             description="Upload documents, paste text, or connect your knowledge bases. Your agent learns instantly, no code required."
             card1={{
                 title: "Marketing Campaigns",
@@ -44,7 +44,7 @@ export default function Home() {
             }}
         />
         <FeaturesFour 
-            title="Deploy with a Click"
+            title="You're Ready: Deploy with a Click"
             description="Embed your agent on your website, connect it to an email, or a phone number. Serve your customers wherever they are."
             card1={{
                 title: "Service Integration",
