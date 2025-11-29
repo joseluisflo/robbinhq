@@ -6,7 +6,7 @@ export default function FeaturesSection() {
         <section className="py-16 md:py-32">
             <div className="mx-auto max-w-5xl space-y-12 px-6">
                 <div className="relative z-10 grid items-center gap-4 md:grid-cols-2 md:gap-12">
-                    <h2 className="text-4xl font-medium">The Lyra ecosystem brings together our models</h2>
+                    <h2 className="text-4xl font-medium">The ecosystem that brings together our models</h2>
                     <p className="max-w-sm sm:ml-auto">Empower your team with workflows that adapt to your needs, whether you prefer git synchronization or a AI Agents interface.</p>
                 </div>
                 <div className="px-3 pt-3 md:-mx-8">
@@ -47,14 +47,14 @@ export default function FeaturesSection() {
                             <AreaChart className="size-4" />
                             <h3 className="text-sm font-medium">Analytics</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">Gain insights from interactions and performance.</p>
+                        <p className="text-muted-foreground text-sm">Gain powerful insights from every interaction.</p>
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
                             <Database className="size-4" />
                             <h3 className="text-sm font-medium">Your Data</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">Maintain full ownership and control always.</p>
+                        <p className="text-muted-foreground text-sm">Maintain full ownership and control, always.</p>
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
