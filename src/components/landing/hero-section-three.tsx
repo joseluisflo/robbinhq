@@ -15,7 +15,7 @@ export default function HeroSection() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                                 <h1 className="text-5xl font-bold lg:text-5xl leading-normal">Automate support. Win time.</h1>
                                 <div className="space-y-6">
-                                    <p className="text-xl">Craft. Build. Ship Modern Websites With AI Support.</p>
+                                    <p className="text-xl">Create, train, and deploy AI support agents that respond naturally in minutes.</p>
                                     <div className="grid sm:flex items-start gap-3">
                                         <Button
                                             asChild
