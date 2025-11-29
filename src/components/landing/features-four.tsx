@@ -23,7 +23,7 @@ export default function FeaturesFour({ title, description, card1, card2 }: Featu
         <section>
             <div className="bg-muted/50 py-24">
                 <div className="mx-auto w-full max-w-5xl px-6">
-                    <div>
+                    <div className="max-w-xl">
                         <h2 className="text-foreground mt-4 text-4xl font-medium">{title}</h2>
                         <p className="text-muted-foreground mb-12 mt-4 text-balance text-lg">{description}</p>
                     </div>
