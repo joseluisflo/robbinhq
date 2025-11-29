@@ -8,3 +8,4 @@ export * from './UserGroupIcon';
 export * from './IA01Icon';
 export * from './Chat02Icon';
 export * from './AutomationIcon';
+export * from './Chart01Icon';
