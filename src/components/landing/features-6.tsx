@@ -1,13 +1,14 @@
-import { Cpu, Lock, Sparkles, Zap, Waypoints, AreaChart, Database, Shield } from 'lucide-react'
+import { Cpu, Lock, Sparkles, Zap } from 'lucide-react'
 import Image from 'next/image'
+import { AutomationIcon, Chart01Icon, DatabaseIcon, ShieldIcon } from '@/components/lo-icons'
 
 export default function FeaturesSection() {
     return (
         <section className="py-16 md:py-32">
             <div className="mx-auto max-w-5xl space-y-12 px-6">
                 <div className="relative z-10 grid items-center gap-4 md:grid-cols-2 md:gap-12">
-                    <h2 className="text-4xl font-medium">The ecosystem that brings together our models</h2>
-                    <p className="max-w-sm sm:ml-auto">Empower your team with workflows that adapt to your needs, whether you prefer git synchronization or a AI Agents interface.</p>
+                    <h2 className="text-4xl font-medium">The ecosystem that brings our models together</h2>
+                    <p className="max-w-sm sm:ml-auto">Build with confidence, knowing you have a robust and secure foundation for your agents.</p>
                 </div>
                 <div className="px-3 pt-3 md:-mx-8">
                     <div className="aspect-88/36 mask-b-from-75% mask-b-to-95% relative">
@@ -37,31 +38,31 @@ export default function FeaturesSection() {
                 <div className="relative mx-auto grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 lg:grid-cols-4">
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                            <Waypoints className="size-4" />
+                            <AutomationIcon variant="duotone" className="size-4" />
                             <h3 className="text-sm font-medium">Workflows</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">Automate complex tasks and processes effortlessly.</p>
+                        <p className="text-muted-foreground text-sm">Automate complex tasks and processes effortlessly with our intuitive builder.</p>
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                            <AreaChart className="size-4" />
+                            <Chart01Icon variant="duotone" className="size-4" />
                             <h3 className="text-sm font-medium">Analytics</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">Gain powerful insights from every interaction.</p>
+                        <p className="text-muted-foreground text-sm">Gain powerful insights from every single customer interaction.</p>
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                            <Database className="size-4" />
+                            <DatabaseIcon variant="duotone" className="size-4" />
                             <h3 className="text-sm font-medium">Your Data</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">Maintain full ownership and control, always.</p>
+                        <p className="text-muted-foreground text-sm">Maintain full ownership and control, ensuring your data remains yours.</p>
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                            <Shield className="size-4" />
+                            <ShieldIcon variant="duotone" className="size-4" />
                             <h3 className="text-sm font-medium">Security</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm">Enterprise-grade protection for your information.</p>
+                        <p className="text-muted-foreground text-sm">Enterprise-grade protection for all of your valuable information.</p>
                     </div>
                 </div>
             </div>
