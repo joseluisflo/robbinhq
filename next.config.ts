@@ -9,13 +9,6 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  devIndicators: {
-    buildActivity: false,
-    appIsrStatus: false,
-  },
-  experimental: {
-    allowedDevOrigins: ["6000-firebase-studio-1762494871433.cluster-fsmcisrvfbb5cr5mvra3hr3qyg.cloudworkstations.dev"],
-  },
   async headers() {
     return [
       {
