@@ -16,8 +16,8 @@ export default function Home() {
       <main className="flex-1">
         <HeroSection />
         <FeaturesFour 
-            title="Personal AI, with you Anywhere"
-            description="Quick AI lives a single hotkey away - ready to quickly appear as a floating window above your other apps. Get instant assistance whether you're browsing, coding, or writing documents."
+            title="Give Your Agent a Brain"
+            description="Upload documents, paste text, or connect your knowledge bases. Your agent learns instantly, no code required."
             card1={{
                 title: "Marketing Campaigns",
                 description: "Effortlessly plan and execute your marketing campaigns organized.",
@@ -30,8 +30,8 @@ export default function Home() {
             }}
         />
         <FeaturesFour 
-            title="Design and Develop at the Speed of Thought"
-            description="Generate code, iterate on designs, and build entire applications with natural language. Our AI understands your intent and helps you ship faster."
+            title="Your Agent, Your Brand"
+            description="Customize colors, logos, and the widget's position. Make your AI agent blend seamlessly with your brand identity."
             card1={{
                 title: "Component Generation",
                 description: "Describe the component you need, and let the AI write the code for you.",
@@ -44,8 +44,8 @@ export default function Home() {
             }}
         />
         <FeaturesFour 
-            title="Automate Workflows and Integrate Services"
-            description="Connect your favorite tools and build powerful automations. Let your AI agent handle repetitive tasks so you can focus on what matters."
+            title="Deploy with a Click"
+            description="Embed your agent on your website, connect it to an email, or a phone number. Serve your customers wherever they are."
             card1={{
                 title: "Service Integration",
                 description: "Connect to APIs and services like Stripe, Twilio, and more with ease.",
