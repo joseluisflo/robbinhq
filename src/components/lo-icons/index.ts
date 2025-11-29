@@ -10,3 +10,4 @@ export * from './Chat02Icon';
 export * from './AutomationIcon';
 export * from './Chart01Icon';
 export * from './DatabaseIcon';
+export * from './ShieldIcon';
