@@ -16,7 +16,7 @@ export default function HeroSection() {
                                 <h1 className="text-5xl font-bold lg:text-6xl leading-normal">Build 10x Faster with Mist</h1>
                                 <div className="space-y-6">
                                     <p className="text-xl">Craft. Build. Ship Modern Websites With AI Support.</p>
-                                    <div className="flex flex-col sm:flex-row items-start gap-3">
+                                    <div className="grid sm:flex items-start gap-3">
                                         <Button
                                             asChild
                                             size="lg"
