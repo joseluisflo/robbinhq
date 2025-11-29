@@ -1,8 +1,9 @@
+
 import { cn } from '@/lib/utils';
 import * as React from 'react';
 
 interface LoIconProps extends React.SVGProps<SVGSVGElement> {
-  variant?: 'stroke' | 'filled';
+  variant?: 'stroke' | 'filled' | 'duotone';
 }
 
 export function PenToolIcon({ variant = 'stroke', className, ...props }: LoIconProps) {

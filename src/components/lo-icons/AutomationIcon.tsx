@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import * as React from 'react';
 
 interface LoIconProps extends React.SVGProps<SVGSVGElement> {
-  variant?: 'stroke' | 'filled';
+  variant?: 'stroke' | 'filled' | 'duotone';
 }
 
 export function AutomationIcon({ variant = 'stroke', className, ...props }: LoIconProps) {
@@ -15,6 +15,19 @@ export function AutomationIcon({ variant = 'stroke', className, ...props }: LoIc
             <path d="M15.25 9.5C15.25 7.70507 16.7051 6.25 18.5 6.25C20.2949 6.25 21.75 7.70507 21.75 9.5C21.75 11.2949 20.2949 12.75 18.5 12.75C16.7051 12.75 15.25 11.2949 15.25 9.5Z" fill="currentColor"></path>
             <path d="M2.25 14.5C2.25 12.7051 3.70507 11.25 5.5 11.25C7.29493 11.25 8.75 12.7051 8.75 14.5C8.75 16.2949 7.29493 17.75 5.5 17.75C3.70507 17.75 2.25 16.2949 2.25 14.5Z" fill="currentColor"></path>
             <path d="M2.25 4.5C2.25 2.70507 3.70507 1.25 5.5 1.25C7.29493 1.25 8.75 2.70507 8.75 4.5C8.75 6.29493 7.29493 7.75 5.5 7.75C3.70507 7.75 2.25 6.29493 2.25 4.5Z" fill="currentColor"></path>
+        </svg>
+    );
+  }
+  if (variant === 'duotone') {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" className={cn(className)} {...props}>
+            <path opacity="0.4" d="M21 19.5C21 20.8807 19.8807 22 18.5 22C17.1193 22 16 20.8807 16 19.5C16 18.1193 17.1193 17 18.5 17C19.8807 17 21 18.1193 21 19.5Z" fill="currentColor"></path>
+            <path opacity="0.4" d="M8 4.5C8 5.88071 6.88071 7 5.5 7C4.11929 7 3 5.88071 3 4.5C3 3.11929 4.11929 2 5.5 2C6.88071 2 8 3.11929 8 4.5Z" fill="currentColor"></path>
+            <path d="M21 19.5C21 20.8807 19.8807 22 18.5 22C17.1193 22 16 20.8807 16 19.5C16 18.1193 17.1193 17 18.5 17C19.8807 17 21 18.1193 21 19.5Z" stroke="currentColor" strokeWidth="2"></path>
+            <path d="M21 9.5C21 10.8807 19.8807 12 18.5 12C17.1193 12 16 10.8807 16 9.5C16 8.11929 17.1193 7 18.5 7C19.8807 7 21 8.11929 21 9.5Z" stroke="currentColor" strokeWidth="2"></path>
+            <path d="M8 14.5C8 15.8807 6.88071 17 5.5 17C4.11929 17 3 15.8807 3 14.5C3 13.1193 4.11929 12 5.5 12C6.88071 12 8 13.1193 8 14.5Z" stroke="currentColor" strokeWidth="2"></path>
+            <path d="M8 4.5C8 5.88071 6.88071 7 5.5 7C4.11929 7 3 5.88071 3 4.5C3 3.11929 4.11929 2 5.5 2C6.88071 2 8 3.11929 8 4.5Z" stroke="currentColor" strokeWidth="2"></path>
+            <path d="M8 4.5L15.5 9.5L8.5 14.5L16 19.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
         </svg>
     );
   }
