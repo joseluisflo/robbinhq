@@ -13,7 +13,7 @@ export default function HeroSection() {
                     <div className="relative pt-32 pb-24">
                         <div className="mx-auto max-w-5xl px-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                                <h1 className="text-4xl font-bold lg:text-5xl">Build 10x Faster with Mist</h1>
+                                <h1 className="text-5xl font-bold lg:text-6xl">Build 10x Faster with Mist</h1>
                                 <div className="space-y-6">
                                     <p className="text-xl">Craft. Build. Ship Modern Websites With AI Support.</p>
                                     <div className="flex flex-col items-start gap-3 *:w-full sm:flex-row sm:*:w-fit">
