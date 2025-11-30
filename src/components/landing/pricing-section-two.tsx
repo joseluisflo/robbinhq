@@ -36,9 +36,9 @@ export default function Pricing() {
                                     {[
                                         { text: '150 credits', included: true },
                                         { text: '1 Agent', included: true },
-                                        { text: '400kb Training Data', included: true },
-                                        { text: 'Deploy 2 Channel', included: false },
-                                        { text: 'Limited Data retention', included: false },
+                                        { text: '400KB for Data Training', included: true },
+                                        { text: 'Deploy 2 Channel', included: true },
+                                        { text: 'Limited Data retention', included: true },
                                         { text: 'Watermark', included: true },
                                     ].map((item, index) => (
                                         <li
