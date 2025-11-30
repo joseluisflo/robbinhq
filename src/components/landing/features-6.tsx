@@ -7,8 +7,8 @@ export default function FeaturesSection() {
         <section className="bg-muted/50 py-16 md:py-32">
             <div className="mx-auto max-w-5xl space-y-12 px-6">
                 <div className="relative z-10 grid items-center gap-4 md:grid-cols-2 md:gap-12">
-                    <h2 className="text-4xl font-medium">The ecosystem that brings our models together</h2>
-                    <p className="max-w-sm sm:ml-auto">Build with confidence, knowing you have a robust and secure foundation for your agents.</p>
+                    <h2 className="text-4xl font-medium">Foundation features that power your business</h2>
+                    <p className="max-w-sm sm:ml-auto">Integrated features working seamlessly to ensure better performance, improved clarity, and ongoing growth.</p>
                 </div>
                 <div className="px-3 pt-3 md:-mx-8">
                     <div className="aspect-88/36 mask-b-from-75% mask-b-to-95% relative">
