@@ -45,7 +45,7 @@ export default function Pricing() {
                                     ))}
                                 </ul>
                             </div>
-                            <div className="ring-foreground/10 bg-background rounded-(--radius) @3xl:mx-0 @3xl:-my-3 -mx-1 border-transparent shadow ring-1">
+                            <div className="ring-foreground/10 bg-background rounded-[var(--radius)] @3xl:mx-0 @3xl:-my-3 -mx-1 border-transparent shadow ring-1">
                                 <div className="@3xl:py-3 @3xl:px-0 relative px-1">
                                     <CardHeader className="p-8">
                                         <CardTitle className="font-medium">Pro</CardTitle>
@@ -63,7 +63,18 @@ export default function Pricing() {
                                     <ul
                                         role="list"
                                         className="space-y-3 p-8">
-                                        {['Everything in Free Plan', '5GB Cloud Storage', 'Email and Chat Support', 'Access to Community Forum', 'Single User Access', 'Access to Basic Templates', 'Mobile App Access', '1 Custom Report Per Month', 'Monthly Product Updates', 'Standard Security Features'].map((item, index) => (
+                                        {[
+                                            'Everything in Free Plan', 
+                                            '5GB Cloud Storage', 
+                                            'Email and Chat Support', 
+                                            'Access to Community Forum', 
+                                            'Single User Access', 
+                                            'Access to Basic Templates', 
+                                            'Mobile App Access', 
+                                            '1 Custom Report Per Month', 
+                                            'Monthly Product Updates', 
+                                            'Standard Security Features'
+                                        ].map((item, index) => (
                                             <li
                                                 key={index}
                                                 className="flex items-center gap-2">
