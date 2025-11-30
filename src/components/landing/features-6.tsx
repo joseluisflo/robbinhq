@@ -1,3 +1,4 @@
+
 import { Cpu, Lock, Sparkles, Zap } from 'lucide-react'
 import Image from 'next/image'
 import { AutomationIcon, Chart01Icon, DatabaseIcon, ShieldIcon } from '@/components/lo-icons'
@@ -10,7 +11,13 @@ export default function FeaturesSection() {
                     <h2 className="text-4xl font-medium">Foundation features that power your business</h2>
                     <p className="max-w-sm sm:ml-auto">Integrated features working seamlessly to ensure better performance, improved clarity, and ongoing growth.</p>
                 </div>
-                <div className="px-3 pt-3 md:-mx-8">
+                <div
+                  className="rounded-[var(--radius)] p-4 bg-cover bg-center"
+                  style={{
+                    backgroundImage:
+                      "url('https://assets.tryrobbin.com/assets/home-masthead-bg.webp')",
+                  }}
+                >
                     <div className="aspect-88/36 mask-b-from-75% mask-b-to-95% relative">
                         <Image
                             src="/mail-upper.png"
