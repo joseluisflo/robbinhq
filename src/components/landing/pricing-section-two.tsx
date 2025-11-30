@@ -1,5 +1,6 @@
+
 import { Button } from '@/components/ui/button'
-import { Check } from 'lucide-react'
+import { Check, XIcon } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
@@ -32,15 +33,29 @@ export default function Pricing() {
                                 <ul
                                     role="list"
                                     className="space-y-3 p-8">
-                                    {['Basic Analytics Dashboard', '5GB Cloud Storage', 'Email and Chat Support'].map((item, index) => (
+                                    {[
+                                        { text: '150 credits', included: true },
+                                        { text: '1 Agent', included: true },
+                                        { text: '400kb Training Data', included: true },
+                                        { text: 'Deploy 2 Channel', included: false },
+                                        { text: 'Limited Data retention', included: false },
+                                        { text: 'Watermark', included: true },
+                                    ].map((item, index) => (
                                         <li
                                             key={index}
                                             className="flex items-center gap-2">
-                                            <Check
-                                                className="text-primary size-3"
-                                                strokeWidth={3.5}
-                                            />
-                                            {item}
+                                            {item.included ? (
+                                                <Check
+                                                    className="text-primary size-3"
+                                                    strokeWidth={3.5}
+                                                />
+                                            ) : (
+                                                <XIcon
+                                                    className="text-muted-foreground/50 size-3"
+                                                    strokeWidth={3.5}
+                                                />
+                                            )}
+                                            <span className={!item.included ? 'text-muted-foreground/50' : ''}>{item.text}</span>
                                         </li>
                                     ))}
                                 </ul>
