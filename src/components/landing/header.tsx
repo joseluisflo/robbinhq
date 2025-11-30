@@ -1,3 +1,4 @@
+
 'use client'
 import Link from 'next/link'
 import { Logo } from '@/components/landing/logo'
@@ -8,7 +9,7 @@ import { cn } from '@/lib/utils'
 
 const menuItems = [
     { name: 'Features', href: '#link' },
-    { name: 'Pricing', href: '#link' },
+    { name: 'Pricing', href: '/pricing' },
     { name: 'About', href: '#link' },
 ]
 
