@@ -64,15 +64,15 @@ export default function Pricing() {
                                         role="list"
                                         className="space-y-3 p-8">
                                         {[
-                                            'Everything in Free Plan', 
-                                            '5GB Cloud Storage', 
-                                            'Email and Chat Support', 
-                                            'Access to Community Forum', 
-                                            'Single User Access', 
-                                            'Access to Basic Templates', 
-                                            'Mobile App Access', 
-                                            '1 Custom Report Per Month', 
-                                            'Monthly Product Updates', 
+                                            'Everything in Free Plan',
+                                            '5GB Cloud Storage',
+                                            'Email and Chat Support',
+                                            'Access to Community Forum',
+                                            'Single User Access',
+                                            'Access to Basic Templates',
+                                            'Mobile App Access',
+                                            '1 Custom Report Per Month',
+                                            'Monthly Product Updates',
                                             'Standard Security Features'
                                         ].map((item, index) => (
                                             <li
