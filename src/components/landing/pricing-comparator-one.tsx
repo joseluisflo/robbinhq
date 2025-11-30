@@ -52,8 +52,8 @@ export default function PricingComparator() {
         <section className="bg-muted/50 py-16 md:py-32">
             <div className="mx-auto max-w-5xl px-6">
                 <div className="w-full overflow-auto lg:overflow-visible">
-                    <table className="w-[200vw] border-separate border-spacing-x-3 md:w-full dark:[--color-muted:var(--color-zinc-900)]">
-                        <thead className="bg-transparent sticky top-0">
+                    <table className="w-full border-separate border-spacing-x-3 dark:[--color-muted:var(--color-zinc-900)]">
+                        <thead className="bg-muted/50 sticky top-[68px]">
                             <tr className="*:py-4 *:text-left *:font-medium">
                                 <th className="lg:w-2/5"></th>
                                 <th className="space-y-3">
