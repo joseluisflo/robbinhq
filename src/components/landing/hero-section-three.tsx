@@ -40,7 +40,13 @@ export default function HeroSection() {
                             </div>
 
                             <div className="relative -mr-56 mt-16 sm:mr-0">
-                                <div className="bg-red-200 rounded-[var(--radius)] p-4">
+                                <div
+                                  className="rounded-[var(--radius)] p-4 bg-cover bg-center"
+                                  style={{
+                                    backgroundImage:
+                                      "url('https://assets.tryrobbin.com/assets/home-masthead-bg.webp')",
+                                  }}
+                                >
                                     <div className="bg-background rounded-md relative mx-auto overflow-hidden border border-transparent shadow-lg shadow-black/10 ring-1 ring-black/10">
                                         <Image
                                             src="/mist/tailark-2.png"
