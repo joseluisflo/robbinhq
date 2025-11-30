@@ -63,8 +63,8 @@ export default function Pricing() {
                             <div className="ring-foreground/10 bg-background rounded-[var(--radius)] lg:mx-0 lg:-my-3 -mx-1 border-transparent shadow ring-1">
                                 <div className="lg:py-3 lg:px-0 relative px-1">
                                     <CardHeader className="p-8">
-                                        <CardTitle className="font-medium">Pro</CardTitle>
-                                        <span className="mb-0.5 mt-2 block text-2xl font-semibold">$19 / mo</span>
+                                        <CardTitle className="font-medium">Essential</CardTitle>
+                                        <span className="mb-0.5 mt-2 block text-2xl font-semibold">$15 / mo</span>
                                         <CardDescription className="text-sm">Per editor</CardDescription>
                                     </CardHeader>
                                     <div className="lg:mx-0 -mx-1 border-y px-8 py-4">
@@ -78,7 +78,14 @@ export default function Pricing() {
                                     <ul
                                         role="list"
                                         className="space-y-3 p-8">
-                                        {['Everything in Free Plan', '5GB Cloud Storage', 'Email and Chat Support', 'Access to Community Forum', 'Single User Access', 'Access to Basic Templates', 'Mobile App Access', '1 Custom Report Per Month', 'Monthly Product Updates', 'Standard Security Features'].map((item, index) => (
+                                        {[
+                                            { text: '1500 Credits', included: true },
+                                            { text: 'Unlimited Agents', included: true },
+                                            { text: '40MB Training Data', included: true },
+                                            { text: '3 Channel Deploy', included: true },
+                                            { text: 'Unlimited Data retention', included: true },
+                                            { text: 'No Watermark', included: true },
+                                        ].map((item, index) => (
                                             <li
                                                 key={index}
                                                 className="flex items-center gap-2">
@@ -86,7 +93,7 @@ export default function Pricing() {
                                                     className="text-primary size-3"
                                                     strokeWidth={3.5}
                                                 />
-                                                {item}
+                                                {item.text}
                                             </li>
                                         ))}
                                     </ul>
