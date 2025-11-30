@@ -101,8 +101,8 @@ export default function Pricing() {
                             </div>
                             <div>
                                 <CardHeader className="p-8">
-                                    <CardTitle className="font-medium">Pro Plus</CardTitle>
-                                    <span className="mb-0.5 mt-2 block text-2xl font-semibold">$49 / mo</span>
+                                    <CardTitle className="font-medium">Pro</CardTitle>
+                                    <span className="mb-0.5 mt-2 block text-2xl font-semibold">$29 / mo</span>
                                     <CardDescription className="text-sm">Per editor</CardDescription>
                                 </CardHeader>
                                 <div className="border-y px-8 py-4">
@@ -117,7 +117,14 @@ export default function Pricing() {
                                 <ul
                                     role="list"
                                     className="space-y-3 p-8">
-                                    {['Everything in Pro Plan', '5GB Cloud Storage', 'Email and Chat Support'].map((item, index) => (
+                                    {[
+                                        { text: '5000 Credits', included: true },
+                                        { text: 'Unlimited Agents', included: true },
+                                        { text: '40MB Training Data', included: true },
+                                        { text: '3 Channel Deploy', included: true },
+                                        { text: 'Unlimited Data Retention', included: true },
+                                        { text: 'No watermark', included: true },
+                                    ].map((item, index) => (
                                         <li
                                             key={index}
                                             className="flex items-center gap-2">
@@ -125,7 +132,7 @@ export default function Pricing() {
                                                 className="text-primary size-3"
                                                 strokeWidth={3.5}
                                             />
-                                            {item}
+                                            {item.text}
                                         </li>
                                     ))}
                                 </ul>
