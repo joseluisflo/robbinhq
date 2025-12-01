@@ -5,9 +5,9 @@ import Link from 'next/link'
 const tableData = [
     {
         feature: 'Agents',
-        free: true,
-        pro: true,
-        startup: true,
+        free: '1',
+        pro: 'Unlimited',
+        startup: 'Unlimited',
     },
     {
         feature: 'Credits',
