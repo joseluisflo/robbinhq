@@ -114,7 +114,7 @@ export default function FeaturesPage() {
       featureList: [
         {
             title: "Unified Inbox",
-            description: "See all your chat and email logs together.",
+            description: "View all chat and email logs in one single inbox.",
             icon: Inbox,
         },
         {
@@ -124,7 +124,7 @@ export default function FeaturesPage() {
         },
         {
             title: "Insights",
-            description: "Access visitor location, device, and browser information. Easily distinguish between chat widget and email conversations.",
+            description: "Get visitor location, device, browser, and conversation source.",
             icon: FileSearch,
         },
         {
