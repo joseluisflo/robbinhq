@@ -4,7 +4,7 @@ import FeaturesSix from '@/components/landing/features-6';
 import CallToAction from '@/components/landing/call-to-action';
 import Footer from '@/components/landing/footer';
 import HeroTitle from '@/components/landing/hero-title';
-import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon, MotionIcon, RocketIcon } from '@/components/lo-icons';
+import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon, MotionIcon, RocketIcon, Chat02Icon, ChatSimpleIcon } from '@/components/lo-icons';
 
 
 export default function FeaturesPage() {
@@ -84,7 +84,24 @@ export default function FeaturesPage() {
     },
     {
       title: "Deploy",
-      description: "Embed your agent on your website, or connect it to email and phone channels with a single click."
+      description: "Embed your agent on your website, or connect it to email and phone channels with a single click.",
+      featureList: [
+        {
+            title: "Website Widget",
+            description: "Embed the agent on your website with one-click.",
+            icon: Chat02Icon
+        },
+        {
+            title: "Iframe Embed",
+            description: "Integrate the chat interface directly into your website.",
+            icon: RocketIcon
+        },
+        {
+            title: "Email Connection",
+            description: "Connect your agent to process and answer emails.",
+            icon: ChatSimpleIcon
+        },
+      ]
     },
     {
       title: "Chat Logs",
