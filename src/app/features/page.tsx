@@ -4,7 +4,7 @@ import FeaturesSix from '@/components/landing/features-6';
 import CallToAction from '@/components/landing/call-to-action';
 import Footer from '@/components/landing/footer';
 import HeroTitle from '@/components/landing/hero-title';
-import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon, MotionIcon, RocketIcon, Chat02Icon, ChatSimpleIcon, Phone } from '@/components/lo-icons';
+import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon, MotionIcon, RocketIcon, Chat02Icon, ChatSimpleIcon, Phone, FileSearch, History, Search, Inbox } from '@/components/lo-icons';
 
 
 export default function FeaturesPage() {
@@ -110,7 +110,29 @@ export default function FeaturesPage() {
     },
     {
       title: "Chat Logs",
-      description: "Review every conversation to gain insights, monitor performance, and identify areas for improvement."
+      description: "Review every conversation to gain insights, monitor performance, and identify areas for improvement.",
+      featureList: [
+        {
+            title: "Unified Inbox",
+            description: "See all your chat and email logs together.",
+            icon: Inbox,
+        },
+        {
+            title: "Full History",
+            description: "Review complete conversations between users and your agent.",
+            icon: History,
+        },
+        {
+            title: "Insights",
+            description: "Access visitor location, device, and browser information. Easily distinguish between chat widget and email conversations.",
+            icon: FileSearch,
+        },
+        {
+            title: "Log Search",
+            description: "Quickly find specific conversations by searching for keywords.",
+            icon: Search,
+        },
+      ]
     },
     {
       title: "Lead Search",
