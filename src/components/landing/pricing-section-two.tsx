@@ -25,7 +25,7 @@ export default function Pricing() {
                                     <span className="mb-0.5 mt-2 block text-2xl font-semibold">$0 / mo</span>
                                     <CardDescription className="text-sm">Per editor</CardDescription>
                                 </CardHeader>
-                                <div className="border-y px-8 py-4">
+                                <div className="px-8 py-4">
                                     <Button
                                         asChild
                                         className="w-full"
@@ -74,7 +74,7 @@ export default function Pricing() {
                                         <span className="mb-0.5 mt-2 block text-2xl font-semibold">$15 / mo</span>
                                         <CardDescription className="text-sm">Per editor</CardDescription>
                                     </CardHeader>
-                                    <div className="lg:mx-0 -mx-1 border-y px-8 py-4">
+                                    <div className="lg:mx-0 -mx-1 px-8 py-4">
                                         <Button
                                             asChild
                                             className="w-full">
@@ -115,7 +115,7 @@ export default function Pricing() {
                                     <span className="mb-0.5 mt-2 block text-2xl font-semibold">$29 / mo</span>
                                     <CardDescription className="text-sm">Per editor</CardDescription>
                                 </CardHeader>
-                                <div className="border-y px-8 py-4">
+                                <div className="px-8 py-4">
                                     <Button
                                         asChild
                                         className="w-full"
