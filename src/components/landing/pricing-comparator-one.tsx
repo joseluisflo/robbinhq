@@ -4,25 +4,25 @@ import Link from 'next/link'
 
 const tableData = [
     {
-        feature: 'Feature 1',
+        feature: 'Agents',
         free: true,
         pro: true,
         startup: true,
     },
     {
-        feature: 'Feature 2',
+        feature: 'Credits',
         free: true,
         pro: true,
         startup: true,
     },
     {
-        feature: 'Feature 3',
+        feature: 'Workflows',
         free: false,
         pro: true,
         startup: true,
     },
     {
-        feature: 'Tokens',
+        feature: 'Data training size',
         free: '',
         pro: '20 Users',
         startup: 'Unlimited',
@@ -85,13 +85,13 @@ export default function PricingComparator() {
                             <tr className="*:py-4">
                                 <td className="flex items-center gap-2 font-medium">
                                     <Star className="size-4" />
-                                    <span>Features</span>
+                                    <span>Core</span>
                                 </td>
                                 <td></td>
                                 <td className="border-none px-4"></td>
                                 <td></td>
                             </tr>
-                            {tableData.slice(-4).map((row, index) => (
+                            {tableData.slice(0, 4).map((row, index) => (
                                 <tr
                                     key={index}
                                     className="*:border-b *:py-4">
