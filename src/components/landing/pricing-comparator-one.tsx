@@ -6,44 +6,44 @@ const tableData = [
     {
         feature: 'Agents',
         free: '1',
+        essential: 'Unlimited',
         pro: 'Unlimited',
-        startup: 'Unlimited',
     },
     {
         feature: 'Credits',
-        free: true,
-        pro: true,
-        startup: true,
+        free: '150',
+        essential: '1,500',
+        pro: '5,000',
     },
     {
         feature: 'Workflows',
-        free: false,
-        pro: true,
-        startup: true,
+        free: '3',
+        essential: '10',
+        pro: '20',
     },
     {
         feature: 'Data training size',
         free: '',
-        pro: '20 Users',
-        startup: 'Unlimited',
+        essential: '20 Users',
+        pro: 'Unlimited',
     },
     {
         feature: 'Video calls',
         free: '',
-        pro: '12 Weeks',
-        startup: '56',
+        essential: '12 Weeks',
+        pro: '56',
     },
     {
         feature: 'Support',
         free: '',
-        pro: 'Secondes',
-        startup: 'Unlimited',
+        essential: 'Secondes',
+        pro: 'Unlimited',
     },
     {
         feature: 'Security',
         free: '',
-        pro: '20 Users',
-        startup: 'Unlimited',
+        essential: '20 Users',
+        pro: 'Unlimited',
     },
 ]
 
@@ -107,6 +107,16 @@ export default function PricingComparator() {
                                         )}
                                     </td>
                                     <td>
+                                        {row.essential === true ? (
+                                            <Check
+                                                className="text-primary size-3"
+                                                strokeWidth={3.5}
+                                            />
+                                        ) : (
+                                            row.essential
+                                        )}
+                                    </td>
+                                    <td>
                                         {row.pro === true ? (
                                             <Check
                                                 className="text-primary size-3"
@@ -114,16 +124,6 @@ export default function PricingComparator() {
                                             />
                                         ) : (
                                             row.pro
-                                        )}
-                                    </td>
-                                    <td>
-                                        {row.startup === true ? (
-                                            <Check
-                                                className="text-primary size-3"
-                                                strokeWidth={3.5}
-                                            />
-                                        ) : (
-                                            row.startup
                                         )}
                                     </td>
                                 </tr>
@@ -153,6 +153,16 @@ export default function PricingComparator() {
                                         )}
                                     </td>
                                     <td>
+                                        {row.essential === true ? (
+                                            <Check
+                                                className="text-primary size-3"
+                                                strokeWidth={3.5}
+                                            />
+                                        ) : (
+                                            row.essential
+                                        )}
+                                    </td>
+                                    <td>
                                         {row.pro === true ? (
                                             <Check
                                                 className="text-primary size-3"
@@ -160,16 +170,6 @@ export default function PricingComparator() {
                                             />
                                         ) : (
                                             row.pro
-                                        )}
-                                    </td>
-                                    <td>
-                                        {row.startup === true ? (
-                                            <Check
-                                                className="text-primary size-3"
-                                                strokeWidth={3.5}
-                                            />
-                                        ) : (
-                                            row.startup
                                         )}
                                     </td>
                                 </tr>
