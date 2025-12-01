@@ -23,7 +23,7 @@ const tableData = [
         pro: '20',
     },
     {
-        feature: 'Data training size',
+        feature: 'Data Training Size',
         free: '400kb',
         essential: '40MB',
         pro: '40MB',
@@ -35,7 +35,7 @@ const tableData = [
         pro: true,
     },
     {
-        feature: 'Data retention',
+        feature: 'Data Retention',
         free: '30 Days',
         essential: 'Unlimited',
         pro: 'Unlimited',
@@ -47,13 +47,13 @@ const tableData = [
         pro: true,
     },
     {
-        feature: 'Lead search',
+        feature: 'Lead Search',
         free: true,
         essential: true,
         pro: true,
     },
     {
-        feature: 'Chat logs',
+        feature: 'Chat Logs',
         free: true,
         essential: true,
         pro: true,
@@ -85,9 +85,9 @@ export default function PricingComparator() {
                 <div className="w-full overflow-auto lg:overflow-visible">
                     <table className="w-full border-separate border-spacing-x-3">
                         <thead className="sticky top-[56px] z-10 bg-background">
-                            <tr className="*:py-4 *:text-left *:font-medium">
-                                <th className="lg:w-2/5"></th>
-                                <th className="space-y-3">
+                            <tr className="*:py-4 *:font-medium">
+                                <th className="lg:w-2/5 text-left"></th>
+                                <th className="space-y-3 text-center">
                                     <span className="block">Free</span>
 
                                     <Button
@@ -96,13 +96,13 @@ export default function PricingComparator() {
                                         <Link href="#">Get Started</Link>
                                     </Button>
                                 </th>
-                                <th className="space-y-3">
+                                <th className="space-y-3 text-center">
                                     <span className="block">Essential</span>
                                     <Button asChild>
                                         <Link href="#">Get Started</Link>
                                     </Button>
                                 </th>
-                                <th className="space-y-3">
+                                <th className="space-y-3 text-center">
                                     <span className="block">Pro</span>
                                     <Button
                                         asChild
@@ -126,45 +126,45 @@ export default function PricingComparator() {
                                     key={index}
                                     className="*:border-b *:py-4">
                                     <td className="text-muted-foreground">{row.feature}</td>
-                                    <td>
+                                    <td className="text-center">
                                         {row.free === true ? (
                                             <Check
-                                                className="text-primary size-3"
+                                                className="text-primary size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : row.free === false ? (
                                             <XIcon
-                                                className="text-muted-foreground/50 size-3"
+                                                className="text-muted-foreground/50 size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
                                             row.free
                                         )}
                                     </td>
-                                    <td>
+                                    <td className="text-center">
                                         {row.essential === true ? (
                                             <Check
-                                                className="text-primary size-3"
+                                                className="text-primary size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : row.essential === false ? (
                                             <XIcon
-                                                className="text-muted-foreground/50 size-3"
+                                                className="text-muted-foreground/50 size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
                                             row.essential
                                         )}
                                     </td>
-                                    <td>
+                                    <td className="text-center">
                                         {row.pro === true ? (
                                             <Check
-                                                className="text-primary size-3"
+                                                className="text-primary size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : row.pro === false ? (
                                             <XIcon
-                                                className="text-muted-foreground/50 size-3"
+                                                className="text-muted-foreground/50 size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
@@ -186,30 +186,30 @@ export default function PricingComparator() {
                                     key={index}
                                     className="*:border-b *:py-4">
                                     <td className="text-muted-foreground">{row.feature}</td>
-                                    <td>
+                                    <td className="text-center">
                                         {row.free === true ? (
                                             <Check
-                                                className="text-primary size-3"
+                                                className="text-primary size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
                                             row.free
                                         )}
                                     </td>
-                                    <td>
+                                    <td className="text-center">
                                         {row.essential === true ? (
                                             <Check
-                                                className="text-primary size-3"
+                                                className="text-primary size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
                                             row.essential
                                         )}
                                     </td>
-                                    <td>
+                                    <td className="text-center">
                                         {row.pro === true ? (
                                             <Check
-                                                className="text-primary size-3"
+                                                className="text-primary size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
@@ -231,45 +231,45 @@ export default function PricingComparator() {
                                     key={index}
                                     className="*:border-b *:py-4">
                                     <td className="text-muted-foreground">{row.feature}</td>
-                                    <td>
+                                    <td className="text-center">
                                         {row.free === true ? (
                                             <Check
-                                                className="text-primary size-3"
+                                                className="text-primary size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : row.free === false ? (
                                             <XIcon
-                                                className="text-muted-foreground/50 size-3"
+                                                className="text-muted-foreground/50 size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
                                             row.free
                                         )}
                                     </td>
-                                    <td>
+                                    <td className="text-center">
                                         {row.essential === true ? (
                                             <Check
-                                                className="text-primary size-3"
+                                                className="text-primary size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : row.essential === false ? (
                                              <XIcon
-                                                className="text-muted-foreground/50 size-3"
+                                                className="text-muted-foreground/50 size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
                                             row.essential
                                         )}
                                     </td>
-                                    <td>
+                                    <td className="text-center">
                                         {row.pro === true ? (
                                             <Check
-                                                className="text-primary size-3"
+                                                className="text-primary size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : row.pro === false ? (
                                             <XIcon
-                                                className="text-muted-foreground/50 size-3"
+                                                className="text-muted-foreground/50 size-3 mx-auto"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
