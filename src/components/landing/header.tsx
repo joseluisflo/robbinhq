@@ -6,6 +6,13 @@ import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import React from 'react'
 import { cn } from '@/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 
 const menuItems = [
     { name: 'Features', href: '/features' },
@@ -36,7 +43,7 @@ export const HeroHeader = () => {
                                 href="/"
                                 aria-label="home"
                                 className="flex items-center space-x-2">
-                                <Logo />
+                                <Logo src={isScrolled ? "https://assets.tryrobbin.com/assets/logo_robbin_icon.svg" : undefined} />
                             </Link>
 
                             <button
@@ -63,6 +70,24 @@ export const HeroHeader = () => {
                                             </Button>
                                         </li>
                                     ))}
+                                    <li>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-base">
+                                                    <span>Resources</span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent>
+                                                <DropdownMenuItem>Item 1</DropdownMenuItem>
+                                                <DropdownMenuItem>Item 2</DropdownMenuItem>
+                                                <DropdownMenuItem>Item 3</DropdownMenuItem>
+                                                <DropdownMenuItem>Item 4</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -79,6 +104,13 @@ export const HeroHeader = () => {
                                             </Link>
                                         </li>
                                     ))}
+                                    <li>
+                                        <Link
+                                            href="#"
+                                            className="text-muted-foreground hover:text-accent-foreground block duration-150">
+                                            <span>Resources</span>
+                                        </Link>
+                                    </li>
                                 </ul>
                             </div>
                             <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
@@ -87,7 +119,7 @@ export const HeroHeader = () => {
                                     variant="ghost"
                                     size="sm"
                                     className={cn(isScrolled && 'lg:hidden')}>
-                                    <Link href="#">
+                                    <Link href="/login">
                                         <span>Login</span>
                                     </Link>
                                 </Button>
@@ -95,7 +127,7 @@ export const HeroHeader = () => {
                                     asChild
                                     size="sm"
                                     className={cn(isScrolled && 'lg:hidden')}>
-                                    <Link href="#">
+                                    <Link href="/signup">
                                         <span>Sign Up</span>
                                     </Link>
                                 </Button>
@@ -103,7 +135,7 @@ export const HeroHeader = () => {
                                     asChild
                                     size="sm"
                                     className={cn(isScrolled ? 'lg:inline-flex' : 'hidden')}>
-                                    <Link href="#">
+                                    <Link href="/signup">
                                         <span>Get Started</span>
                                     </Link>
                                 </Button>
