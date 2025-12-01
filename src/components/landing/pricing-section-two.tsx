@@ -7,7 +7,7 @@ import { StarAward01Icon, StarAward02Icon, StarAward03Icon } from '@/components/
 
 export default function Pricing() {
     return (
-        <div className="bg-background relative py-16 md:py-32">
+        <div className="bg-background relative pb-16 md:pb-32">
             <div className="mx-auto max-w-5xl px-6">
                 <div className="relative mt-12 md:mt-20">
                     <Card className="lg:max-w-full relative mx-auto max-w-sm">
