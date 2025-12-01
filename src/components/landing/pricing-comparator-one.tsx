@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button'
-import { Check, Sparkles, Star, XIcon, Rocket } from 'lucide-react'
+import { Check, XIcon } from 'lucide-react'
 import Link from 'next/link'
 
 const tableData = [
@@ -35,25 +35,25 @@ const tableData = [
         pro: true,
     },
     {
-        feature: 'data retention',
+        feature: 'Data retention',
         free: '30 Days',
         essential: 'Unlimited',
         pro: 'Unlimited',
     },
     {
-        feature: 'analytics',
+        feature: 'Analytics',
         free: true,
         essential: true,
         pro: true,
     },
     {
-        feature: 'lead search',
+        feature: 'Lead search',
         free: true,
         essential: true,
         pro: true,
     },
     {
-        feature: 'chat logs',
+        feature: 'Chat logs',
         free: true,
         essential: true,
         pro: true,
@@ -80,11 +80,11 @@ const tableData = [
 
 export default function PricingComparator() {
     return (
-        <section className="bg-muted py-16 md:py-32">
+        <section className="bg-background py-16 md:py-32">
             <div className="mx-auto max-w-5xl px-6">
                 <div className="w-full overflow-auto lg:overflow-visible">
-                    <table className="w-full border-separate border-spacing-x-3 dark:[--color-muted:var(--color-zinc-900)]">
-                        <thead className="bg-muted sticky top-[56px] z-10">
+                    <table className="w-full border-separate border-spacing-x-3">
+                        <thead className="sticky top-[56px] z-10 bg-background">
                             <tr className="*:py-4 *:text-left *:font-medium">
                                 <th className="lg:w-2/5"></th>
                                 <th className="space-y-3">
@@ -114,9 +114,8 @@ export default function PricingComparator() {
                         </thead>
                         <tbody>
                             <tr className="*:py-4">
-                                <td className="flex items-center gap-2 font-medium">
-                                    <Star className="size-4" />
-                                    <span>Core</span>
+                                <td className="font-medium">
+                                    Core
                                 </td>
                                 <td></td>
                                 <td className="border-none px-4"></td>
@@ -175,12 +174,11 @@ export default function PricingComparator() {
                                 </tr>
                             ))}
                             <tr className="*:pb-4 *:pt-8">
-                                <td className="flex items-center gap-2 font-medium">
-                                    <Sparkles className="size-4" />
-                                    <span>Activity</span>
+                                <td className="font-medium">
+                                    Activity
                                 </td>
                                 <td></td>
-                                <td className="bg-muted/50 border-none px-4"></td>
+                                <td className="border-none px-4"></td>
                                 <td></td>
                             </tr>
                             {tableData.slice(5, 9).map((row, index) => (
@@ -221,12 +219,11 @@ export default function PricingComparator() {
                                 </tr>
                             ))}
                             <tr className="*:pb-4 *:pt-8">
-                                <td className="flex items-center gap-2 font-medium">
-                                    <Rocket className="size-4" />
-                                    <span>Deploy</span>
+                                <td className="font-medium">
+                                    Deploy
                                 </td>
                                 <td></td>
-                                <td className="bg-muted/50 border-none px-4"></td>
+                                <td className="border-none px-4"></td>
                                 <td></td>
                             </tr>
                             {tableData.slice(9).map((row, index) => (
@@ -268,6 +265,11 @@ export default function PricingComparator() {
                                         {row.pro === true ? (
                                             <Check
                                                 className="text-primary size-3"
+                                                strokeWidth={3.5}
+                                            />
+                                        ) : row.pro === false ? (
+                                            <XIcon
+                                                className="text-muted-foreground/50 size-3"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
