@@ -4,14 +4,14 @@ import FeaturesSix from '@/components/landing/features-6';
 import CallToAction from '@/components/landing/call-to-action';
 import Footer from '@/components/landing/footer';
 import HeroTitle from '@/components/landing/hero-title';
-import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon, MotionIcon, RocketIcon, Chat02Icon, ChatSimpleIcon, Phone, FileSearch, History, Search, Inbox } from '@/components/lo-icons';
+import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon, MotionIcon, RocketIcon, Chat02Icon, ChatSimpleIcon, Phone, FileSearch, History, Search, Inbox, Sparkles, Download, Link as LinkIcon } from '@/components/lo-icons';
 
 
 export default function FeaturesPage() {
   const features = [
     {
       title: "Training",
-      description: "Provide your agent with knowledge from documents, text, or websites to answer questions accurately.",
+      description: "Customize your agent's personality and knowledge base.",
       featureList: [
         {
           title: "Instructions",
@@ -37,7 +37,7 @@ export default function FeaturesPage() {
     },
     {
       title: "Design",
-      description: "Customize the look and feel of your chat widget to match your brand identity perfectly.",
+      description: "Customize the look and feel of your agent.",
       featureList: [
         {
           title: "Upload your logo",
@@ -58,7 +58,7 @@ export default function FeaturesPage() {
     },
     {
       title: "Workflows",
-      description: "Automate complex, multi-step tasks with a visual editor, no code required.",
+      description: "Automate complex, multi-step tasks for your agent.",
       featureList: [
           {
             title: "Visual Builder",
@@ -84,7 +84,7 @@ export default function FeaturesPage() {
     },
     {
       title: "Deploy",
-      description: "Embed your agent on your website, or connect it to email and phone channels with a single click.",
+      description: "Launch your agent across multiple customer channels.",
       featureList: [
         {
             title: "Website Widget",
@@ -110,7 +110,7 @@ export default function FeaturesPage() {
     },
     {
       title: "Chat Logs",
-      description: "Review every conversation to gain insights, monitor performance, and identify areas for improvement.",
+      description: "Review and analyze every customer interaction seamlessly.",
       featureList: [
         {
             title: "Unified Inbox",
@@ -136,7 +136,29 @@ export default function FeaturesPage() {
     },
     {
       title: "Lead Search",
-      description: "Automatically analyze conversations to identify and extract valuable customer leads."
+      description: "Automatically analyze conversations to identify and extract valuable customer leads.",
+      featureList: [
+        {
+            title: "Automatic Analysis",
+            description: "Automatically analyze conversations to find potential customer leads.",
+            icon: Sparkles,
+        },
+        {
+            title: "Data Export",
+            description: "Easily export all of your lead data to CSV.",
+            icon: Download,
+        },
+        {
+            title: "Conversation Link",
+            description: "Instantly jump to the conversation where a lead originated.",
+            icon: LinkIcon,
+        },
+        {
+            title: "Source Tracking",
+            description: "Know if a lead came from the chat or email.",
+            icon: FileSearch,
+        },
+      ]
     }
   ];
 
