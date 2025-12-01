@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button'
 import { Check, Sparkles, Star } from 'lucide-react'
 import Link from 'next/link'
@@ -23,9 +24,9 @@ const tableData = [
     },
     {
         feature: 'Data training size',
-        free: '',
-        essential: '20 Users',
-        pro: 'Unlimited',
+        free: '400kb',
+        essential: '40MB',
+        pro: '40MB',
     },
     {
         feature: 'Video calls',
