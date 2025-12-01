@@ -4,7 +4,7 @@ import FeaturesSix from '@/components/landing/features-6';
 import CallToAction from '@/components/landing/call-to-action';
 import Footer from '@/components/landing/footer';
 import HeroTitle from '@/components/landing/hero-title';
-import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon } from '@/components/lo-icons';
+import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon } from '@/components/lo-icons';
 
 
 export default function FeaturesPage() {
@@ -37,7 +37,24 @@ export default function FeaturesPage() {
     },
     {
       title: "Design",
-      description: "Customize the look and feel of your chat widget to match your brand identity perfectly."
+      description: "Customize the look and feel of your chat widget to match your brand identity perfectly.",
+      featureList: [
+        {
+          title: "Upload your logo",
+          description: "Personalize your agent with your own brand logo.",
+          icon: PenToolIcon,
+        },
+        {
+          title: "Custom Colors",
+          description: "Match your brand's color palette perfectly.",
+          icon: PenToolIcon,
+        },
+        {
+          title: "Welcome Message",
+          description: "Set a custom greeting for your users.",
+          icon: PenToolIcon,
+        },
+      ]
     },
     {
       title: "Workflows",
