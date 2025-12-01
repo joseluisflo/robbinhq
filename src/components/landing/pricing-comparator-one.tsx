@@ -35,22 +35,28 @@ const tableData = [
         pro: true,
     },
     {
-        feature: 'Video calls',
+        feature: 'data retention',
         free: '',
-        essential: '12 Weeks',
-        pro: '56',
+        essential: '',
+        pro: '',
     },
     {
-        feature: 'Support',
+        feature: 'analytics',
         free: '',
-        essential: 'Secondes',
-        pro: 'Unlimited',
+        essential: '',
+        pro: '',
     },
     {
-        feature: 'Security',
+        feature: 'lead search',
         free: '',
-        essential: '20 Users',
-        pro: 'Unlimited',
+        essential: '',
+        pro: '',
+    },
+    {
+        feature: 'chat logs',
+        free: '',
+        essential: '',
+        pro: '',
     },
 ]
 
@@ -153,7 +159,7 @@ export default function PricingComparator() {
                             <tr className="*:pb-4 *:pt-8">
                                 <td className="flex items-center gap-2 font-medium">
                                     <Sparkles className="size-4" />
-                                    <span>AI Models</span>
+                                    <span>Activity</span>
                                 </td>
                                 <td></td>
                                 <td className="bg-muted/50 border-none px-4"></td>
