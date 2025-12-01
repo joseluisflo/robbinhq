@@ -20,7 +20,7 @@ export default function Pricing() {
                             <div>
                                 <CardHeader className="p-8">
                                     <CardTitle className="font-medium flex items-center gap-2">
-                                        <StarAward02Icon variant="duotone" className="size-5" />
+                                        <StarAward02Icon variant="duotone" className="size-7" />
                                         Free
                                     </CardTitle>
                                     <span className="mb-0.5 mt-2 block text-2xl font-semibold">$0 / mo</span>
@@ -69,7 +69,7 @@ export default function Pricing() {
                                 <div className="lg:py-3 lg:px-0 relative px-1">
                                     <CardHeader className="p-8">
                                         <CardTitle className="font-medium flex items-center gap-2">
-                                            <StarAward01Icon variant="duotone" className="size-5" />
+                                            <StarAward01Icon variant="duotone" className="size-7" />
                                             Essential
                                         </CardTitle>
                                         <span className="mb-0.5 mt-2 block text-2xl font-semibold">$15 / mo</span>
@@ -110,7 +110,7 @@ export default function Pricing() {
                             <div>
                                 <CardHeader className="p-8">
                                     <CardTitle className="font-medium flex items-center gap-2">
-                                        <StarAward03Icon variant="duotone" className="size-5" />
+                                        <StarAward03Icon variant="duotone" className="size-7" />
                                         Pro
                                     </CardTitle>
                                     <span className="mb-0.5 mt-2 block text-2xl font-semibold">$29 / mo</span>
