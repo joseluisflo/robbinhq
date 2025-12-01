@@ -175,6 +175,7 @@ export default function FeaturesPage() {
             title={feature.title} 
             description={feature.description}
             featureList={feature.featureList} 
+            variant="white"
           />
         ))}
         <CallToAction />
