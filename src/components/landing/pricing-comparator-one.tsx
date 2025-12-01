@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button'
-import { Check, Sparkles, Star, XIcon } from 'lucide-react'
+import { Check, Sparkles, Star, XIcon, Rocket } from 'lucide-react'
 import Link from 'next/link'
 
 const tableData = [
@@ -54,6 +54,24 @@ const tableData = [
     },
     {
         feature: 'chat logs',
+        free: true,
+        essential: true,
+        pro: true,
+    },
+    {
+        feature: 'Widget',
+        free: true,
+        essential: true,
+        pro: true,
+    },
+    {
+        feature: 'Email',
+        free: true,
+        essential: true,
+        pro: true,
+    },
+    {
+        feature: 'Phone',
         free: true,
         essential: true,
         pro: true,
@@ -165,7 +183,53 @@ export default function PricingComparator() {
                                 <td className="bg-muted/50 border-none px-4"></td>
                                 <td></td>
                             </tr>
-                            {tableData.slice(5).map((row, index) => (
+                            {tableData.slice(5, 9).map((row, index) => (
+                                <tr
+                                    key={index}
+                                    className="*:border-b *:py-4">
+                                    <td className="text-muted-foreground">{row.feature}</td>
+                                    <td>
+                                        {row.free === true ? (
+                                            <Check
+                                                className="text-primary size-3"
+                                                strokeWidth={3.5}
+                                            />
+                                        ) : (
+                                            row.free
+                                        )}
+                                    </td>
+                                    <td>
+                                        {row.essential === true ? (
+                                            <Check
+                                                className="text-primary size-3"
+                                                strokeWidth={3.5}
+                                            />
+                                        ) : (
+                                            row.essential
+                                        )}
+                                    </td>
+                                    <td>
+                                        {row.pro === true ? (
+                                            <Check
+                                                className="text-primary size-3"
+                                                strokeWidth={3.5}
+                                            />
+                                        ) : (
+                                            row.pro
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                            <tr className="*:pb-4 *:pt-8">
+                                <td className="flex items-center gap-2 font-medium">
+                                    <Rocket className="size-4" />
+                                    <span>Deploy</span>
+                                </td>
+                                <td></td>
+                                <td className="bg-muted/50 border-none px-4"></td>
+                                <td></td>
+                            </tr>
+                            {tableData.slice(9).map((row, index) => (
                                 <tr
                                     key={index}
                                     className="*:border-b *:py-4">
