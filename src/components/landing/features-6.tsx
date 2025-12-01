@@ -3,7 +3,30 @@ import { Cpu, Lock, Sparkles, Zap } from 'lucide-react'
 import Image from 'next/image'
 import { AutomationIcon, Chart01Icon, DatabaseIcon, ShieldIcon } from '@/components/lo-icons'
 
-export default function FeaturesSection({ title = "Foundation features that power your business", description = "Integrated features working seamlessly to ensure better performance, improved clarity, and ongoing growth." }: { title?: string, description?: string }) {
+interface FeatureItem {
+    title: string;
+    description: string;
+    icon: React.ElementType;
+}
+
+export default function FeaturesSection({ 
+    title = "Foundation features that power your business", 
+    description = "Integrated features working seamlessly to ensure better performance, improved clarity, and ongoing growth.",
+    featureList
+}: { 
+    title?: string, 
+    description?: string,
+    featureList?: FeatureItem[]
+}) {
+    const defaultFeatures: FeatureItem[] = [
+        { title: "Workflows", description: "Automate complex tasks and processes effortlessly.", icon: AutomationIcon },
+        { title: "Analytics", description: "Gain powerful insights from every customer interaction.", icon: Chart01Icon },
+        { title: "Your Data", description: "Maintain full ownership and control over data.", icon: DatabaseIcon },
+        { title: "Security", description: "Enterprise-grade protection for all your valuable information.", icon: ShieldIcon },
+    ];
+
+    const featuresToDisplay = featureList || defaultFeatures;
+
     return (
         <section className="bg-muted/50 py-16 md:py-32">
             <div className="mx-auto max-w-5xl space-y-12 px-6">
@@ -43,34 +66,15 @@ export default function FeaturesSection({ title = "Foundation features that powe
                     </div>
                 </div>
                 <div className="relative mx-auto grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 lg:grid-cols-4">
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <AutomationIcon variant="duotone" className="size-4" style={{ color: '#00a6f4' }} />
-                            <h3 className="text-sm font-medium">Workflows</h3>
+                    {featuresToDisplay.map((feature, index) => (
+                         <div key={index} className="space-y-3">
+                            <div className="flex items-center gap-2">
+                                <feature.icon variant="duotone" className="size-4" style={{ color: '#00a6f4' }} />
+                                <h3 className="text-sm font-medium">{feature.title}</h3>
+                            </div>
+                            <p className="text-muted-foreground text-sm">{feature.description}</p>
                         </div>
-                        <p className="text-muted-foreground text-sm">Automate complex tasks and processes effortlessly.</p>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <Chart01Icon variant="duotone" className="size-4" style={{ color: '#f48700' }} />
-                            <h3 className="text-sm font-medium">Analytics</h3>
-                        </div>
-                        <p className="text-muted-foreground text-sm">Gain powerful insights from every customer interaction.</p>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <DatabaseIcon variant="duotone" className="size-4" style={{ color: '#32e48c' }} />
-                            <h3 className="text-sm font-medium">Your Data</h3>
-                        </div>
-                        <p className="text-muted-foreground text-sm">Maintain full ownership and control over data.</p>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <ShieldIcon variant="duotone" className="size-4" style={{ color: '#e751aa' }} />
-                            <h3 className="text-sm font-medium">Security</h3>
-                        </div>
-                        <p className="text-muted-foreground text-sm">Enterprise-grade protection for all your valuable information.</p>
-                    </div>
+                    ))}
                 </div>
             </div>
         </section>

@@ -4,12 +4,36 @@ import FeaturesSix from '@/components/landing/features-6';
 import CallToAction from '@/components/landing/call-to-action';
 import Footer from '@/components/landing/footer';
 import HeroTitle from '@/components/landing/hero-title';
+import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon } from '@/components/lo-icons';
+
 
 export default function FeaturesPage() {
   const features = [
     {
       title: "Training",
-      description: "Provide your agent with knowledge from documents, text, or websites to answer questions accurately."
+      description: "Provide your agent with knowledge from documents, text, or websites to answer questions accurately.",
+      featureList: [
+        {
+          title: "Instructions",
+          description: "Define your agent's personality and behavior.",
+          icon: AiChemistryIcon,
+        },
+        {
+          title: "Sources",
+          description: "Upload files and text for knowledge.",
+          icon: DatabaseIcon,
+        },
+        {
+          title: "Temperature",
+          description: "Control the creativity of AI responses.",
+          icon: IA01Icon,
+        },
+        {
+          title: "Rate Limiting",
+          description: "Prevent abuse with message and time limits.",
+          icon: ShieldIcon,
+        },
+      ]
     },
     {
       title: "Design",
@@ -41,7 +65,12 @@ export default function FeaturesPage() {
             <HeroTitle />
         </div>
         {features.map((feature, index) => (
-          <FeaturesSix key={index} title={feature.title} description={feature.description} />
+          <FeaturesSix 
+            key={index} 
+            title={feature.title} 
+            description={feature.description}
+            featureList={feature.featureList} 
+          />
         ))}
         <CallToAction />
       </main>
