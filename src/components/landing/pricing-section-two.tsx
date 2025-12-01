@@ -1,5 +1,4 @@
 
-
 import { Button } from '@/components/ui/button'
 import { Check, XIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -20,7 +19,7 @@ export default function Pricing() {
                             <div>
                                 <CardHeader className="p-8">
                                     <CardTitle className="font-medium flex items-center gap-2">
-                                        <StarAward02Icon variant="duotone" className="size-7" />
+                                        <StarAward02Icon variant="duotone" className="size-7" style={{ color: '#45c775' }} />
                                         Free
                                     </CardTitle>
                                     <span className="mb-0.5 mt-2 block text-2xl font-semibold">$0 / mo</span>
@@ -69,7 +68,7 @@ export default function Pricing() {
                                 <div className="lg:py-3 lg:px-0 relative px-1">
                                     <CardHeader className="p-8">
                                         <CardTitle className="font-medium flex items-center gap-2">
-                                            <StarAward01Icon variant="duotone" className="size-7" />
+                                            <StarAward01Icon variant="duotone" className="size-7" style={{ color: '#4379ef' }} />
                                             Essential
                                         </CardTitle>
                                         <span className="mb-0.5 mt-2 block text-2xl font-semibold">$15 / mo</span>
@@ -110,7 +109,7 @@ export default function Pricing() {
                             <div>
                                 <CardHeader className="p-8">
                                     <CardTitle className="font-medium flex items-center gap-2">
-                                        <StarAward03Icon variant="duotone" className="size-7" />
+                                        <StarAward03Icon variant="duotone" className="size-7" style={{ color: '#ef459e' }}/>
                                         Pro
                                     </CardTitle>
                                     <span className="mb-0.5 mt-2 block text-2xl font-semibold">$29 / mo</span>
