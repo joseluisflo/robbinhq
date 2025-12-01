@@ -72,8 +72,8 @@ const tableData = [
     },
     {
         feature: 'Phone',
-        free: true,
-        essential: true,
+        free: false,
+        essential: false,
         pro: true,
     },
 ]
@@ -240,6 +240,11 @@ export default function PricingComparator() {
                                                 className="text-primary size-3"
                                                 strokeWidth={3.5}
                                             />
+                                        ) : row.free === false ? (
+                                            <XIcon
+                                                className="text-muted-foreground/50 size-3"
+                                                strokeWidth={3.5}
+                                            />
                                         ) : (
                                             row.free
                                         )}
@@ -248,6 +253,11 @@ export default function PricingComparator() {
                                         {row.essential === true ? (
                                             <Check
                                                 className="text-primary size-3"
+                                                strokeWidth={3.5}
+                                            />
+                                        ) : row.essential === false ? (
+                                             <XIcon
+                                                className="text-muted-foreground/50 size-3"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
