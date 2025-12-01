@@ -10,6 +10,11 @@ export default function FeaturesPage() {
       <HeroHeader />
       <main className="flex-1 pt-24 md:pt-32">
         <FeaturesSix />
+        <FeaturesSix />
+        <FeaturesSix />
+        <FeaturesSix />
+        <FeaturesSix />
+        <FeaturesSix />
         <CallToAction />
       </main>
       <Footer />
