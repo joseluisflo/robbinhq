@@ -9,10 +9,6 @@ export default function Pricing() {
     return (
         <div className="bg-background relative py-16 md:py-32">
             <div className="mx-auto max-w-5xl px-6">
-                <div className="grid items-center gap-4 md:grid-cols-2 md:gap-12">
-                    <h2 className="text-balance text-4xl font-medium lg:text-5xl">Pricing that scale with your business</h2>
-                    <p className="text-muted-foreground max-w-sm text-balance text-lg sm:ml-auto">Choose the perfect plan for your needs and start optimizing your workflow today</p>
-                </div>
                 <div className="relative mt-12 md:mt-20">
                     <Card className="lg:max-w-full relative mx-auto max-w-sm">
                         <div className="lg:grid-cols-3 grid">
