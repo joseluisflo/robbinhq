@@ -66,13 +66,13 @@ export default function PricingComparator() {
                                     </Button>
                                 </th>
                                 <th className="space-y-3">
-                                    <span className="block">Pro</span>
+                                    <span className="block">Essential</span>
                                     <Button asChild>
                                         <Link href="#">Get Started</Link>
                                     </Button>
                                 </th>
                                 <th className="space-y-3">
-                                    <span className="block">Startup</span>
+                                    <span className="block">Pro</span>
                                     <Button
                                         asChild
                                         variant="neutral">
