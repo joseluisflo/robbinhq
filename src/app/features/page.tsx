@@ -4,7 +4,7 @@ import FeaturesSix from '@/components/landing/features-6';
 import CallToAction from '@/components/landing/call-to-action';
 import Footer from '@/components/landing/footer';
 import HeroTitle from '@/components/landing/hero-title';
-import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon, MotionIcon, RocketIcon, Chat02Icon, ChatSimpleIcon } from '@/components/lo-icons';
+import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon, MotionIcon, RocketIcon, Chat02Icon, ChatSimpleIcon, Phone } from '@/components/lo-icons';
 
 
 export default function FeaturesPage() {
@@ -100,6 +100,11 @@ export default function FeaturesPage() {
             title: "Email Connection",
             description: "Connect your agent to process and answer emails.",
             icon: ChatSimpleIcon
+        },
+        {
+            title: "Phone Number",
+            description: "Assign a phone number for voice call interactions.",
+            icon: Phone
         },
       ]
     },
