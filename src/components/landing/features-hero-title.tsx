@@ -2,7 +2,7 @@ import React from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
-export default function HeroTitle() {
+export default function FeaturesHeroTitle() {
     return (
         <section>
             <div className="relative pt-32 pb-14">
@@ -15,18 +15,9 @@ export default function HeroTitle() {
                                 <Button
                                     asChild
                                     size="lg"
-                                    className="w-full sm:w-auto">
+                                    className="w-full">
                                     <Link href="/signup">
                                         <span className="text-nowrap">Start Building</span>
-                                    </Link>
-                                </Button>
-                                <Button
-                                    asChild
-                                    size="lg"
-                                    variant="outline"
-                                    className="w-full sm:w-auto">
-                                    <Link href="#">
-                                        <span className="text-nowrap">Request a demo</span>
                                     </Link>
                                 </Button>
                             </div>

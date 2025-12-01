@@ -3,7 +3,7 @@ import { HeroHeader } from '@/components/landing/header';
 import FeaturesSix from '@/components/landing/features-6';
 import CallToAction from '@/components/landing/call-to-action';
 import Footer from '@/components/landing/footer';
-import HeroTitle from '@/components/landing/hero-title';
+import FeaturesHeroTitle from '@/components/landing/features-hero-title';
 import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon, MotionIcon, RocketIcon, Chat02Icon, ChatSimpleIcon, Phone, FileSearch, History, Search, Inbox, Sparkles, Download, Link as LinkIcon } from '@/components/lo-icons';
 
 
@@ -167,7 +167,7 @@ export default function FeaturesPage() {
       <HeroHeader />
       <main className="flex-1">
         <div className="bg-muted/50">
-            <HeroTitle />
+            <FeaturesHeroTitle />
         </div>
         {features.map((feature, index) => (
           <FeaturesSix 
