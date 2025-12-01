@@ -4,7 +4,7 @@ import FeaturesSix from '@/components/landing/features-6';
 import CallToAction from '@/components/landing/call-to-action';
 import Footer from '@/components/landing/footer';
 import HeroTitle from '@/components/landing/hero-title';
-import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon } from '@/components/lo-icons';
+import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon, MotionIcon, RocketIcon } from '@/components/lo-icons';
 
 
 export default function FeaturesPage() {
@@ -58,7 +58,29 @@ export default function FeaturesPage() {
     },
     {
       title: "Workflows",
-      description: "Automate complex, multi-step tasks with a visual editor, no code required."
+      description: "Automate complex, multi-step tasks with a visual editor, no code required.",
+      featureList: [
+          {
+            title: "Visual Builder",
+            description: "Design complex automations with an intuitive drag-and-drop editor.",
+            icon: MotionIcon,
+          },
+          {
+            title: "Smart Triggers",
+            description: "Automatically start workflows based on user intent keywords.",
+            icon: RocketIcon,
+          },
+          {
+            title: "User Interaction",
+            description: "Ask questions and present options to guide users.",
+            icon: AiChemistryIcon,
+          },
+          {
+            title: "Actions",
+            description: "Send emails, SMS messages, or even generate PDFs.",
+            icon: PenToolIcon,
+          },
+      ]
     },
     {
       title: "Deploy",
