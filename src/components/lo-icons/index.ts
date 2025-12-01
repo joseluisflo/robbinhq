@@ -13,3 +13,4 @@ export * from './DatabaseIcon';
 export * from './ShieldIcon';
 export * from './StarAward01Icon';
 export * from './StarAward02Icon';
+export * from './StarAward03Icon';
