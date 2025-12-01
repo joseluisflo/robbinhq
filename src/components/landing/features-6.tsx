@@ -3,12 +3,12 @@ import { Cpu, Lock, Sparkles, Zap } from 'lucide-react'
 import Image from 'next/image'
 import { AutomationIcon, Chart01Icon, DatabaseIcon, ShieldIcon } from '@/components/lo-icons'
 
-export default function FeaturesSection() {
+export default function FeaturesSection({ title = "Foundation features that power your business" }: { title?: string }) {
     return (
         <section className="bg-muted/50 py-16 md:py-32">
             <div className="mx-auto max-w-5xl space-y-12 px-6">
                 <div className="relative z-10 grid items-center gap-4 md:grid-cols-2 md:gap-12">
-                    <h2 className="text-4xl font-medium">Foundation features that power your business</h2>
+                    <h2 className="text-4xl font-medium">{title}</h2>
                     <p className="max-w-sm sm:ml-auto">Integrated features working seamlessly to ensure better performance, improved clarity, and ongoing growth.</p>
                 </div>
                 <div
