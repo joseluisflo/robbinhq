@@ -33,14 +33,14 @@ export default function FAQs() {
             <div className="mx-auto max-w-5xl px-6">
                 <div className="grid gap-8 md:grid-cols-5 md:gap-12">
                     <div className="md:col-span-2">
-                        <h2 className="text-foreground text-4xl font-semibold">FAQs</h2>
-                        <p className="text-muted-foreground mt-4 text-balance text-lg">Your questions answered</p>
+                        <h2 className="text-foreground text-4xl font-semibold">Preguntas Frecuentes</h2>
+                        <p className="text-muted-foreground mt-4 text-balance text-lg">Tus preguntas respondidas</p>
                         <p className="text-muted-foreground mt-6 hidden md:block">
-                            Can't find what you're looking for? Contact our{' '}
+                            ¿No encuentras lo que buscas? Contacta a nuestro{' '}
                             <Link
                                 href="#"
                                 className="text-primary font-medium hover:underline">
-                                customer support team
+                                equipo de soporte
                             </Link>
                         </p>
                     </div>
@@ -63,11 +63,11 @@ export default function FAQs() {
                     </div>
 
                     <p className="text-muted-foreground mt-6 md:hidden">
-                        Can't find what you're looking for? Contact our{' '}
+                        ¿No encuentras lo que buscas? Contacta a nuestro{' '}
                         <Link
                             href="#"
                             className="text-primary font-medium hover:underline">
-                            customer support team
+                            equipo de soporte
                         </Link>
                     </p>
                 </div>
