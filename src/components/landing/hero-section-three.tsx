@@ -12,7 +12,7 @@ export default function HeroSection() {
             <main className="bg-muted/50 overflow-hidden">
                 <HeroTitle />
                 <section>
-                    <div className="relative pb-24">
+                    <div className="relative pb-12">
                         <div className="mx-auto max-w-5xl px-6">
                             <div className="relative -mr-56 mt-16 sm:mr-0">
                                 <div
