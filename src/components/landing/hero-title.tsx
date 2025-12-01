@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 export default function HeroTitle() {
     return (
         <section>
-            <div className="relative pt-32 pb-24">
+            <div className="relative pt-32 pb-14">
                 <div className="mx-auto max-w-5xl px-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                         <h1 className="text-5xl font-medium lg:text-5xl leading-normal">Automate support. Win time.</h1>
