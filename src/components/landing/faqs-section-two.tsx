@@ -8,23 +8,23 @@ export default function FAQs() {
     const faqItems = [
         {
             id: 'item-1',
-            question: '¿Qué es AgentVerse?',
-            answer: 'AgentVerse es una plataforma que te permite crear, entrenar y desplegar agentes de inteligencia artificial para tu negocio. Estos agentes pueden automatizar el soporte al cliente, responder preguntas y realizar tareas en diferentes canales como chat, correo electrónico y teléfono.',
+            question: 'What is AgentVerse?',
+            answer: 'AgentVerse is a platform that allows you to create, train, and deploy artificial intelligence agents for your business. These agents can automate customer support, answer questions, and perform tasks across different channels like chat, email, and phone.',
         },
         {
             id: 'item-2',
-            question: '¿Qué son los "créditos" y cómo se utilizan?',
-            answer: 'Los créditos se utilizan para las interacciones con la IA. Cada vez que el agente responde a una pregunta o ejecuta una tarea compleja, se consume una cantidad determinada de créditos. Tu plan mensual incluye una cantidad de créditos que se renueva cada mes.',
+            question: 'What are "credits" and how are they used?',
+            answer: 'Credits are used for interactions with the AI. Each time the agent answers a question or executes a complex task, a certain amount of credits is consumed. Your monthly plan includes a number of credits that renews each month.',
         },
         {
             id: 'item-3',
-            question: '¿Qué pasa si me quedo sin créditos?',
-            answer: 'Si agotas tus créditos mensuales, tus agentes dejarán de responder hasta que se renueve tu plan o hasta que actualices a un plan superior con más créditos.',
+            question: "What happens if I run out of credits?",
+            answer: 'If you run out of your monthly credits, your agents will stop responding until your plan renews or until you upgrade to a higher plan with more credits.',
         },
         {
             id: 'item-4',
-            question: '¿Mis datos están seguros?',
-            answer: "La seguridad es nuestra máxima prioridad. Todos tus datos se almacenan de forma segura y tienes control total sobre ellos, incluyendo políticas de retención y la opción de anonimizar la información de los visitantes.",
+            question: 'Is my data secure?',
+            answer: "Security is our top priority. All your data is stored securely, and you have full control over it, including retention policies and the option to anonymize visitor information.",
         },
     ]
 
@@ -33,14 +33,14 @@ export default function FAQs() {
             <div className="mx-auto max-w-5xl px-6">
                 <div className="grid gap-8 md:grid-cols-5 md:gap-12">
                     <div className="md:col-span-2">
-                        <h2 className="text-foreground text-4xl font-semibold">Preguntas Frecuentes</h2>
-                        <p className="text-muted-foreground mt-4 text-balance text-lg">Tus preguntas respondidas</p>
+                        <h2 className="text-foreground text-4xl font-semibold">Frequently Asked Questions</h2>
+                        <p className="text-muted-foreground mt-4 text-balance text-lg">Your questions answered</p>
                         <p className="text-muted-foreground mt-6 hidden md:block">
-                            ¿No encuentras lo que buscas? Contacta a nuestro{' '}
+                            Can't find what you're looking for? Contact our{' '}
                             <Link
                                 href="#"
                                 className="text-primary font-medium hover:underline">
-                                equipo de soporte
+                                support team
                             </Link>
                         </p>
                     </div>
@@ -63,11 +63,11 @@ export default function FAQs() {
                     </div>
 
                     <p className="text-muted-foreground mt-6 md:hidden">
-                        ¿No encuentras lo que buscas? Contacta a nuestro{' '}
+                        Can't find what you're looking for? Contact our{' '}
                         <Link
                             href="#"
                             className="text-primary font-medium hover:underline">
-                            equipo de soporte
+                            support team
                         </Link>
                     </p>
                 </div>
