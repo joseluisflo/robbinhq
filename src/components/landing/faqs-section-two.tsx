@@ -1,3 +1,4 @@
+
 'use client'
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
@@ -7,28 +8,23 @@ export default function FAQs() {
     const faqItems = [
         {
             id: 'item-1',
-            question: 'How long does shipping take?',
-            answer: 'Standard shipping takes 3-5 business days, depending on your location. Express shipping options are available at checkout for 1-2 business day delivery.',
+            question: '¿Qué es AgentVerse?',
+            answer: 'AgentVerse es una plataforma que te permite crear, entrenar y desplegar agentes de inteligencia artificial para tu negocio. Estos agentes pueden automatizar el soporte al cliente, responder preguntas y realizar tareas en diferentes canales como chat, correo electrónico y teléfono.',
         },
         {
             id: 'item-2',
-            question: 'What payment methods do you accept?',
-            answer: 'We accept all major credit cards (Visa, Mastercard, American Express), PayPal, Apple Pay, and Google Pay. For enterprise customers, we also offer invoicing options.',
+            question: '¿Qué son los "créditos" y cómo se utilizan?',
+            answer: 'Los créditos se utilizan para las interacciones con la IA. Cada vez que el agente responde a una pregunta o ejecuta una tarea compleja, se consume una cantidad determinada de créditos. Tu plan mensual incluye una cantidad de créditos que se renueva cada mes.',
         },
         {
             id: 'item-3',
-            question: 'Can I change or cancel my order?',
-            answer: 'You can modify or cancel your order within 1 hour of placing it. After this window, please contact our customer support team who will assist you with any changes.',
+            question: '¿Qué pasa si me quedo sin créditos?',
+            answer: 'Si agotas tus créditos mensuales, tus agentes dejarán de responder hasta que se renueve tu plan o hasta que actualices a un plan superior con más créditos.',
         },
         {
             id: 'item-4',
-            question: 'Do you ship internationally?',
-            answer: "Yes, we ship to over 50 countries worldwide. International shipping typically takes 7-14 business days. Additional customs fees may apply depending on your country's import regulations.",
-        },
-        {
-            id: 'item-5',
-            question: 'What is your return policy?',
-            answer: 'We offer a 30-day return policy for most items. Products must be in original condition with tags attached. Some specialty items may have different return terms, which will be noted on the product page.',
+            question: '¿Mis datos están seguros?',
+            answer: "La seguridad es nuestra máxima prioridad. Todos tus datos se almacenan de forma segura y tienes control total sobre ellos, incluyendo políticas de retención y la opción de anonimizar la información de los visitantes.",
         },
     ]
 
