@@ -20,16 +20,6 @@ export default function HeroTitle() {
                                         <span className="text-nowrap">Start Building</span>
                                     </Link>
                                 </Button>
-                                <Button
-                                    key={2}
-                                    asChild
-                                    size="lg"
-                                    variant="outline"
-                                    className="w-full sm:w-auto">
-                                    <Link href="#link">
-                                        <span className="text-nowrap">Request a demo</span>
-                                    </Link>
-                                </Button>
                             </div>
                         </div>
                     </div>
