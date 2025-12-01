@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button'
-import { Check, Sparkles, Star } from 'lucide-react'
+import { Check, Sparkles, Star, XIcon } from 'lucide-react'
 import Link from 'next/link'
 
 const tableData = [
@@ -27,6 +27,12 @@ const tableData = [
         free: '400kb',
         essential: '40MB',
         pro: '40MB',
+    },
+    {
+        feature: 'Remove Watermark',
+        free: false,
+        essential: true,
+        pro: true,
     },
     {
         feature: 'Video calls',
@@ -92,7 +98,7 @@ export default function PricingComparator() {
                                 <td className="border-none px-4"></td>
                                 <td></td>
                             </tr>
-                            {tableData.slice(0, 4).map((row, index) => (
+                            {tableData.slice(0, 5).map((row, index) => (
                                 <tr
                                     key={index}
                                     className="*:border-b *:py-4">
@@ -101,6 +107,11 @@ export default function PricingComparator() {
                                         {row.free === true ? (
                                             <Check
                                                 className="text-primary size-3"
+                                                strokeWidth={3.5}
+                                            />
+                                        ) : row.free === false ? (
+                                            <XIcon
+                                                className="text-muted-foreground/50 size-3"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
@@ -113,6 +124,11 @@ export default function PricingComparator() {
                                                 className="text-primary size-3"
                                                 strokeWidth={3.5}
                                             />
+                                        ) : row.essential === false ? (
+                                            <XIcon
+                                                className="text-muted-foreground/50 size-3"
+                                                strokeWidth={3.5}
+                                            />
                                         ) : (
                                             row.essential
                                         )}
@@ -121,6 +137,11 @@ export default function PricingComparator() {
                                         {row.pro === true ? (
                                             <Check
                                                 className="text-primary size-3"
+                                                strokeWidth={3.5}
+                                            />
+                                        ) : row.pro === false ? (
+                                            <XIcon
+                                                className="text-muted-foreground/50 size-3"
                                                 strokeWidth={3.5}
                                             />
                                         ) : (
@@ -138,7 +159,7 @@ export default function PricingComparator() {
                                 <td className="bg-muted/50 border-none px-4"></td>
                                 <td></td>
                             </tr>
-                            {tableData.map((row, index) => (
+                            {tableData.slice(5).map((row, index) => (
                                 <tr
                                     key={index}
                                     className="*:border-b *:py-4">
