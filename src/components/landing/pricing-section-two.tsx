@@ -1,8 +1,10 @@
 
+
 import { Button } from '@/components/ui/button'
 import { Check, XIcon } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { StarAward01Icon, StarAward02Icon, StarAward03Icon } from '@/components/lo-icons'
 
 export default function Pricing() {
     return (
@@ -17,7 +19,10 @@ export default function Pricing() {
                         <div className="lg:grid-cols-3 grid">
                             <div>
                                 <CardHeader className="p-8">
-                                    <CardTitle className="font-medium">Free</CardTitle>
+                                    <CardTitle className="font-medium flex items-center gap-2">
+                                        <StarAward02Icon variant="duotone" className="size-5" />
+                                        Free
+                                    </CardTitle>
                                     <span className="mb-0.5 mt-2 block text-2xl font-semibold">$0 / mo</span>
                                     <CardDescription className="text-sm">Per editor</CardDescription>
                                 </CardHeader>
@@ -63,7 +68,10 @@ export default function Pricing() {
                             <div className="ring-foreground/10 bg-background rounded-[var(--radius)] lg:mx-0 lg:-my-3 -mx-1 border-transparent shadow ring-1">
                                 <div className="lg:py-3 lg:px-0 relative px-1">
                                     <CardHeader className="p-8">
-                                        <CardTitle className="font-medium">Essential</CardTitle>
+                                        <CardTitle className="font-medium flex items-center gap-2">
+                                            <StarAward01Icon variant="duotone" className="size-5" />
+                                            Essential
+                                        </CardTitle>
                                         <span className="mb-0.5 mt-2 block text-2xl font-semibold">$15 / mo</span>
                                         <CardDescription className="text-sm">Per editor</CardDescription>
                                     </CardHeader>
@@ -101,7 +109,10 @@ export default function Pricing() {
                             </div>
                             <div>
                                 <CardHeader className="p-8">
-                                    <CardTitle className="font-medium">Pro</CardTitle>
+                                    <CardTitle className="font-medium flex items-center gap-2">
+                                        <StarAward03Icon variant="duotone" className="size-5" />
+                                        Pro
+                                    </CardTitle>
                                     <span className="mb-0.5 mt-2 block text-2xl font-semibold">$29 / mo</span>
                                     <CardDescription className="text-sm">Per editor</CardDescription>
                                 </CardHeader>
