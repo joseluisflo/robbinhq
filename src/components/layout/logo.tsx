@@ -1,11 +1,14 @@
-import { Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <div className={cn('flex items-center gap-2', className)}>
-      <Bot className="h-6 w-6 text-primary" />
-      <span className="text-lg font-bold">AgentVerse</span>
-    </div>
+    <Image
+      src="https://assets.tryrobbin.com/assets/logo_robbin%20(4).svg"
+      alt="AgentVerse logo"
+      width={120}
+      height={24}
+      className={cn('dark:invert', className)}
+    />
   );
 }
