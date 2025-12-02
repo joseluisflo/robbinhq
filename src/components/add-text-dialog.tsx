@@ -38,10 +38,16 @@ export function AddTextDialog({ children }: { children: React.ReactNode }) {
   const firestore = useFirestore();
 
   // --- Knowledge Usage ---
-  const textsQuery = query(collection(firestore, 'users', user!.uid, 'agents', activeAgent!.id!, 'texts'));
+  const textsQuery = useMemo(() => 
+    user && activeAgent?.id ? query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'texts')) : null,
+  [user, activeAgent, firestore]);
   const { data: textSources } = useCollection<TextSource>(textsQuery);
-  const filesQuery = query(collection(firestore, 'users', user!.uid, 'agents', activeAgent!.id!, 'files'));
+  
+  const filesQuery = useMemo(() =>
+    user && activeAgent?.id ? query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'files')) : null,
+  [user, activeAgent, firestore]);
   const { data: fileSources } = useCollection<AgentFile>(filesQuery);
+
   const { currentUsageKB, usageLimitKB, isLimitReached } = useKnowledgeUsage(textSources, fileSources, userProfile);
   // --- End Knowledge Usage ---
 
