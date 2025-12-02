@@ -54,7 +54,8 @@ export default function FeaturesPage() {
           description: "Set a custom greeting for your users.",
           icon: PenToolIcon,
         },
-      ]
+      ],
+      layout: 'center'
     },
     {
       title: "Workflows",
@@ -176,6 +177,8 @@ export default function FeaturesPage() {
             description={feature.description}
             featureList={feature.featureList} 
             variant="white"
+            // @ts-ignore
+            layout={feature.layout}
           />
         ))}
         <CallToAction />

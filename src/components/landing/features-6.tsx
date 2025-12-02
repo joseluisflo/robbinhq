@@ -14,12 +14,14 @@ export default function FeaturesSection({
     title = "Foundation features that power your business", 
     description = "Integrated features working seamlessly to ensure better performance, improved clarity, and ongoing growth.",
     featureList,
-    variant = "muted"
+    variant = "muted",
+    layout
 }: { 
     title?: string, 
     description?: string,
     featureList?: FeatureItem[],
-    variant?: 'muted' | 'white'
+    variant?: 'muted' | 'white',
+    layout?: 'default' | 'center'
 }) {
     const defaultFeatures: FeatureItem[] = [
         { title: "Workflows", description: "Automate complex tasks and processes effortlessly.", icon: AutomationIcon },
@@ -68,7 +70,7 @@ export default function FeaturesSection({
                         />
                     </div>
                 </div>
-                <div className="relative mx-auto grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 lg:grid-cols-4">
+                <div className={cn("relative mx-auto grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 lg:grid-cols-4", layout === 'center' && 'lg:justify-center')}>
                     {featuresToDisplay.map((feature, index) => (
                          <div key={index} className="space-y-3">
                             <div className="flex items-center gap-2">
