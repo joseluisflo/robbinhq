@@ -1,7 +1,7 @@
 
 import { Cpu, Lock, Sparkles, Zap } from 'lucide-react'
 import Image from 'next/image'
-import { AutomationIcon, Chart01Icon, LoDatabaseIcon, LoShieldIcon } from '@/components/lo-icons'
+import { AutomationIcon, Chart01Icon, LoDatabaseIcon as DatabaseIcon, LoShieldIcon as ShieldIcon } from '@/components/lo-icons'
 import { cn } from '@/lib/utils';
 
 interface FeatureItem {
@@ -26,11 +26,12 @@ export default function FeaturesSection({
     const defaultFeatures: FeatureItem[] = [
         { title: "Workflows", description: "Automate complex tasks and processes effortlessly.", icon: AutomationIcon },
         { title: "Analytics", description: "Gain powerful insights from every customer interaction.", icon: Chart01Icon },
-        { title: "Your Data", description: "Maintain full ownership and control over data.", icon: LoDatabaseIcon },
-        { title: "Security", description: "Enterprise-grade protection for all your valuable information.", icon: LoShieldIcon },
+        { title: "Your Data", description: "Maintain full ownership and control over data.", icon: DatabaseIcon },
+        { title: "Security", description: "Enterprise-grade protection for all your valuable information.", icon: ShieldIcon },
     ];
 
     const featuresToDisplay = featureList || defaultFeatures;
+    const iconColors = ['#00a6f4', '#f48700', '#32e48c', '#e751aa'];
 
     return (
         <section className={cn("py-16 md:py-32", variant === 'muted' ? 'bg-muted/50' : 'bg-background')}>
@@ -76,7 +77,7 @@ export default function FeaturesSection({
                     {featuresToDisplay.map((feature, index) => (
                          <div key={index} className="space-y-3 lg:max-w-xs">
                             <div className="flex items-center gap-2">
-                                <feature.icon variant="duotone" className="size-4" style={{ color: '#00a6f4' }} />
+                                <feature.icon variant="duotone" className="size-4" style={{ color: iconColors[index] }} />
                                 <h3 className="text-sm font-medium">{feature.title}</h3>
                             </div>
                             <p className="text-muted-foreground text-sm">{feature.description}</p>
