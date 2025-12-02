@@ -1,7 +1,7 @@
 
 import { Cpu, Lock, Sparkles, Zap } from 'lucide-react'
 import Image from 'next/image'
-import { AutomationIcon, Chart01Icon, DatabaseIcon, ShieldIcon } from '@/components/lo-icons'
+import { AutomationIcon, Chart01Icon, LoDatabaseIcon, LoShieldIcon } from '@/components/lo-icons'
 import { cn } from '@/lib/utils';
 
 interface FeatureItem {
@@ -26,8 +26,8 @@ export default function FeaturesSection({
     const defaultFeatures: FeatureItem[] = [
         { title: "Workflows", description: "Automate complex tasks and processes effortlessly.", icon: AutomationIcon },
         { title: "Analytics", description: "Gain powerful insights from every customer interaction.", icon: Chart01Icon },
-        { title: "Your Data", description: "Maintain full ownership and control over data.", icon: DatabaseIcon },
-        { title: "Security", description: "Enterprise-grade protection for all your valuable information.", icon: ShieldIcon },
+        { title: "Your Data", description: "Maintain full ownership and control over data.", icon: LoDatabaseIcon },
+        { title: "Security", description: "Enterprise-grade protection for all your valuable information.", icon: LoShieldIcon },
     ];
 
     const featuresToDisplay = featureList || defaultFeatures;

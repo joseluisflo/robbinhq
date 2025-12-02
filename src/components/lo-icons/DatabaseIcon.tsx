@@ -1,4 +1,5 @@
 
+
 import { cn } from '@/lib/utils';
 import * as React from 'react';
 
@@ -6,7 +7,7 @@ interface LoIconProps extends React.SVGProps<SVGSVGElement> {
   variant?: 'stroke' | 'filled' | 'duotone';
 }
 
-export function DatabaseIcon({ variant = 'stroke', className, ...props }: LoIconProps) {
+export function LoDatabaseIcon({ variant = 'stroke', className, ...props }: LoIconProps) {
   if (variant === 'filled') {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" className={cn(className)} {...props}>
