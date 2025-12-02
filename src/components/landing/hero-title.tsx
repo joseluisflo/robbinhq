@@ -15,7 +15,7 @@ export default function HeroTitle() {
                                 <Button
                                     asChild
                                     size="lg"
-                                    className="w-full sm:w-auto">
+                                    className="w-full">
                                     <Link href="/signup">
                                         <span className="text-nowrap">Start Building</span>
                                     </Link>
@@ -24,7 +24,7 @@ export default function HeroTitle() {
                                     asChild
                                     size="lg"
                                     variant="outline"
-                                    className="w-full sm:w-auto">
+                                    className="w-full">
                                     <Link href="#">
                                         <span className="text-nowrap">Request a demo</span>
                                     </Link>
