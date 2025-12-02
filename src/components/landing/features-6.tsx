@@ -70,9 +70,11 @@ export default function FeaturesSection({
                         />
                     </div>
                 </div>
-                <div className={cn("relative mx-auto grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 lg:grid-cols-4", layout === 'center' && 'lg:justify-center')}>
+                <div className={cn("relative mx-auto grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8", 
+                    layout === 'center' ? "lg:flex lg:justify-center" : "lg:grid-cols-4"
+                )}>
                     {featuresToDisplay.map((feature, index) => (
-                         <div key={index} className="space-y-3">
+                         <div key={index} className="space-y-3 lg:max-w-xs">
                             <div className="flex items-center gap-2">
                                 <feature.icon variant="duotone" className="size-4" style={{ color: '#00a6f4' }} />
                                 <h3 className="text-sm font-medium">{feature.title}</h3>
