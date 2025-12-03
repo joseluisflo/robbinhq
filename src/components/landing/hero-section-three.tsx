@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { HeroHeader } from './header'
 import Image from 'next/image'
 import HeroTitle from './hero-title'
+import { MockupHeroTraining } from './mockup-hero-training'
 
 export default function HeroSection() {
     return (
@@ -23,12 +24,7 @@ export default function HeroSection() {
                                   }}
                                 >
                                     <div className="bg-background rounded-md relative mx-auto overflow-hidden border border-transparent shadow-lg shadow-black/10 ring-1 ring-black/10">
-                                        <Image
-                                            src="/mist/tailark-2.png"
-                                            alt="app screen"
-                                            width="2880"
-                                            height="1842"
-                                        />
+                                        <MockupHeroTraining />
                                     </div>
                                 </div>
                             </div>
