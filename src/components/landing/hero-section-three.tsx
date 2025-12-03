@@ -23,7 +23,7 @@ export default function HeroSection() {
                                       "url('https://assets.tryrobbin.com/assets/home-masthead-bg.webp')",
                                   }}
                                 >
-                                    <div className="bg-background rounded-md relative mx-auto overflow-hidden border border-transparent shadow-lg shadow-black/10 ring-1 ring-black/10">
+                                    <div className="bg-background rounded-md relative mx-auto overflow-hidden border border-transparent shadow-lg shadow-black/10 ring-1 ring-black/10 transform scale-[0.8] origin-top">
                                         <MockupHeroTraining />
                                     </div>
                                 </div>
