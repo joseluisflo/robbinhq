@@ -14,17 +14,23 @@ export default function HeroSection() {
                 <HeroTitle />
                 <section>
                     <div className="relative pb-14">
-                        <div className="mx-auto max-w-5xl px-6">
-                            <div className="relative -mr-56 mt-16 sm:mr-0">
+                        <div className="mx-auto max-w-7xl px-6">
+                            <div className="relative mt-16">
                                 <div
-                                  className="rounded-[var(--radius)] p-4 bg-cover bg-center"
+                                  className="rounded-[var(--radius)] p-8 bg-cover bg-center"
                                   style={{
                                     backgroundImage:
                                       "url('https://assets.tryrobbin.com/assets/home-masthead-bg.webp')",
                                   }}
                                 >
-                                    <div className="transform scale-[0.8] origin-top">
-                                        <div className="bg-background rounded-md relative mx-auto overflow-hidden border border-transparent shadow-lg shadow-black/10 ring-1 ring-black/10">
+                                    <div 
+                                        className="mx-auto overflow-hidden"
+                                        style={{
+                                            maxWidth: '1400px',
+                                            zoom: 0.7,
+                                        }}
+                                    >
+                                        <div className="bg-background rounded-lg relative overflow-hidden border border-border shadow-2xl ring-1 ring-black/5">
                                             <MockupHeroTraining />
                                         </div>
                                     </div>
