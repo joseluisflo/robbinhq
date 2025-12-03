@@ -72,7 +72,7 @@ export function MockupHeroTraining() {
   };
 
   return (
-    <div className="h-[700px] flex-1 flex flex-col bg-background">
+    <div className="h-[780px] flex-1 flex flex-col bg-background">
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         {/* Configuration Panel */}
         <ResizablePanel defaultSize={50} minSize={30}>
