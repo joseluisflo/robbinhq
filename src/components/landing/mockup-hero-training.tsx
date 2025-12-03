@@ -76,7 +76,7 @@ export function MockupHeroTraining() {
     <div className="h-[780px] flex-1 flex flex-col bg-background">
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         {/* Configuration Panel */}
-        <ResizablePanel defaultSize={50} minSize={30} maxSize={50}>
+        <ResizablePanel defaultSize={50} minSize={30} maxSize={30}>
           <div className="flex flex-col h-full">
             <Tabs defaultValue="instructions" className="flex flex-col flex-1 h-full">
                <div className="px-6 py-3 border-b flex items-center justify-between">
