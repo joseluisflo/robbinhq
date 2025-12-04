@@ -10,6 +10,7 @@ import CallToAction from '@/components/landing/call-to-action';
 import { MockupKnowledgeBase } from '@/components/landing/mockup-knowledge-base';
 import Footer from '@/components/landing/footer';
 import { MockupAgentPersonality } from '@/components/landing/mockup-agent-personality';
+import { MockupTemperatureSlider } from '@/components/landing/mockup-temperature-slider';
 
 
 export default function Home() {
@@ -29,7 +30,10 @@ export default function Home() {
             card2={{
                 title: "Agent Personality",
                 description: "Define your agent's role, persona, and creativity level to match your brand's voice.",
-                illustration: <MockupAgentPersonality />
+                illustration: <>
+                    <MockupTemperatureSlider />
+                    <MockupAgentPersonality />
+                </>
             }}
         />
         <FeaturesFour 

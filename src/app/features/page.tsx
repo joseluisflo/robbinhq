@@ -4,7 +4,7 @@ import FeaturesSix from '@/components/landing/features-6';
 import CallToAction from '@/components/landing/call-to-action';
 import Footer from '@/components/landing/footer';
 import FeaturesHeroTitle from '@/components/landing/features-hero-title';
-import { AiChemistryIcon, DatabaseIcon, ShieldIcon, IA01Icon, PenToolIcon, MotionIcon, RocketIcon, Chat02Icon, ChatSimpleIcon, Phone, FileSearch, History, Search, Inbox, Sparkles, Download, Link as LinkIcon } from '@/components/lo-icons';
+import { AiChemistryIcon, LoDatabaseIcon, LoShieldIcon, IA01Icon, PenToolIcon, MotionIcon, RocketIcon, Chat02Icon, ChatSimpleIcon, Phone, FileSearch, History, Search, Inbox, Sparkles, Download, Link as LinkIcon } from '@/components/lo-icons';
 
 
 export default function FeaturesPage() {
@@ -21,7 +21,7 @@ export default function FeaturesPage() {
         {
           title: "Sources",
           description: "Upload files and text for knowledge.",
-          icon: DatabaseIcon,
+          icon: LoDatabaseIcon,
         },
         {
           title: "Temperature",
@@ -31,7 +31,7 @@ export default function FeaturesPage() {
         {
           title: "Rate Limiting",
           description: "Prevent abuse with message and time limits.",
-          icon: ShieldIcon,
+          icon: LoShieldIcon,
         },
       ]
     },
