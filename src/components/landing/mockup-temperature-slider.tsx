@@ -1,15 +1,17 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { cn } from '@/lib/utils';
 
-export function MockupTemperatureSlider() {
+export function MockupTemperatureSlider({ className }: { className?: string }) {
   const [temperature, setTemperature] = useState(0.5);
 
   return (
-    <Card className="w-full max-w-sm mx-auto p-4 shadow-md mb-4">
+    <Card className={cn("w-full max-w-xs p-4 shadow-lg", className)}>
         <div className="flex items-center justify-between">
           <Label htmlFor="temperature-mock" className="font-semibold">
             Temperature
