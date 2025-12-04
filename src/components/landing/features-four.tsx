@@ -4,11 +4,12 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Bold, Calendar1, Ellipsis, Italic, Strikethrough, Underline } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import type { ReactNode } from 'react';
 
 interface FeatureCardProps {
     title: string;
     description: string;
-    illustration: 'code' | 'schedule';
+    illustration: 'code' | 'schedule' | ReactNode;
 }
 
 interface FeaturesFourProps {
@@ -19,6 +20,20 @@ interface FeaturesFourProps {
 }
 
 export default function FeaturesFour({ title, description, card1, card2 }: FeaturesFourProps) {
+    const renderIllustration = (illustration: FeatureCardProps['illustration']) => {
+        if (typeof illustration === 'string') {
+            switch (illustration) {
+                case 'code':
+                    return <CodeIllustration className="w-full" />;
+                case 'schedule':
+                    return <ScheduleIllustation className="border" variant="mixed" />;
+                default:
+                    return null;
+            }
+        }
+        return illustration;
+    };
+
     return (
         <section>
             <div className="bg-muted/50 py-24">
@@ -31,14 +46,7 @@ export default function FeaturesFour({ title, description, card1, card2 }: Featu
                     <div className="grid gap-4 sm:grid-cols-2">
                         <Card className="p-6">
                             <div className="flex aspect-video items-center justify-center">
-                                {card1.illustration === 'code' ? (
-                                    <CodeIllustration className="w-full" />
-                                ) : (
-                                    <ScheduleIllustation
-                                        className="border"
-                                        variant="mixed"
-                                    />
-                                )}
+                                {renderIllustration(card1.illustration)}
                             </div>
                             <div className="text-center">
                                 <h3 className="text-foreground text-xl font-semibold">{card1.title}</h3>
@@ -47,14 +55,7 @@ export default function FeaturesFour({ title, description, card1, card2 }: Featu
                         </Card>
                          <Card className="p-6">
                             <div className="flex aspect-video items-center justify-center">
-                                {card2.illustration === 'code' ? (
-                                    <CodeIllustration className="w-full" />
-                                ) : (
-                                    <ScheduleIllustation
-                                        className="border"
-                                        variant="mixed"
-                                    />
-                                )}
+                                {renderIllustration(card2.illustration)}
                             </div>
                             <div className="text-center">
                                 <h3 className="text-foreground text-xl font-semibold">{card2.title}</h3>

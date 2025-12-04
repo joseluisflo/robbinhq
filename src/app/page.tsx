@@ -6,7 +6,7 @@ import Testimonials from '@/components/landing/testimonials';
 import FeaturesSix from '@/components/landing/features-6';
 import ContentThree from '@/components/landing/content-3';
 import CallToAction from '@/components/landing/call-to-action';
-import Footer from '@/components/landing/footer';
+import { MockupKnowledgeBase } from '@/components/landing/mockup-knowledge-base';
 
 
 export default function Home() {
@@ -19,9 +19,9 @@ export default function Home() {
             title="First: Give Your Agent a Brain"
             description="Upload documents, paste text, or connect your knowledge bases. Your agent learns instantly, no code required."
             card1={{
-                title: "Marketing Campaigns",
-                description: "Effortlessly plan and execute your marketing campaigns organized.",
-                illustration: "code"
+                title: "Knowledge Base",
+                description: "Upload documents, spreadsheets, and text to build your agent's knowledge.",
+                illustration: <MockupKnowledgeBase />
             }}
             card2={{
                 title: "AI Meeting Scheduler",
