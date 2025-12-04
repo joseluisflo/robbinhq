@@ -10,6 +10,7 @@ import CallToAction from '@/components/landing/call-to-action';
 import { MockupKnowledgeBase } from '@/components/landing/mockup-knowledge-base';
 import { MockupAgentPersonality } from '@/components/landing/mockup-agent-personality';
 import { MockupTemperatureSlider } from '@/components/landing/mockup-temperature-slider';
+import Footer from '@/components/landing/footer';
 
 
 export default function Home() {
@@ -31,7 +32,7 @@ export default function Home() {
                 description: "Define your agent's role, persona, and creativity level to match your brand's voice.",
                 illustration: (
                   <div className="relative w-full max-w-sm mx-auto">
-                    <MockupTemperatureSlider className="absolute -top-8 right-0 z-10 scale-80 origin-top-right" />
+                    <MockupTemperatureSlider className="absolute -top-8 right-0 z-10 origin-top-right scale-80" />
                     <MockupAgentPersonality />
                   </div>
                 )
