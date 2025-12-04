@@ -3,12 +3,13 @@
 import { File, FileText, Trash2, FileUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PdfIcon } from '@/components/illustrations';
 
 const knowledgeFiles = [
     {
         name: 'Product Catalog 2024.pdf',
         size: '2.3 MB',
-        icon: File,
+        icon: PdfIcon,
     },
     {
         name: 'Return Policy.txt',
