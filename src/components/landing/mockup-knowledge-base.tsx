@@ -1,9 +1,10 @@
+
 'use client';
 
-import { File, FileText, Trash2, FileUp } from 'lucide-react';
+import { File, Trash2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PdfIcon } from '@/components/illustrations';
+import { PdfIcon, TxtIcon } from '@/components/illustrations';
 
 const knowledgeFiles = [
     {
@@ -14,7 +15,7 @@ const knowledgeFiles = [
     {
         name: 'Return Policy.txt',
         size: '15 KB',
-        icon: FileText,
+        icon: TxtIcon,
     },
     {
         name: 'Onboarding Guide.docx',
