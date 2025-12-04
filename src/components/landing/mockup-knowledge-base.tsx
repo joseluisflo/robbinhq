@@ -4,7 +4,7 @@
 import { File, Trash2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PdfIcon, TxtIcon } from '@/components/illustrations';
+import { PdfIcon, TxtIcon, DocxIcon } from '@/components/illustrations';
 
 const knowledgeFiles = [
     {
@@ -20,7 +20,7 @@ const knowledgeFiles = [
     {
         name: 'Onboarding Guide.docx',
         size: '890 KB',
-        icon: File,
+        icon: DocxIcon,
     },
 ];
 
