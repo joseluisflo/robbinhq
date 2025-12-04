@@ -11,6 +11,8 @@ import { AddTextDialog } from '@/components/add-text-dialog';
 import { AddFileDialog } from '@/components/add-file-dialog';
 import type { TextSource, AgentFile } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { PdfIcon, TxtIcon, DocxIcon } from '@/components/illustrations';
+
 
 interface KnowledgeSourcesProps {
   sourceType: 'text' | 'file';
@@ -66,6 +68,20 @@ function KnowledgeUsageBar({ currentUsageKB, usageLimitKB, isLimitReached }: { c
     </Card>
   );
 }
+
+const getFileIcon = (fileType: string, fileName: string): React.ElementType => {
+    if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+      return PdfIcon;
+    }
+    if (fileType.includes('word') || fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+      return DocxIcon;
+    }
+    if (fileType.startsWith('text/') || fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.html')) {
+      return TxtIcon;
+    }
+    return FileIcon; // Fallback icon
+};
+
 
 export function KnowledgeSources({
   sourceType,
@@ -133,20 +149,23 @@ export function KnowledgeSources({
                   </Button>
                 </Card>
               ))
-            : fileSources.map((file) => (
-                <Card key={file.id} className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <FileIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                    <div className="flex flex-col overflow-hidden">
-                      <span className="font-medium truncate" title={file.name}>{file.name}</span>
-                      <span className="text-xs text-muted-foreground">{formatBytes(file.size)}</span>
+            : fileSources.map((file) => {
+                const Icon = getFileIcon(file.type, file.name);
+                return (
+                    <Card key={file.id} className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <Icon className="h-6 w-6 text-muted-foreground flex-shrink-0" />
+                        <div className="flex flex-col overflow-hidden">
+                        <span className="font-medium truncate" title={file.name}>{file.name}</span>
+                        <span className="text-xs text-muted-foreground">{formatBytes(file.size)}</span>
+                        </div>
                     </div>
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleDeleteFile(file.id!)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </Card>
-              ))}
+                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleDeleteFile(file.id!)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                    </Card>
+                )
+            })}
         </div>
       ) : (
         <Card className="text-center flex-1 flex flex-col justify-center min-h-[200px]">
