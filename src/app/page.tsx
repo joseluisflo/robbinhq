@@ -7,6 +7,7 @@ import FeaturesSix from '@/components/landing/features-6';
 import ContentThree from '@/components/landing/content-3';
 import CallToAction from '@/components/landing/call-to-action';
 import { MockupKnowledgeBase } from '@/components/landing/mockup-knowledge-base';
+import Footer from '@/components/landing/footer';
 
 
 export default function Home() {
