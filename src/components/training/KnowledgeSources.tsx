@@ -11,7 +11,7 @@ import { AddTextDialog } from '@/components/add-text-dialog';
 import { AddFileDialog } from '@/components/add-file-dialog';
 import type { TextSource, AgentFile } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { PdfIcon, TxtIcon, DocxIcon } from '@/components/illustrations';
+import { PdfIcon, TxtIcon, DocxIcon, HtmlIcon, MarkdownIcon } from '@/components/illustrations';
 
 
 interface KnowledgeSourcesProps {
@@ -70,13 +70,20 @@ function KnowledgeUsageBar({ currentUsageKB, usageLimitKB, isLimitReached }: { c
 }
 
 const getFileIcon = (fileType: string, fileName: string): React.ElementType => {
-    if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+    const lowerFileName = fileName.toLowerCase();
+    if (fileType === 'application/pdf' || lowerFileName.endsWith('.pdf')) {
       return PdfIcon;
     }
-    if (fileType.includes('word') || fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+    if (fileType.includes('word') || lowerFileName.endsWith('.doc') || lowerFileName.endsWith('.docx')) {
       return DocxIcon;
     }
-    if (fileType.startsWith('text/') || fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.html')) {
+    if (lowerFileName.endsWith('.md')) {
+        return MarkdownIcon;
+    }
+    if (fileType.startsWith('text/html') || lowerFileName.endsWith('.html') || lowerFileName.endsWith('.htm')) {
+        return HtmlIcon;
+    }
+    if (fileType.startsWith('text/')) {
       return TxtIcon;
     }
     return FileIcon; // Fallback icon
