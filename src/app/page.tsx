@@ -1,3 +1,4 @@
+
 'use client';
 
 import HeroSection from '@/components/landing/hero-section-three';
@@ -8,6 +9,7 @@ import ContentThree from '@/components/landing/content-3';
 import CallToAction from '@/components/landing/call-to-action';
 import { MockupKnowledgeBase } from '@/components/landing/mockup-knowledge-base';
 import Footer from '@/components/landing/footer';
+import { MockupAgentPersonality } from '@/components/landing/mockup-agent-personality';
 
 
 export default function Home() {
@@ -25,9 +27,9 @@ export default function Home() {
                 illustration: <MockupKnowledgeBase />
             }}
             card2={{
-                title: "AI Meeting Scheduler",
-                description: "Effortlessly book and manage your meetings. Stay on top of your schedule.",
-                illustration: "schedule"
+                title: "Agent Personality",
+                description: "Define your agent's role, persona, and creativity level to match your brand's voice.",
+                illustration: <MockupAgentPersonality />
             }}
         />
         <FeaturesFour 
