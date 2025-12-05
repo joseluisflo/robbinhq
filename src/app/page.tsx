@@ -32,7 +32,7 @@ export default function Home() {
                 description: "Define your agent's role, persona, and creativity level to match your brand's voice.",
                 illustration: (
                   <div className="relative w-full max-w-sm mx-auto">
-                    <MockupTemperatureSlider className="absolute -top-8 right-0 z-10 origin-top-right scale-80" />
+                    <MockupTemperatureSlider className="absolute -top-8 right-0 z-10 origin-top-right scale-60" />
                     <MockupAgentPersonality />
                   </div>
                 )
@@ -75,6 +75,7 @@ export default function Home() {
     </div>
   );
 }
+
 
 
 
