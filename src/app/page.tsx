@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import HeroSection from '@/components/landing/hero-section-three';
@@ -75,7 +76,3 @@ export default function Home() {
     </div>
   );
 }
-
-
-
-
