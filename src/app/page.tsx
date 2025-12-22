@@ -43,8 +43,8 @@ export default function Home() {
             title="Your Agent, Your Brand"
             description="Customize colors, logos, and the widget's position. Make your AI agent blend seamlessly with your brand identity."
             card1={{
-                title: "Component Generation",
-                description: "Describe the component you need, and let the AI write the code for you.",
+                title: "Visual Controls",
+                description: "Visually customize colors, position, and messages. No code needed.",
                 illustration: "schedule"
             }}
             card2={{
