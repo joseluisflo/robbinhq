@@ -12,6 +12,7 @@ import { MockupKnowledgeBase } from '@/components/landing/mockup-knowledge-base'
 import { MockupAgentPersonality } from '@/components/landing/mockup-agent-personality';
 import { MockupTemperatureSlider } from '@/components/landing/mockup-temperature-slider';
 import Footer from '@/components/landing/footer';
+import { MockupColorsSelection } from '@/components/landing/mockup-colors-selection';
 
 
 export default function Home() {
@@ -45,12 +46,12 @@ export default function Home() {
             card1={{
                 title: "Visual Controls",
                 description: "Visually customize colors, position, and messages. No code needed.",
-                illustration: "schedule"
+                illustration: <MockupColorsSelection />
             }}
             card2={{
-                title: "Iterative Design",
-                description: "Refine your UI/UX with simple prompts, making design changes in seconds.",
-                illustration: "code"
+                title: "Custom Workflows",
+                description: "Build complex, multi-step automations that run on their own.",
+                illustration: "schedule"
             }}
         />
         <FeaturesFour 
