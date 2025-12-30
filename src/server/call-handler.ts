@@ -3,7 +3,7 @@ import { GoogleGenAI, type LiveSession, Modality } from "@google/genai";
 import { Buffer } from "node:buffer";
 
 // -------------------------------------------------------------------------
-// FUNCIONES DE AUDIO
+// FUNCIONES DE AUDIO (Optimizadas y corregidas)
 // -------------------------------------------------------------------------
 
 // 1. Entrada: Mu-Law (Twilio 8k) -> PCM 16-bit
@@ -23,7 +23,7 @@ function muLawToLinear16(muLawBuffer: Buffer): Buffer {
   return pcmBuffer;
 }
 
-// 2. Entrada: Upsample 8k -> 16k (Para cumplir con la API de Google)
+// 2. Entrada: Upsample 8k -> 16k
 function upsample8kTo16k(buffer8k: Buffer): Buffer {
   const buffer16k = Buffer.alloc(buffer8k.length * 2);
   for (let i = 0; i < buffer8k.length / 2; i++) {
@@ -34,7 +34,7 @@ function upsample8kTo16k(buffer8k: Buffer): Buffer {
   return buffer16k;
 }
 
-// 3. Salida: Downsample 24k (Google) -> 8k (Twilio)
+// 3. Salida: Downsample 24k -> 8k
 function downsampleBuffer(buffer: Buffer, inputRate: number, outputRate: number): Buffer {
   if (inputRate === outputRate) return buffer;
   const ratio = inputRate / outputRate;
@@ -59,7 +59,7 @@ function linear16ToMuLaw(pcmBuffer: Buffer): Buffer {
     const sign = sample < 0 ? 0x80 : 0;
     if (sample < 0) sample = -sample;
     
-    // Clipping a 16-bit
+    // Clipping
     sample = Math.min(sample + 0x84, 0x7fff);
     
     let exponent = 7;
@@ -73,7 +73,10 @@ function linear16ToMuLaw(pcmBuffer: Buffer): Buffer {
     let mantissa = (sample >> (exponent + 3)) & 0x0f;
     
     let mu = ~(sign | (exponent << 4) | mantissa);
-    mu &= 0xFF; // Asegura byte positivo
+    
+    // 🔥 CORRECCIÓN VITAL: Forzamos que sea un byte positivo (0-255)
+    // Esto evita el RangeError que estaba saturando tus logs y tu CPU
+    mu &= 0xFF; 
 
     muBuffer.writeUInt8(mu, i / 2);
   }
@@ -117,19 +120,14 @@ export class CallHandler {
             : "You are a helpful voice assistant.";
         const agentVoice = params.agentVoice || 'Zephyr';
 
-        console.log(`[Handler] 📝 System instruction length: ${systemInstruction.length} chars`);
         console.log(`[Handler] 🗣️ Agent voice: ${agentVoice}`);
-
         await this.connectToGoogleAI(systemInstruction, agentVoice);
 
       } else if (twilioMessage.event === 'media') {
         if (!this.googleAISession) return;
         
-        this.audioChunkCount++;
-        
+        // Procesamos audio entrante
         const audioBuffer = Buffer.from(twilioMessage.media.payload, 'base64');
-        
-        // Conversión: Twilio(MuLaw 8k) -> PCM 8k -> PCM 16k -> Google
         const pcm8k = muLawToLinear16(audioBuffer);
         const pcm16k = upsample8kTo16k(pcm8k);
         
@@ -146,13 +144,7 @@ export class CallHandler {
 
   private sendAudioToGoogle(base64Payload: string) {
     if (!this.googleAISession) return;
-
     try {
-      // Loguear solo ocasionalmente para no saturar la consola
-      if (this.audioChunkCount % 100 === 0) {
-        console.log(`[Handler] 📤 Sending chunk #${this.audioChunkCount}`);
-      }
-      
       this.googleAISession.sendRealtimeInput({
         audio: { 
           data: base64Payload,
@@ -161,6 +153,18 @@ export class CallHandler {
       });
     } catch (err) {
       console.error("[Handler] ❌ Error sending audio to Google:", err);
+    }
+  }
+
+  // 🔥 NUEVA FUNCIÓN: Limpia el buffer de audio de Twilio
+  // Esto hace que la interrupción se sienta instantánea
+  private sendClearToTwilio() {
+    if (this.ws.readyState === WebSocket.OPEN && this.twilioStreamSid) {
+        const clearMessage = {
+            event: "clear",
+            streamSid: this.twilioStreamSid,
+        };
+        this.ws.send(JSON.stringify(clearMessage));
     }
   }
 
@@ -179,19 +183,14 @@ export class CallHandler {
         model: "gemini-2.5-flash-native-audio-preview-09-2025",
         config: {
           responseModalities: [Modality.AUDIO],
-          
-          // 🔥 1. FORMATO DE AUDIO (Indispensable para que Google entienda el stream)
           inputAudioConfig: {
             encoding: 'PCM16',
             sampleRateHertz: 16000,
           },
-
-          // 🔥 2. CONFIGURACIÓN DE BARGE-IN (Lo que faltaba)
-          // Esto le dice al modelo que escuche interrupciones mientras habla
+          // ✅ Configuración correcta de interrupciones
           inputAudioTranscription: {
             interruptions: true
           },
-
           outputAudioConfig: {
             encoding: 'PCM16',
             sampleRateHertz: 24000,
@@ -203,21 +202,26 @@ export class CallHandler {
         },
         callbacks: {
           onopen: () => {
-            console.log("[Handler] ✅ Google AI session opened successfully!");
-            // Mensaje inicial para activar la conversación
+            console.log("[Handler] ✅ Connected to Google AI");
             setTimeout(() => {
-                console.log("[Handler] ⚡ Sending trigger message");
-                this.googleAISession?.sendRealtimeInput({
-                    text: "Hello" 
-                });
+                this.googleAISession?.sendRealtimeInput({ text: "Hello" });
             }, 200);
           },
           onmessage: (message) => {
             try {
-              const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+              const serverContent = message.serverContent;
+
+              // 🔥 DETECCIÓN DE INTERRUPCIÓN
+              // Si Google nos dice que hubo una interrupción, borramos lo que Twilio tenga en cola.
+              if (serverContent?.turnComplete && serverContent?.interrupted) {
+                  console.log("[Handler] ⚡ Interruption detected! Clearing Twilio buffer.");
+                  this.sendClearToTwilio();
+              }
+
+              const audioData = serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
               
               if (audioData && this.twilioStreamSid) {
-                // Conversión: Google(24k) -> PCM 8k -> Twilio(MuLaw)
+                // Conversión inversa: 24k -> 8k -> MuLaw
                 const pcm24kBuffer = Buffer.from(audioData, 'base64');
                 const pcm8kBuffer = downsampleBuffer(pcm24kBuffer, 24000, 8000);
                 const muLawBuffer = linear16ToMuLaw(pcm8kBuffer);
@@ -233,7 +237,7 @@ export class CallHandler {
                 }
               }
             } catch (err) {
-              console.error("[Handler] ❌ Error processing Google AI response:", err);
+              console.error("[Handler] ❌ Error processing AI response:", err);
             }
           },
           onerror: (e) => {
@@ -244,11 +248,9 @@ export class CallHandler {
           },
         },
       })) as MinimalLiveSession;
-      
-      console.log("[Handler] ✅ Google AI connection established successfully!");
     } catch (error) {
-      console.error("[Handler] ❌ Failed to connect to Google AI:", error);
-      this.ws.close(1011, "Could not connect to AI service.");
+      console.error("[Handler] ❌ Connection failed:", error);
+      this.ws.close(1011, "Connection failed.");
     }
   }
 
