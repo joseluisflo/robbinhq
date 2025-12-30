@@ -1,14 +1,12 @@
 import { WebSocket } from 'ws';
 import { GoogleGenAI, type LiveSession, Modality } from "@google/genai";
 import { Buffer } from "node:buffer";
-import { downsampleBuffer, linear16ToMuLaw } from "@/lib/audioUtils";
 
-interface MinimalLiveSession extends LiveSession {
-  close(): void;
-  sendRealtimeInput(request: { audio: { data: string, mimeType: string } } | { text: string }): void;
-}
+// -------------------------------------------------------------------------
+// FUNCIONES DE AUDIO (Todo incluido aquí para evitar errores de importación)
+// -------------------------------------------------------------------------
 
-// ✅ UTILS: Correcto. Mantén esto aquí o muévelo a @/lib/audioUtils para limpieza.
+// 1. Convierte Mu-Law (8-bit) a PCM Linear (16-bit) -> Para ENTRADA (Twilio -> Google)
 function muLawToLinear16(muLawBuffer: Buffer): Buffer {
   const pcmBuffer = Buffer.alloc(muLawBuffer.length * 2);
   for (let i = 0; i < muLawBuffer.length; i++) {
@@ -25,6 +23,7 @@ function muLawToLinear16(muLawBuffer: Buffer): Buffer {
   return pcmBuffer;
 }
 
+// 2. Convierte 8000Hz a 16000Hz -> Para ENTRADA (Twilio -> Google)
 function upsample8kTo16k(buffer8k: Buffer): Buffer {
   const buffer16k = Buffer.alloc(buffer8k.length * 2);
   for (let i = 0; i < buffer8k.length / 2; i++) {
@@ -33,6 +32,56 @@ function upsample8kTo16k(buffer8k: Buffer): Buffer {
     buffer16k.writeInt16LE(sample, i * 4 + 2);
   }
   return buffer16k;
+}
+
+// 3. Baja la frecuencia (Downsample) -> Para SALIDA (Google -> Twilio)
+function downsampleBuffer(buffer: Buffer, inputRate: number, outputRate: number): Buffer {
+  if (inputRate === outputRate) return buffer;
+  const ratio = inputRate / outputRate;
+  const newLength = Math.floor(buffer.length / 2 / ratio) * 2;
+  const result = Buffer.alloc(newLength);
+  
+  for (let i = 0; i < newLength / 2; i++) {
+    const originalIndex = Math.floor(i * ratio) * 2;
+    if (originalIndex < buffer.length - 1) {
+        const val = buffer.readInt16LE(originalIndex);
+        result.writeInt16LE(val, i * 2);
+    }
+  }
+  return result;
+}
+
+// 4. Convierte PCM Linear (16-bit) a Mu-Law -> Para SALIDA (Google -> Twilio)
+function linear16ToMuLaw(pcmBuffer: Buffer): Buffer {
+  const muBuffer = Buffer.alloc(pcmBuffer.length / 2);
+  for (let i = 0; i < pcmBuffer.length; i += 2) {
+    const sample = pcmBuffer.readInt16LE(i);
+    const sign = sample < 0 ? 0x80 : 0;
+    let magnitude = sample < 0 ? -sample : sample;
+    magnitude = Math.min(magnitude + 0x84, 0x7fff);
+    
+    let exponent = 7;
+    for (let exp = 0; exp < 8; exp++) {
+        if (magnitude < (0x84 << (exp + 1))) {
+            exponent = exp;
+            break;
+        }
+    }
+    
+    let mantissa = (magnitude >> (exponent + 3)) & 0x0f;
+    const mu = ~(sign | (exponent << 4) | mantissa);
+    muBuffer.writeUInt8(mu, i / 2);
+  }
+  return muBuffer;
+}
+
+// -------------------------------------------------------------------------
+// CLASE PRINCIPAL
+// -------------------------------------------------------------------------
+
+interface MinimalLiveSession extends LiveSession {
+  close(): void;
+  sendRealtimeInput(request: { audio: { data: string, mimeType: string } } | { text: string }): void;
 }
 
 export class CallHandler {
@@ -69,7 +118,6 @@ export class CallHandler {
         await this.connectToGoogleAI(systemInstruction, agentVoice);
 
       } else if (twilioMessage.event === 'media') {
-        // ✅ CORRECCIÓN APLICADA: No incrementes chunkCount si no hay sesión
         if (!this.googleAISession) return;
         
         this.audioChunkCount++;
@@ -92,11 +140,9 @@ export class CallHandler {
   }
 
   private sendAudioToGoogle(base64Payload: string) {
-    // Ya verificamos this.googleAISession en handleMessage, pero por seguridad:
     if (!this.googleAISession) return;
 
     try {
-      // Logs reducidos para no saturar consola
       if (this.audioChunkCount % 100 === 0) {
         console.log(`[Handler] 📤 Sending chunk #${this.audioChunkCount}`);
       }
@@ -143,11 +189,11 @@ export class CallHandler {
         callbacks: {
           onopen: () => {
             console.log("[Handler] ✅ Google AI session opened successfully!");
-            // ⭐ TRUCO IMPORTANTE: Hacer que la IA hable primero
+            // ⭐ TRUCO: Despertar a la IA
             setTimeout(() => {
-                console.log("[Handler] ⚡ Sending trigger message to wake up AI");
+                console.log("[Handler] ⚡ Sending trigger message");
                 this.googleAISession?.sendRealtimeInput({
-                    text: "start conversation" 
+                    text: "Hello" 
                 });
             }, 200);
           },
@@ -156,7 +202,7 @@ export class CallHandler {
               const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
               
               if (audioData && this.twilioStreamSid) {
-                // Cadena de conversión inversa: Google 24k -> PCM 8k -> MuLaw
+                // AQUÍ OCURRÍA EL ERROR ANTES, AHORA USARÁ LAS FUNCIONES LOCALES
                 const pcm24kBuffer = Buffer.from(audioData, 'base64');
                 const pcm8kBuffer = downsampleBuffer(pcm24kBuffer, 24000, 8000);
                 const muLawBuffer = linear16ToMuLaw(pcm8kBuffer);
@@ -177,8 +223,6 @@ export class CallHandler {
           },
           onerror: (e) => {
             console.error("[Handler] ❌ Google AI Error:", e);
-            // No cerramos el socket inmediatamente para evitar desconexiones bruscas por errores transitorios,
-            // pero si es fatal, Twilio cerrará la llamada eventualmente.
           },
           onclose: () => {
             console.log("[Handler] 🔌 Google AI session closed.");
