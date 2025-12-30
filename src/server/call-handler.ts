@@ -3,7 +3,7 @@ import { GoogleGenAI, type LiveSession, Modality } from "@google/genai";
 import { Buffer } from "node:buffer";
 
 // -------------------------------------------------------------------------
-// FUNCIONES DE AUDIO (Corregidas para evitar ERR_OUT_OF_RANGE)
+// FUNCIONES DE AUDIO
 // -------------------------------------------------------------------------
 
 // 1. Entrada: Mu-Law (Twilio 8k) -> PCM 16-bit
@@ -52,7 +52,6 @@ function downsampleBuffer(buffer: Buffer, inputRate: number, outputRate: number)
 }
 
 // 4. Salida: PCM 16-bit -> Mu-Law (Twilio)
-// ⚠️ ESTA ES LA FUNCIÓN QUE CAUSABA EL CRASH, AHORA ESTÁ CORREGIDA
 function linear16ToMuLaw(pcmBuffer: Buffer): Buffer {
   const muBuffer = Buffer.alloc(pcmBuffer.length / 2);
   for (let i = 0; i < pcmBuffer.length; i += 2) {
@@ -73,11 +72,8 @@ function linear16ToMuLaw(pcmBuffer: Buffer): Buffer {
     
     let mantissa = (sample >> (exponent + 3)) & 0x0f;
     
-    // 🔥 CORRECCIÓN CRÍTICA: 
-    // El operador '~' en JS crea enteros con signo (ej. -44).
-    // Usamos '& 0xFF' para forzar que sea un byte positivo (0-255).
     let mu = ~(sign | (exponent << 4) | mantissa);
-    mu &= 0xFF; 
+    mu &= 0xFF; // Asegura byte positivo
 
     muBuffer.writeUInt8(mu, i / 2);
   }
@@ -133,7 +129,7 @@ export class CallHandler {
         
         const audioBuffer = Buffer.from(twilioMessage.media.payload, 'base64');
         
-        // Cadena de conversión de entrada: Twilio(MuLaw 8k) -> PCM 8k -> PCM 16k -> Google
+        // Conversión: Twilio(MuLaw 8k) -> PCM 8k -> PCM 16k -> Google
         const pcm8k = muLawToLinear16(audioBuffer);
         const pcm16k = upsample8kTo16k(pcm8k);
         
@@ -152,6 +148,7 @@ export class CallHandler {
     if (!this.googleAISession) return;
 
     try {
+      // Loguear solo ocasionalmente para no saturar la consola
       if (this.audioChunkCount % 100 === 0) {
         console.log(`[Handler] 📤 Sending chunk #${this.audioChunkCount}`);
       }
@@ -159,7 +156,7 @@ export class CallHandler {
       this.googleAISession.sendRealtimeInput({
         audio: { 
           data: base64Payload,
-          mimeType: `audio/pcm;rate=16000` // Coincide con el upsample que hicimos
+          mimeType: `audio/pcm;rate=16000`
         }
       });
     } catch (err) {
@@ -182,10 +179,19 @@ export class CallHandler {
         model: "gemini-2.5-flash-native-audio-preview-09-2025",
         config: {
           responseModalities: [Modality.AUDIO],
+          
+          // 🔥 1. FORMATO DE AUDIO (Indispensable para que Google entienda el stream)
           inputAudioConfig: {
             encoding: 'PCM16',
             sampleRateHertz: 16000,
           },
+
+          // 🔥 2. CONFIGURACIÓN DE BARGE-IN (Lo que faltaba)
+          // Esto le dice al modelo que escuche interrupciones mientras habla
+          inputAudioTranscription: {
+            interruptions: true
+          },
+
           outputAudioConfig: {
             encoding: 'PCM16',
             sampleRateHertz: 24000,
@@ -198,7 +204,7 @@ export class CallHandler {
         callbacks: {
           onopen: () => {
             console.log("[Handler] ✅ Google AI session opened successfully!");
-            // Mensaje inicial para que la IA salude
+            // Mensaje inicial para activar la conversación
             setTimeout(() => {
                 console.log("[Handler] ⚡ Sending trigger message");
                 this.googleAISession?.sendRealtimeInput({
@@ -211,10 +217,10 @@ export class CallHandler {
               const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
               
               if (audioData && this.twilioStreamSid) {
-                // Cadena de conversión de salida: Google(24k) -> PCM 8k -> Twilio(MuLaw)
+                // Conversión: Google(24k) -> PCM 8k -> Twilio(MuLaw)
                 const pcm24kBuffer = Buffer.from(audioData, 'base64');
                 const pcm8kBuffer = downsampleBuffer(pcm24kBuffer, 24000, 8000);
-                const muLawBuffer = linear16ToMuLaw(pcm8kBuffer); // Ahora es seguro
+                const muLawBuffer = linear16ToMuLaw(pcm8kBuffer);
                 
                 const twilioResponse = {
                   event: "media",
