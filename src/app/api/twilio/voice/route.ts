@@ -116,20 +116,8 @@ ${knowledge}
     name: "callSid",
     value: callSid
   });
-  // Request Twilio to send audio in PCM format for higher quality and simpler processing
-  stream.parameter({
-    name: "track",
-    value: "inbound_track"
-  });
-  stream.parameter({
-      name: "codec",
-      value: "pcm"
-  });
-  stream.parameter({
-      name: "sampleRate",
-      value: "16000"
-  });
-
+  // Twilio Media Streams send audio in mu-law format. We don't need to specify track or codec here
+  // as the server will handle the conversion.
 
   // CRITICAL: Add a pause to keep the call alive while the stream connects.
   response.pause({ length: 60 });

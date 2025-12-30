@@ -1,3 +1,4 @@
+
 import { WebSocket } from 'ws';
 import { GoogleGenAI, type LiveSession, Modality } from "@google/genai";
 import { Buffer } from "node:buffer";
@@ -8,12 +9,39 @@ interface MinimalLiveSession extends LiveSession {
   sendRealtimeInput(request: { audio: { data: string, mimeType: string } } | { text: string }): void;
 }
 
+// Converts Mu-Law (8-bit) to PCM Linear (16-bit)
+function muLawToLinear16(muLawBuffer: Buffer): Buffer {
+  const pcmBuffer = Buffer.alloc(muLawBuffer.length * 2);
+  for (let i = 0; i < muLawBuffer.length; i++) {
+    const mu = muLawBuffer[i];
+    let t = ~mu;
+    let sign = (t & 0x80) >> 7;
+    let exponent = (t & 0x70) >> 4;
+    let mantissa = t & 0x0f;
+    let sample = ((mantissa << 3) + 0x84) << exponent;
+    sample -= 0x84;
+    if (sign === 0) sample = -sample;
+    pcmBuffer.writeInt16LE(sample, i * 2);
+  }
+  return pcmBuffer;
+}
+
+// Converts 8000Hz to 16000Hz (by duplicating samples)
+function upsample8kTo16k(buffer8k: Buffer): Buffer {
+  const buffer16k = Buffer.alloc(buffer8k.length * 2);
+  for (let i = 0; i < buffer8k.length / 2; i++) {
+    const sample = buffer8k.readInt16LE(i * 2);
+    buffer16k.writeInt16LE(sample, i * 4);
+    buffer16k.writeInt16LE(sample, i * 4 + 2);
+  }
+  return buffer16k;
+}
+
+
 export class CallHandler {
   private ws: WebSocket;
   private googleAISession: MinimalLiveSession | null = null;
   private twilioStreamSid: string | null = null;
-  private codec: string = 'pcm';
-  private sampleRate: number = 16000;
   private audioChunkCount: number = 0;
 
   constructor(ws: WebSocket) {
@@ -28,9 +56,6 @@ export class CallHandler {
       const messageStr = message.toString();
       const twilioMessage = JSON.parse(messageStr);
 
-      // 🔍 LOG: Mostrar qué evento recibimos
-      console.log(`[Handler] 📨 Received event: ${twilioMessage.event}`);
-
       if (twilioMessage.event === "start") {
         this.twilioStreamSid = twilioMessage.start.streamSid;
         console.log(`[Handler] 🎬 Stream started: ${this.twilioStreamSid}`);
@@ -40,28 +65,19 @@ export class CallHandler {
             ? Buffer.from(params.systemInstruction, 'base64').toString('utf-8') 
             : "You are a helpful voice assistant.";
         const agentVoice = params.agentVoice || 'Zephyr';
-        this.codec = params.codec || 'pcm';
-        this.sampleRate = parseInt(params.sampleRate, 10) || 16000;
 
-        console.log(`[Handler] 🎙️ Codec: ${this.codec}, Rate: ${this.sampleRate}`);
         console.log(`[Handler] 📝 System instruction length: ${systemInstruction.length} chars`);
         console.log(`[Handler] 🗣️ Agent voice: ${agentVoice}`);
 
         await this.connectToGoogleAI(systemInstruction, agentVoice);
       } else if (twilioMessage.event === 'media') {
-        // 🔍 LOG: Contar chunks de audio recibidos
         this.audioChunkCount++;
-        if (this.audioChunkCount % 50 === 0) {
-          console.log(`[Handler] 🎵 Received ${this.audioChunkCount} audio chunks so far`);
-        }
-        
-        const payloadLength = twilioMessage.media.payload?.length || 0;
-        if (this.audioChunkCount <= 3) {
-          console.log(`[Handler] 🎵 Media chunk #${this.audioChunkCount}, payload length: ${payloadLength}`);
-        }
         
         if (this.googleAISession) {
-          this.sendAudioToGoogle(twilioMessage.media.payload);
+            const audioBuffer = Buffer.from(twilioMessage.media.payload, 'base64');
+            const pcm8k = muLawToLinear16(audioBuffer);
+            const pcm16k = upsample8kTo16k(pcm8k);
+            this.sendAudioToGoogle(pcm16k.toString('base64'));
         } else {
           console.error(`[Handler] ⚠️ Received media but Google AI session is not ready!`);
         }
@@ -80,7 +96,6 @@ export class CallHandler {
       return;
     }
     try {
-      // 🔍 LOG: Mostrar cada 50 chunks para no saturar
       if (this.audioChunkCount % 50 === 0) {
         console.log(`[Handler] 📤 Sending audio to Google, chunk size: ${base64Payload.length} chars`);
       }
@@ -88,7 +103,7 @@ export class CallHandler {
       this.googleAISession.sendRealtimeInput({
         audio: { 
           data: base64Payload,
-          mimeType: `audio/pcm;rate=${this.sampleRate}`
+          mimeType: `audio/pcm;rate=16000`
         }
       });
     } catch (err) {
@@ -113,7 +128,7 @@ export class CallHandler {
           responseModalities: [Modality.AUDIO],
           inputAudioConfig: {
             encoding: 'PCM16',
-            sampleRateHertz: this.sampleRate,
+            sampleRateHertz: 16000,
           },
           outputAudioConfig: {
             encoding: 'PCM16',
@@ -130,27 +145,12 @@ export class CallHandler {
           },
           onmessage: (message) => {
             try {
-              // 🔍 LOG: Importante - ver si Google responde
-              console.log("[Handler] ⭐ Received message from Google AI");
-              
               const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
-              
-              if (audioData) {
-                console.log(`[Handler] 🔊 Google sent audio data: ${audioData.length} chars (base64)`);
-              } else {
-                console.log("[Handler] ⚠️ Google message received but no audio data");
-                console.log("[Handler] 📋 Message structure:", JSON.stringify(message).substring(0, 500));
-              }
               
               if (audioData && this.twilioStreamSid) {
                 const pcm24kBuffer = Buffer.from(audioData, 'base64');
-                console.log(`[Handler] 🔄 Converting audio: PCM 24kHz (${pcm24kBuffer.length} bytes)`);
-                
                 const pcm8kBuffer = downsampleBuffer(pcm24kBuffer, 24000, 8000);
-                console.log(`[Handler] 🔄 Downsampled to 8kHz (${pcm8kBuffer.length} bytes)`);
-                
                 const muLawBuffer = linear16ToMuLaw(pcm8kBuffer);
-                console.log(`[Handler] 🔄 Converted to muLaw (${muLawBuffer.length} bytes)`);
                 
                 const twilioResponse = {
                   event: "media",
@@ -160,16 +160,8 @@ export class CallHandler {
                 
                 if (this.ws.readyState === WebSocket.OPEN) {
                   this.ws.send(JSON.stringify(twilioResponse));
-                  console.log("[Handler] ✅ Audio sent back to Twilio successfully!");
                 } else {
                   console.error("[Handler] ❌ Cannot send to Twilio: WebSocket is not open");
-                }
-              } else {
-                if (!audioData) {
-                  console.log("[Handler] ⚠️ No audio data in Google response");
-                }
-                if (!this.twilioStreamSid) {
-                  console.log("[Handler] ⚠️ No Twilio streamSid available");
                 }
               }
             } catch (err) {
