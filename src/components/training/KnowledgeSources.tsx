@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
-import { Info, Loader2, PlusCircle, Trash2, FileText, File as FileIcon, AlertCircle } from 'lucide-react';
+import { Info, Loader2, PlusCircle, Trash2, File as FileIcon, AlertCircle } from 'lucide-react';
 import { AddTextDialog } from '@/components/add-text-dialog';
 import { AddFileDialog } from '@/components/add-file-dialog';
 import type { TextSource, AgentFile } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { PdfIcon, TxtIcon, DocxIcon, HtmlIcon, MarkdownIcon } from '@/components/illustrations';
+import { PdfIcon, TxtIcon, DocxIcon, HtmlIcon, MarkdownIcon, TextSourceIcon } from '@/components/illustrations';
 
 
 interface KnowledgeSourcesProps {
@@ -148,7 +148,7 @@ export function KnowledgeSources({
             ? textSources.map((text) => (
                 <Card key={text.id} className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <TextSourceIcon className="h-6 w-6 text-muted-foreground flex-shrink-0" />
                     <span className="font-medium truncate">{text.title}</span>
                   </div>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteText(text.id!)}>
