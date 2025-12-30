@@ -31,14 +31,14 @@ const allChannels = [
     description: 'Connect to an email address',
     icon: Mail,
     href: '/deploy/email',
-    requiredPlan: 'essential',
+    requiredPlan: 'free',
   },
   {
     name: 'Phone',
     description: 'Integrate with a phone number',
     icon: Phone,
     href: '/deploy/phone',
-    requiredPlan: 'essential',
+    requiredPlan: 'free',
   },
 ];
 
