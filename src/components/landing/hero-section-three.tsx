@@ -20,7 +20,7 @@ export default function HeroSection() {
                                   className="rounded-[var(--radius)] p-8 bg-cover bg-center"
                                   style={{
                                     backgroundImage:
-                                      "url('https://assets.tryrobbin.com/assets/home-masthead-bg.webp')",
+                                      "url('https://files.tryrobbin.com/assets/OXXnRWwOHTLxnj6fGttTq13VSI.avif')",
                                   }}
                                 >
                                     <div 
