@@ -58,12 +58,11 @@ export class CallHandler {
   private sendAudioToGoogle(base64Payload: string) {
     if (!this.googleAISession) return;
     try {
-        // Since we are requesting PCM 16kHz from Twilio, no conversion is needed.
-        // We just pass the base64 data directly.
+      // Google Gemini espera base64 string con el mimeType correcto
       this.googleAISession.sendRealtimeInput({
         audio: { 
-            data: base64Payload,
-            mimeType: 'audio/pcm;rate=16000'
+          data: base64Payload,
+          mimeType: `audio/pcm;rate=${this.sampleRate}`
         }
       });
     } catch (err) {
@@ -85,8 +84,12 @@ export class CallHandler {
         config: {
           responseModalities: [Modality.AUDIO],
           inputAudioConfig: {
-              encoding: 'LINEAR16', // We now receive PCM
-              sampleRateHertz: this.sampleRate,
+            encoding: 'PCM16', // Asegúrate de usar PCM16
+            sampleRateHertz: this.sampleRate,
+          },
+          outputAudioConfig: {
+            encoding: 'PCM16',
+            sampleRateHertz: 24000,
           },
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: agentVoice } },
@@ -96,29 +99,32 @@ export class CallHandler {
         callbacks: {
           onopen: () => {
             console.log("[Handler] Google AI session opened.");
-            this.googleAISession?.sendRealtimeInput({ text: "start" });
           },
           onmessage: (message) => {
-            const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
-            if (audioData && this.twilioStreamSid) {
-              const pcm24kBuffer = Buffer.from(audioData, 'base64');
-              const pcm8kBuffer = downsampleBuffer(pcm24kBuffer, 24000, 8000);
-              const muLawBuffer = linear16ToMuLaw(pcm8kBuffer);
-              
-              const twilioResponse = {
-                event: "media",
-                streamSid: this.twilioStreamSid,
-                media: { payload: muLawBuffer.toString('base64') },
-              };
-              if (this.ws.readyState === WebSocket.OPEN) {
-                this.ws.send(JSON.stringify(twilioResponse));
+            try {
+              const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+              if (audioData && this.twilioStreamSid) {
+                const pcm24kBuffer = Buffer.from(audioData, 'base64');
+                const pcm8kBuffer = downsampleBuffer(pcm24kBuffer, 24000, 8000);
+                const muLawBuffer = linear16ToMuLaw(pcm8kBuffer);
+                
+                const twilioResponse = {
+                  event: "media",
+                  streamSid: this.twilioStreamSid,
+                  media: { payload: muLawBuffer.toString('base64') },
+                };
+                if (this.ws.readyState === WebSocket.OPEN) {
+                  this.ws.send(JSON.stringify(twilioResponse));
+                }
               }
+            } catch (err) {
+              console.error("[Handler] Error processing Google AI response:", err);
             }
           },
           onerror: (e) => {
             console.error("[Handler] Google AI Error:", e);
             if (this.ws.readyState === WebSocket.OPEN) {
-                this.ws.close(1011, "An AI service error occurred.");
+              this.ws.close(1011, "An AI service error occurred.");
             }
           },
           onclose: () => {
