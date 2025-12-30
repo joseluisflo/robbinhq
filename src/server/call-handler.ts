@@ -5,46 +5,15 @@ import { downsampleBuffer, linear16ToMuLaw } from "@/lib/audioUtils";
 
 interface MinimalLiveSession extends LiveSession {
   close(): void;
-  sendRealtimeInput(request: { audio: { data: string } } | { text: string }): void;
+  sendRealtimeInput(request: { audio: { data: string, mimeType: string } } | { text: string }): void;
 }
-
-// Mu-law to 16-bit linear PCM conversion table
-const muLawToLinear16Table = new Int16Array(256);
-for (let i = 0; i < 256; i++) {
-    let sample = ~i;
-    let sign = (sample & 0x80) ? -1 : 1;
-    let exponent = (sample >> 4) & 0x07;
-    let mantissa = sample & 0x0F;
-    let linear = (mantissa << 1) + 33;
-    linear <<= (exponent + 2);
-    linear -= 33;
-    muLawToLinear16Table[i] = sign * linear;
-}
-
-function muLawToLinear16(muLawBuffer: Buffer): Buffer {
-    const output = new Int16Array(muLawBuffer.length);
-    for (let i = 0; i < muLawBuffer.length; i++) {
-        output[i] = muLawToLinear16Table[muLawBuffer[i]];
-    }
-    return Buffer.from(output.buffer);
-}
-
-function upsampleTo16k(pcm8k: Buffer): Buffer {
-    const samples8k = new Int16Array(pcm8k.buffer, pcm8k.byteOffset, pcm8k.length / 2);
-    const samples16k = new Int16Array(samples8k.length * 2);
-    for (let i = 0; i < samples8k.length; i++) {
-        const sample = samples8k[i];
-        samples16k[i * 2] = sample;
-        samples16k[i * 2 + 1] = sample;
-    }
-    return Buffer.from(samples16k.buffer);
-}
-
 
 export class CallHandler {
   private ws: WebSocket;
   private googleAISession: MinimalLiveSession | null = null;
   private twilioStreamSid: string | null = null;
+  private codec: string = 'pcm';
+  private sampleRate: number = 16000;
 
   constructor(ws: WebSocket) {
     this.ws = ws;
@@ -67,6 +36,10 @@ export class CallHandler {
             ? Buffer.from(params.systemInstruction, 'base64').toString('utf-8') 
             : "You are a helpful voice assistant.";
         const agentVoice = params.agentVoice || 'Zephyr';
+        this.codec = params.codec || 'pcm';
+        this.sampleRate = parseInt(params.sampleRate, 10) || 16000;
+
+        console.log(`[Handler] Codec: ${this.codec}, Rate: ${this.sampleRate}`);
 
         await this.connectToGoogleAI(systemInstruction, agentVoice);
       } else if (twilioMessage.event === 'media') {
@@ -85,16 +58,16 @@ export class CallHandler {
   private sendAudioToGoogle(base64Payload: string) {
     if (!this.googleAISession) return;
     try {
-      const muLawBuffer = Buffer.from(base64Payload, 'base64');
-      const pcm8kBuffer = muLawToLinear16(muLawBuffer);
-      const pcm16kBuffer = upsampleTo16k(pcm8kBuffer);
-      const pcmBase64 = pcm16kBuffer.toString('base64');
-      
+        // Since we are requesting PCM 16kHz from Twilio, no conversion is needed.
+        // We just pass the base64 data directly.
       this.googleAISession.sendRealtimeInput({
-        audio: { data: pcmBase64 }
+        audio: { 
+            data: base64Payload,
+            mimeType: 'audio/pcm;rate=16000'
+        }
       });
     } catch (err) {
-      console.error("[Handler] Error converting or sending audio to Google:", err);
+      console.error("[Handler] Error sending audio to Google:", err);
     }
   }
 
@@ -111,6 +84,10 @@ export class CallHandler {
         model: "gemini-2.5-flash-native-audio-preview-09-2025",
         config: {
           responseModalities: [Modality.AUDIO],
+          inputAudioConfig: {
+              encoding: 'LINEAR16', // We now receive PCM
+              sampleRateHertz: this.sampleRate,
+          },
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: agentVoice } },
           },

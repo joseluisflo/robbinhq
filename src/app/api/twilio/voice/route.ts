@@ -116,6 +116,20 @@ ${knowledge}
     name: "callSid",
     value: callSid
   });
+  // Request Twilio to send audio in PCM format for higher quality and simpler processing
+  stream.parameter({
+    name: "track",
+    value: "inbound_track"
+  });
+  stream.parameter({
+      name: "codec",
+      value: "pcm"
+  });
+  stream.parameter({
+      name: "sampleRate",
+      value: "16000"
+  });
+
 
   // CRITICAL: Add a pause to keep the call alive while the stream connects.
   response.pause({ length: 60 });
