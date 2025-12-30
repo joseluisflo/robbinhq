@@ -53,9 +53,9 @@ export async function POST(request: Request) {
     return new Response('CallSid is required', { status: 400 });
   }
 
-  const partykitHost = process.env.NEXT_PUBLIC_PARTYKIT_HOST;
-  if (!partykitHost) {
-    console.error('[Vercel Webhook] NEXT_PUBLIC_PARTYKIT_HOST is not set.');
+  const webSocketServerUrl = process.env.WEBSOCKET_SERVER_URL;
+  if (!webSocketServerUrl) {
+    console.error('[Vercel Webhook] WEBSOCKET_SERVER_URL is not set.');
     return new Response('Application is not configured for real-time calls.', { status: 500 });
   }
   
@@ -87,10 +87,9 @@ ${knowledge}
 ---
   `;
 
-  const cleanHost = partykitHost.replace(/^https?:\/\//, '');
-  const streamUrl = `wss://${cleanHost}/party/${callSid}`;
+  const streamUrl = webSocketServerUrl;
 
-  console.log(`[Vercel Webhook] Incoming call for agent ${agentId}. Responding with TwiML to stream to PartyKit: ${streamUrl}`);
+  console.log(`[Vercel Webhook] Incoming call for agent ${agentId}. Responding with TwiML to stream to: ${streamUrl}`);
 
   const response = new twiml.VoiceResponse();
   const connect = response.connect();
@@ -112,6 +111,10 @@ ${knowledge}
    stream.parameter({
     name: "agentId",
     value: agentId
+  });
+   stream.parameter({
+    name: "callSid",
+    value: callSid
   });
 
   // CRITICAL: Add a pause to keep the call alive while the stream connects.

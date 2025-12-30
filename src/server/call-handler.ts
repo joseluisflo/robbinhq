@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws';
 import { GoogleGenAI, type LiveSession, Modality } from "@google/genai";
 import { Buffer } from "node:buffer";
-import { downsampleBuffer, linear16ToMuLaw } from "../audioUtils";
+import { downsampleBuffer, linear16ToMuLaw } from "@/lib/audioUtils";
 
 interface MinimalLiveSession extends LiveSession {
   close(): void;
