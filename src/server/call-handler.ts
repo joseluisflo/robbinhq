@@ -1,4 +1,3 @@
-
 import { WebSocket } from 'ws';
 import { GoogleGenAI, type LiveSession, Modality } from "@google/genai";
 import { Buffer } from "node:buffer";
@@ -9,7 +8,7 @@ interface MinimalLiveSession extends LiveSession {
   sendRealtimeInput(request: { audio: { data: string, mimeType: string } } | { text: string }): void;
 }
 
-// Converts Mu-Law (8-bit) to PCM Linear (16-bit)
+// ✅ UTILS: Correcto. Mantén esto aquí o muévelo a @/lib/audioUtils para limpieza.
 function muLawToLinear16(muLawBuffer: Buffer): Buffer {
   const pcmBuffer = Buffer.alloc(muLawBuffer.length * 2);
   for (let i = 0; i < muLawBuffer.length; i++) {
@@ -26,7 +25,6 @@ function muLawToLinear16(muLawBuffer: Buffer): Buffer {
   return pcmBuffer;
 }
 
-// Converts 8000Hz to 16000Hz (by duplicating samples)
 function upsample8kTo16k(buffer8k: Buffer): Buffer {
   const buffer16k = Buffer.alloc(buffer8k.length * 2);
   for (let i = 0; i < buffer8k.length / 2; i++) {
@@ -36,7 +34,6 @@ function upsample8kTo16k(buffer8k: Buffer): Buffer {
   }
   return buffer16k;
 }
-
 
 export class CallHandler {
   private ws: WebSocket;
@@ -70,17 +67,21 @@ export class CallHandler {
         console.log(`[Handler] 🗣️ Agent voice: ${agentVoice}`);
 
         await this.connectToGoogleAI(systemInstruction, agentVoice);
+
       } else if (twilioMessage.event === 'media') {
+        // ✅ CORRECCIÓN APLICADA: No incrementes chunkCount si no hay sesión
+        if (!this.googleAISession) return;
+        
         this.audioChunkCount++;
         
-        if (this.googleAISession) {
-            const audioBuffer = Buffer.from(twilioMessage.media.payload, 'base64');
-            const pcm8k = muLawToLinear16(audioBuffer);
-            const pcm16k = upsample8kTo16k(pcm8k);
-            this.sendAudioToGoogle(pcm16k.toString('base64'));
-        } else {
-          console.error(`[Handler] ⚠️ Received media but Google AI session is not ready!`);
-        }
+        const audioBuffer = Buffer.from(twilioMessage.media.payload, 'base64');
+        
+        // Cadena de conversión: MuLaw 8k -> PCM 8k -> PCM 16k
+        const pcm8k = muLawToLinear16(audioBuffer);
+        const pcm16k = upsample8kTo16k(pcm8k);
+        
+        this.sendAudioToGoogle(pcm16k.toString('base64'));
+
       } else if (twilioMessage.event === 'stop') {
         console.log('[Handler] 🛑 Twilio stream stopped.');
         this.onClose();
@@ -91,13 +92,13 @@ export class CallHandler {
   }
 
   private sendAudioToGoogle(base64Payload: string) {
-    if (!this.googleAISession) {
-      console.error("[Handler] ❌ Cannot send audio: Google AI session is null");
-      return;
-    }
+    // Ya verificamos this.googleAISession en handleMessage, pero por seguridad:
+    if (!this.googleAISession) return;
+
     try {
-      if (this.audioChunkCount % 50 === 0) {
-        console.log(`[Handler] 📤 Sending audio to Google, chunk size: ${base64Payload.length} chars`);
+      // Logs reducidos para no saturar consola
+      if (this.audioChunkCount % 100 === 0) {
+        console.log(`[Handler] 📤 Sending chunk #${this.audioChunkCount}`);
       }
       
       this.googleAISession.sendRealtimeInput({
@@ -142,12 +143,20 @@ export class CallHandler {
         callbacks: {
           onopen: () => {
             console.log("[Handler] ✅ Google AI session opened successfully!");
+            // ⭐ TRUCO IMPORTANTE: Hacer que la IA hable primero
+            setTimeout(() => {
+                console.log("[Handler] ⚡ Sending trigger message to wake up AI");
+                this.googleAISession?.sendRealtimeInput({
+                    text: "start conversation" 
+                });
+            }, 200);
           },
           onmessage: (message) => {
             try {
               const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
               
               if (audioData && this.twilioStreamSid) {
+                // Cadena de conversión inversa: Google 24k -> PCM 8k -> MuLaw
                 const pcm24kBuffer = Buffer.from(audioData, 'base64');
                 const pcm8kBuffer = downsampleBuffer(pcm24kBuffer, 24000, 8000);
                 const muLawBuffer = linear16ToMuLaw(pcm8kBuffer);
@@ -160,8 +169,6 @@ export class CallHandler {
                 
                 if (this.ws.readyState === WebSocket.OPEN) {
                   this.ws.send(JSON.stringify(twilioResponse));
-                } else {
-                  console.error("[Handler] ❌ Cannot send to Twilio: WebSocket is not open");
                 }
               }
             } catch (err) {
@@ -170,15 +177,11 @@ export class CallHandler {
           },
           onerror: (e) => {
             console.error("[Handler] ❌ Google AI Error:", e);
-            if (this.ws.readyState === WebSocket.OPEN) {
-              this.ws.close(1011, "An AI service error occurred.");
-            }
+            // No cerramos el socket inmediatamente para evitar desconexiones bruscas por errores transitorios,
+            // pero si es fatal, Twilio cerrará la llamada eventualmente.
           },
           onclose: () => {
             console.log("[Handler] 🔌 Google AI session closed.");
-            if (this.ws.readyState === WebSocket.OPEN) {
-              this.ws.close(1000, "AI session ended.");
-            }
           },
         },
       })) as MinimalLiveSession;
@@ -186,15 +189,12 @@ export class CallHandler {
       console.log("[Handler] ✅ Google AI connection established successfully!");
     } catch (error) {
       console.error("[Handler] ❌ Failed to connect to Google AI:", error);
-      if (this.ws.readyState === WebSocket.OPEN) {
-        this.ws.close(1011, "Could not connect to AI service.");
-      }
+      this.ws.close(1011, "Could not connect to AI service.");
     }
   }
 
   private onClose() {
-    console.log("[Handler] 🔌 Connection closed. Cleaning up.");
-    console.log(`[Handler] 📊 Total audio chunks received: ${this.audioChunkCount}`);
+    console.log("[Handler] 🔌 Connection closed.");
     if (this.googleAISession) {
       this.googleAISession.close();
       this.googleAISession = null;
