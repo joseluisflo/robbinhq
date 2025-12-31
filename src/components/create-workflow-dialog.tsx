@@ -16,7 +16,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useUser, useFirestore } from '@/firebase';
 import { useActiveAgent } from '@/app/(main)/layout';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -35,7 +34,11 @@ export function CreateWorkflowDialog({ children }: { children: React.ReactNode }
   const { activeAgent } = useActiveAgent();
   const { toast } = useToast();
 
-  const dialogImage = PlaceHolderImages.find((img) => img.id === 'dialog-create-workflow');
+  const dialogImage = {
+    imageUrl: "https://files.tryrobbin.com/assets/dkHXeKR1M92uLZev3zgcPR7Gsw.avif",
+    description: "Workflow creation visual",
+    imageHint: "workflow diagram"
+  };
 
   const handleCreateWorkflow = () => {
     if (!name || !user || !activeAgent?.id) return;
@@ -78,7 +81,7 @@ export function CreateWorkflowDialog({ children }: { children: React.ReactNode }
         {dialogImage && (
           <div className="p-2">
             <Image
-              className="w-full rounded-md object-cover h-48"
+              className="w-full rounded-md object-cover object-top h-48"
               src={dialogImage.imageUrl}
               width={382}
               height={216}

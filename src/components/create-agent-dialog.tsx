@@ -17,7 +17,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowRightIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { createAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
@@ -48,7 +47,11 @@ export function CreateAgentDialog({
     setInternalOpen(open);
   } : setInternalOpen;
 
-  const dialogImage = PlaceHolderImages.find((img) => img.id === 'dialog-create-agent');
+  const dialogImage = {
+    imageUrl: "https://files.tryrobbin.com/assets/NXBg7YQFDXYOsOTwOO1H7ilnbM.webp",
+    description: "AI agent creation visual",
+    imageHint: "ai agent"
+  };
 
   const handleContinue = () => {
     if (step < 2) {
@@ -101,7 +104,7 @@ export function CreateAgentDialog({
         {dialogImage && (
           <div className="p-2">
             <Image
-              className="w-full rounded-md object-cover h-40"
+              className="w-full rounded-md object-cover object-top h-40"
               src={dialogImage.imageUrl}
               width={382}
               height={216}
