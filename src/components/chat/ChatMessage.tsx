@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Message } from '@/lib/types';
@@ -6,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { TextTypingEffect } from '@/components/ui/text-typing-effect';
+import { motion } from 'motion/react';
 
 interface ChatMessageProps {
   message: Message;
@@ -29,7 +29,8 @@ export function ChatMessage({
   return (
     <div className={cn("flex flex-col", message.sender === 'user' ? 'items-end' : 'items-start')}>
       <div className={cn("max-w-[75%]", message.sender === 'user' ? 'text-right' : 'text-left')}>
-        <div
+        <motion.div
+          layout="position"
           className={cn("p-3 rounded-2xl text-sm",
             message.sender === 'user'
               ? 'rounded-br-sm bg-primary text-primary-foreground'
@@ -46,7 +47,7 @@ export function ChatMessage({
             ) : (
                 <p className="text-left">{message.text}</p>
             )}
-        </div>
+        </motion.div>
         <div className="flex items-center gap-2 mt-1.5 px-1">
           <p className="text-xs text-muted-foreground">
             {message.sender === 'agent' ? agentName : 'You'}
@@ -81,5 +82,3 @@ export function ChatMessage({
     </div>
   );
 }
-
-    
