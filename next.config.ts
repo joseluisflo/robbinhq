@@ -46,6 +46,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'files.tryrobbin.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };
