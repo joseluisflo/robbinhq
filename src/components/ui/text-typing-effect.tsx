@@ -1,3 +1,4 @@
+
 'use client';
 import { cn } from '@/lib/utils';
 import {
@@ -268,6 +269,7 @@ export function TextTypingEffect({
     <AnimatePresence mode='popLayout'>
       {trigger && (
         <MotionTag
+          layout="position"
           initial='hidden'
           animate='visible'
           exit='exit'
