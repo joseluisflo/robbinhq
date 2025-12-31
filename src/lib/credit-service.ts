@@ -2,7 +2,7 @@
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import type { userProfile } from '@/lib/types';
 
 
@@ -31,6 +31,12 @@ export async function getUserCredits(userId: string): Promise<number> {
   }
 }
 
+const PLAN_CREDITS = {
+  free: 150,
+  essential: 2000,
+  pro: 5000,
+};
+
 
 /**
  * Deducts a specified amount of credits from a user's account.
@@ -57,8 +63,32 @@ export async function deductCredits(
         throw new Error('User profile not found.');
       }
 
-      const userData = userDoc.data() as userProfile;
-      const currentCredits = userData.credits ?? 0;
+      let userData = userDoc.data() as userProfile;
+      let currentCredits = userData.credits ?? 0;
+      const now = new Date();
+      const creditResetDate = (userData.creditResetDate as Timestamp)?.toDate();
+      const planId = userData.planId || 'free';
+
+      // Check if the reset date has passed
+      if (creditResetDate && now > creditResetDate) {
+        // Calculate the new reset date for the next month
+        const newResetDate = new Date(now.getFullYear(), now.getMonth(), 30, 23, 59, 59);
+        if (now > newResetDate) {
+            newResetDate.setMonth(newResetDate.getMonth() + 1);
+        }
+        
+        const newCredits = PLAN_CREDITS[planId];
+        
+        // Update user data in the transaction
+        transaction.update(userRef, {
+            credits: newCredits,
+            creditResetDate: newResetDate
+        });
+        
+        // Use the new credit balance for the current deduction
+        currentCredits = newCredits;
+      }
+
 
       if (currentCredits < amount) {
         // This error message is for internal logging, not for the end-user.
