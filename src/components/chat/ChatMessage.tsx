@@ -29,8 +29,7 @@ export function ChatMessage({
   return (
     <div className={cn("flex flex-col", message.sender === 'user' ? 'items-end' : 'items-start')}>
       <div className={cn("max-w-[75%]", message.sender === 'user' ? 'text-right' : 'text-left')}>
-        <motion.div
-          layout="position"
+        <div
           className={cn("p-3 rounded-2xl text-sm",
             message.sender === 'user'
               ? 'rounded-br-sm bg-primary text-primary-foreground'
@@ -47,7 +46,7 @@ export function ChatMessage({
             ) : (
                 <p className="text-left">{message.text}</p>
             )}
-        </motion.div>
+        </div>
         <div className="flex items-center gap-2 mt-1.5 px-1">
           <p className="text-xs text-muted-foreground">
             {message.sender === 'agent' ? agentName : 'You'}
