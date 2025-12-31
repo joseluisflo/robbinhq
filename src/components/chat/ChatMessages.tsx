@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import type { Message } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
+import { Shimmer } from '@/components/shimmer';
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -59,10 +60,14 @@ export function ChatMessages({
         ))}
 
         {isResponding && !isCallActive && (
-          <div className="flex justify-start">
+          <div className="flex flex-col items-start">
             <div className="max-w-[75%]">
-              <div className="p-3 rounded-2xl rounded-tl-sm bg-muted flex items-center">
-                <Loader2 className="h-5 w-5 animate-spin" />
+              <div
+                className="p-3 rounded-2xl rounded-tl-sm bg-muted text-foreground"
+              >
+                <Shimmer as="p" className="text-sm">
+                  Typing...
+                </Shimmer>
               </div>
             </div>
           </div>
