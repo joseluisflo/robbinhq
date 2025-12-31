@@ -5,6 +5,7 @@ import type { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
+import { TextTypingEffect } from '@/components/ui/text-typing-effect';
 
 interface ChatMessageProps {
   message: Message;
@@ -29,7 +30,7 @@ export function ChatMessage({
     <div className={cn("flex flex-col", message.sender === 'user' ? 'items-end' : 'items-start')}>
       <div className={cn("max-w-[75%]", message.sender === 'user' ? 'text-right' : 'text-left')}>
         <div
-          className={cn("p-3 rounded-2xl",
+          className={cn("p-3 rounded-2xl text-sm",
             message.sender === 'user'
               ? 'rounded-br-sm bg-primary text-primary-foreground'
               : 'bg-muted rounded-tl-sm text-foreground'
@@ -38,7 +39,13 @@ export function ChatMessage({
             backgroundColor: message.sender === 'user' ? themeColor : undefined
           }}
         >
-          <p className="text-sm text-left">{message.text}</p>
+            {message.sender === 'agent' && isLastMessage && !isResponding ? (
+                <TextTypingEffect per="char" preset="fade">
+                  {message.text}
+                </TextTypingEffect>
+            ) : (
+                <p className="text-left">{message.text}</p>
+            )}
         </div>
         <div className="flex items-center gap-2 mt-1.5 px-1">
           <p className="text-xs text-muted-foreground">
