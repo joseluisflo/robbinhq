@@ -5,7 +5,7 @@ import { useState, useTransition, useEffect } from 'react';
 import type { Agent, Message } from '@/lib/types';
 import { useUser } from '@/firebase';
 import { getAgentResponse } from '@/app/actions/agents';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useParams } from 'next/navigation';
 
 // Define the shape of the data the hook will manage and return
 export interface UseChatManagerProps {
@@ -15,6 +15,7 @@ export interface UseChatManagerProps {
 export function useChatManager({ agent }: UseChatManagerProps) {
   const { user } = useUser();
   const searchParams = useSearchParams();
+  const params = useParams(); // Import and use useParams to get URL parameters
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState('');
@@ -22,6 +23,10 @@ export function useChatManager({ agent }: UseChatManagerProps) {
   const [currentWorkflowRunId, setCurrentWorkflowRunId] = useState<string | null>(null);
 
   const sessionId = searchParams.get('sessionId');
+  
+  // Determine the correct userId. If logged in, use the current user's ID. 
+  // If not (public widget), get the agent owner's ID from the URL.
+  const agentOwnerUserId = user ? user.uid : (params.userId as string);
 
   // Effect to set initial welcome message
   useEffect(() => {
@@ -45,7 +50,8 @@ export function useChatManager({ agent }: UseChatManagerProps) {
   }, [agent]);
 
   const handleSendMessage = (messageText: string) => {
-    if (!messageText.trim() || !agent?.id || !user || !sessionId) return;
+    // The check now uses the determined agentOwnerUserId instead of relying on a logged-in user.
+    if (!messageText.trim() || !agent?.id || !agentOwnerUserId || !sessionId) return;
 
     const newUserMessage: Message = {
       id: Date.now().toString(),
@@ -58,7 +64,7 @@ export function useChatManager({ agent }: UseChatManagerProps) {
     
     startResponding(async () => {
       const result = await getAgentResponse({
-        userId: user.uid,
+        userId: agentOwnerUserId,
         agentId: agent.id!,
         message: messageText,
         runId: currentWorkflowRunId,
@@ -123,5 +129,3 @@ export function useChatManager({ agent }: UseChatManagerProps) {
     handleOptionClick,
   };
 }
-
-    
