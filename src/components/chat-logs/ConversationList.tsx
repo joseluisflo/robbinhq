@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useUser, useFirestore, query, collection, orderBy, useCollection } from '@/firebase';
 import type { ChatSession, EmailSession } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
@@ -24,6 +24,7 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
     const { user } = useUser();
     const firestore = useFirestore();
     const { activeAgent } = useActiveAgent();
+    const [searchTerm, setSearchTerm] = useState('');
 
     const sessionsQuery = useMemo(() => {
         if (!user || !activeAgent?.id) return null;
@@ -78,7 +79,11 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
                         <Switch id="unreads" />
                     </div>
                 </div>
-                <Input placeholder="Type to search..." />
+                <Input 
+                    placeholder="Type to search..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
             
             <div className="flex-1 overflow-y-auto">
