@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
-import { useUser, useFirestore, query, collection, orderBy } from '@/firebase';
+import { useUser, useFirestore, query, collection, orderBy, useCollection } from '@/firebase';
 import type { ChatSession, EmailSession } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
