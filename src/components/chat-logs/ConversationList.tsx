@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
@@ -44,7 +43,7 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
     }, [user, firestore, activeAgent?.id]);
     const { data: emailSessions, loading: emailSessionsLoading } = useCollection<EmailSession>(emailSessionsQuery);
     
-    const combinedSessions = useMemo(() => {
+    const filteredSessions = useMemo(() => {
         if (!activeAgent?.id) return [];
         
         const chatsWithType: CombinedSession[] = (chatSessions || []).map(s => ({ ...s, type: 'chat', agentId: activeAgent.id }));
@@ -58,14 +57,25 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
             return (timeB as any) - (timeA as any);
         });
         
-        return allSessions;
-    }, [chatSessions, emailSessions, activeAgent?.id]);
+        if (!searchTerm) {
+            return allSessions;
+        }
+
+        const lowercasedTerm = searchTerm.toLowerCase();
+        return allSessions.filter(session => {
+            const title = (session.type === 'chat' ? (session as ChatSession).title : (session as EmailSession).subject) || '';
+            const snippet = (session as ChatSession).lastMessageSnippet || '';
+            return title.toLowerCase().includes(lowercasedTerm) || snippet.toLowerCase().includes(lowercasedTerm);
+        });
+
+    }, [chatSessions, emailSessions, activeAgent?.id, searchTerm]);
 
     useEffect(() => {
-        if (combinedSessions.length > 0 && !selectedSessionId) {
-            onSessionSelect(combinedSessions[0]);
+        if (filteredSessions.length > 0 && !selectedSessionId) {
+            onSessionSelect(filteredSessions[0]);
         }
-    }, [combinedSessions, selectedSessionId, onSessionSelect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filteredSessions, selectedSessionId]);
 
     return (
         <div className="flex flex-col border-r bg-card text-card-foreground overflow-hidden">
@@ -91,8 +101,8 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
                     <div className="flex items-center justify-center h-full">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
-                ) : combinedSessions.length > 0 ? (
-                    combinedSessions.map((session) => (
+                ) : filteredSessions.length > 0 ? (
+                    filteredSessions.map((session) => (
                     <button
                         key={`${session.type}-${session.id}`}
                         onClick={() => onSessionSelect(session)}
