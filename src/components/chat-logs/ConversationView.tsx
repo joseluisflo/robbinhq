@@ -2,28 +2,38 @@
 
 import { useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Info, Loader2, Globe, Monitor, Smartphone } from 'lucide-react';
 import type { ChatSession, EmailSession, CombinedMessage } from '@/lib/types';
 import { MessageList } from './MessageList';
+import { SessionDetails } from './SessionDetails';
+import { useUser, useFirestore, useCollection, query, collection, orderBy } from '@/firebase';
 
 type CombinedSession = (ChatSession | EmailSession) & { type: 'chat' | 'email' };
-
-const DetailRow = ({ label, value }: { label: string; value: string | number | undefined | null }) => {
-    if (!value) return null;
-    return (
-        <div className="flex justify-between items-center text-sm">
-            <p className="text-muted-foreground">{label}:</p>
-            <p className="font-medium text-right">{value}</p>
-        </div>
-    );
-};
 
 interface ConversationViewProps {
     selectedSession: CombinedSession | null;
 }
 
 export function ConversationView({ selectedSession }: ConversationViewProps) {
+    const { user } = useUser();
+    const firestore = useFirestore();
+
+    // Fetch messages here to pass to both MessageList and SessionDetails
+    const messagesQuery = useMemo(() => {
+        if (!user || !selectedSession) return null;
+        const { type, id, agentId } = selectedSession as any;
+        if (!agentId || !id) return null;
+        
+        const sessionTypePath = type === 'chat' ? 'sessions' : 'emailSessions';
+        
+        return query(
+            collection(firestore, 'users', user.uid, 'agents', agentId, sessionTypePath, id, 'messages'),
+            orderBy('timestamp', 'asc')
+        );
+    }, [user, firestore, selectedSession]);
+    
+    const { data: messages, loading: messagesLoading } = useCollection<CombinedMessage>(messagesQuery);
+
+
     if (!selectedSession) {
         return (
             <div className="flex h-full items-center justify-center text-muted-foreground bg-background">
@@ -31,9 +41,6 @@ export function ConversationView({ selectedSession }: ConversationViewProps) {
             </div>
         );
     }
-    
-    const visitorInfo = (selectedSession as ChatSession)?.visitorInfo;
-    const DeviceIcon = visitorInfo?.device?.type === 'mobile' ? Smartphone : Monitor;
 
     return (
         <div className="flex flex-col h-full bg-background overflow-hidden">
@@ -46,13 +53,11 @@ export function ConversationView({ selectedSession }: ConversationViewProps) {
                 </div>
 
                 <TabsContent value="chat" className="flex-1 overflow-y-auto mt-0 data-[state=inactive]:hidden min-h-0">
-                   <MessageList session={selectedSession} />
+                   <MessageList messages={messages || []} loading={messagesLoading} />
                 </TabsContent>
 
                 <TabsContent value="details" className="flex-1 overflow-y-auto mt-0 data-[state=inactive]:hidden min-h-0">
-                    <div className="p-6 space-y-6">
-                        {/* Details content remains the same */}
-                    </div>
+                    <SessionDetails session={selectedSession} messages={messages || []} />
                 </TabsContent>
             </Tabs>
         </div>
