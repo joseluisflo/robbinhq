@@ -46,6 +46,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     const agentDoc = agentQuerySnapshot.docs[0];
     const agent = agentDoc.data() as Agent;
     const agentRef = agentDoc.ref;
+    const ownerId = agentRef.parent.parent!.id; // Extract the owner's user ID
     
     const emailSessionsRef = agentRef.collection('emailSessions');
     let sessionRef;
