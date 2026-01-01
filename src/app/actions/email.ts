@@ -6,6 +6,7 @@ import { agentChat } from '@/ai/flows/agent-chat';
 import type { Agent, AgentFile, TextSource, EmailMessage, EmailSession } from '@/lib/types';
 import { sendEmail } from '@/lib/email-service';
 import { FieldValue } from 'firebase-admin/firestore';
+import { deductCredits } from '@/lib/credit-service';
 
 
 interface EmailData {
@@ -82,6 +83,15 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
         text: body,
         timestamp: FieldValue.serverTimestamp(),
     });
+
+
+    // Deduct credit before generating a response
+    const creditResult = await deductCredits(ownerId, 1);
+    if (!creditResult.success) {
+      // Don't send a reply if credits are insufficient. Log the error.
+      console.error(`Credit deduction failed for user ${ownerId}: ${creditResult.error}`);
+      return { error: 'Insufficient credits or billing issue.' }; // We stop here.
+    }
 
 
     const textsSnapshot = await agentRef.collection('texts').get();
