@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useUser, useFirestore, query, collection, orderBy, useCollection } from '@/firebase';
 import type { ChatSession, EmailSession } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { Loader2, MessageSquare, Mail } from 'lucide-react';
 import { useActiveAgent } from '@/app/(main)/layout';
 
-type CombinedSession = (ChatSession | EmailSession) & { type: 'chat' | 'email' };
+type CombinedSession = (ChatSession | EmailSession) & { type: 'chat' | 'email'; agentId?: string };
 
 interface ConversationListProps {
     onSessionSelect: (session: CombinedSession) => void;
@@ -44,8 +44,10 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
     const { data: emailSessions, loading: emailSessionsLoading } = useCollection<EmailSession>(emailSessionsQuery);
     
     const combinedSessions = useMemo(() => {
-        const chatsWithType: CombinedSession[] = (chatSessions || []).map(s => ({ ...s, type: 'chat' }));
-        const emailsWithType: CombinedSession[] = (emailSessions || []).map(s => ({ ...s, type: 'email' }));
+        if (!activeAgent?.id) return [];
+        
+        const chatsWithType: CombinedSession[] = (chatSessions || []).map(s => ({ ...s, type: 'chat', agentId: activeAgent.id }));
+        const emailsWithType: CombinedSession[] = (emailSessions || []).map(s => ({ ...s, type: 'email', agentId: activeAgent.id }));
         
         const allSessions = [...chatsWithType, ...emailsWithType];
         
@@ -56,7 +58,7 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
         });
         
         return allSessions;
-    }, [chatSessions, emailSessions]);
+    }, [chatSessions, emailSessions, activeAgent?.id]);
 
     useEffect(() => {
         if (combinedSessions.length > 0 && !selectedSessionId) {
