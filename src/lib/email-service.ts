@@ -2,6 +2,8 @@
 import Plunk from '@plunk/node';
 
 const PLUNK_API_KEY = process.env.PLUNK_API_KEY;
+const PLUNK_SENDER_EMAIL = process.env.PLUNK_SENDER_EMAIL || 'agent@agentverse.com';
+
 
 if (!PLUNK_API_KEY) {
   console.warn('PLUNK_API_KEY is not set. Email functionality will be disabled.');
@@ -13,12 +15,13 @@ interface SendEmailParams {
   to: string;
   subject: string;
   text: string;
+  fromName: string; // Add fromName to personalize the sender
   inReplyTo?: string;
   references?: string;
   replyTo?: string;
 }
 
-export async function sendEmail({ to, subject, text, inReplyTo, references, replyTo }: SendEmailParams) {
+export async function sendEmail({ to, subject, text, fromName, inReplyTo, references, replyTo }: SendEmailParams) {
   if (!plunk) {
     console.error('Email service is not initialized. PLUNK_API_KEY might be missing.');
     throw new Error('Email service is not available.');
@@ -30,9 +33,10 @@ export async function sendEmail({ to, subject, text, inReplyTo, references, repl
     if (references) headers['References'] = references;
     if (replyTo) headers['Reply-To'] = replyTo;
     
-    // The 'from' field is intentionally omitted to let Plunk use its default verified sender (e.g. no-reply@useplunk.com).
-    // The 'Reply-To' header will direct user replies back to the correct agent address.
+    const formattedFrom = `"${fromName}" <${PLUNK_SENDER_EMAIL}>`;
+    
     const response = await plunk.emails.send({
+      from: formattedFrom,
       to,
       subject,
       body: text,

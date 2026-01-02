@@ -182,6 +182,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
       to: from,
       subject: replySubject,
       text: replyBody,
+      fromName: agent.name, // Pass the agent's name to the email service
       inReplyTo: messageId,
       references: newReferences,
       replyTo: to,
