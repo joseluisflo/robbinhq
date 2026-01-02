@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
@@ -22,36 +23,46 @@ interface EmailData {
 const agentEmailDomain = process.env.NEXT_PUBLIC_AGENT_EMAIL_DOMAIN || process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN;
 
 async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId: string): Promise<{ agent: Agent, agentRef: FirebaseFirestore.DocumentReference, ownerId: string } | null> {
+    // 1. Try the efficient index first
     const indexRef = firestore.collection('agentIndex').doc(agentId);
     const indexDoc = await indexRef.get();
 
-    if (!indexDoc.exists) {
-        console.error(`[ACTION] No index found for agent ID ${agentId}.`);
-        return null;
+    if (indexDoc.exists) {
+        const { ownerId } = indexDoc.data() as { ownerId: string };
+        if (ownerId) {
+            const agentRef = firestore.collection('users').doc(ownerId).collection('agents').doc(agentId);
+            const agentDoc = await agentRef.get();
+            if (agentDoc.exists) {
+                console.log(`[ACTION] Agent ${agentId} found in index for owner ${ownerId}.`);
+                return {
+                    agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
+                    agentRef: agentRef,
+                    ownerId: ownerId,
+                };
+            }
+        }
+    }
+    
+    // 2. Fallback for existing agents without an index entry
+    console.warn(`[ACTION] Agent ${agentId} not found in index. Falling back to collection group query. This is less efficient.`);
+    const usersSnapshot = await firestore.collection('users').get();
+    for (const userDoc of usersSnapshot.docs) {
+        const agentRef = firestore.collection('users').doc(userDoc.id).collection('agents').doc(agentId);
+        const agentDoc = await agentRef.get();
+        if (agentDoc.exists) {
+            console.log(`[ACTION] Agent ${agentId} found via fallback for owner ${userDoc.id}.`);
+            return {
+                agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
+                agentRef,
+                ownerId: userDoc.id,
+            };
+        }
     }
 
-    const { ownerId } = indexDoc.data() as { ownerId: string };
-    if (!ownerId) {
-        console.error(`[ACTION] Index for agent ID ${agentId} is missing ownerId.`);
-        return null;
-    }
-
-    const agentRef = firestore.collection('users').doc(ownerId).collection('agents').doc(agentId);
-    const agentDoc = await agentRef.get();
-
-    if (!agentDoc.exists) {
-        console.error(`[ACTION] Agent document not found at path users/${ownerId}/agents/${agentId}, but index exists.`);
-        // Optional: Clean up the stale index entry
-        await indexRef.delete();
-        return null;
-    }
-
-    return {
-        agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
-        agentRef: agentRef,
-        ownerId: ownerId,
-    };
+    console.error(`[ACTION] Agent with ID ${agentId} not found in index or via fallback.`);
+    return null;
 }
+
 
 
 export async function processInboundEmail(emailData: EmailData): Promise<{ success: boolean } | { error: string }> {
