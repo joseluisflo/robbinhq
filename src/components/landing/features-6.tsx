@@ -1,4 +1,3 @@
-
 import { Cpu, Lock, Sparkles, Zap } from 'lucide-react'
 import Image from 'next/image'
 import { AutomationIcon, Chart01Icon, LoDatabaseIcon as DatabaseIcon, LoShieldIcon as ShieldIcon } from '@/components/lo-icons'
@@ -44,7 +43,7 @@ export default function FeaturesSection({
                   className="rounded-[var(--radius)] p-4 bg-cover bg-center"
                   style={{
                     backgroundImage:
-                      "url('https://assets.tryrobbin.com/assets/home-masthead-bg.webp')",
+                      "url('https://files.tryrobbin.com/assets/gradient-03.avif')",
                   }}
                 >
                     <div className="aspect-88/36 mask-b-from-75% mask-b-to-95% relative">
