@@ -12,7 +12,8 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const AgentChatInputSchema = z.object({
-  message: z.string().describe('The user\'s message, which may include the full conversation history.'),
+  conversationHistory: z.string().optional().describe('The history of the conversation so far.'),
+  latestUserMessage: z.string().describe('The most recent message from the user.'),
   instructions: z.string().describe('The agent\'s instructions and persona.'),
   knowledge: z.string().describe('A collection of knowledge from texts and files for the agent to use.'),
 });
@@ -46,10 +47,11 @@ If the user's question can be answered using the information below, use it as yo
 ### Conversation History
 Below is the history of the conversation so far. Use it to understand the full context.
 ---
-{{{message}}}
+{{{conversationHistory}}}
 ---
 
-Based on all the information above, provide a helpful and relevant response to the LAST message in the conversation history.
+Based on all the information above, provide a helpful and relevant response to the following user message:
+User: {{{latestUserMessage}}}
 `,
 });
 

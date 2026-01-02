@@ -5,7 +5,7 @@
 import { generateAgentInstructions } from '@/ai/flows/agent-instruction-generation';
 import { agentChat } from '@/ai/flows/agent-chat';
 import { firebaseAdmin } from '@/firebase/admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, FieldPath } from 'firebase-admin/firestore';
 import type { Agent, TextSource, AgentFile, Workflow, WorkflowRun } from '@/lib/types';
 import { runOrResumeWorkflow } from './workflow';
 import { ai } from '@/ai/genkit';
@@ -227,22 +227,24 @@ async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId
 
     // 2. Fallback to the inefficient method if index fails
     console.warn(`[ACTION] Agent ID ${agentId} not found in index. Falling back to collection group query. Consider re-indexing old agents.`);
-    const agentsSnapshot = await firestore.collectionGroup('agents').where(FieldPath.documentId(), '==', agentId).limit(1).get();
-
-    if (agentsSnapshot.empty) {
-        console.error(`[ACTION] No agent found with ID ${agentId} in index or collection group.`);
-        return null;
+    const usersSnapshot = await firestore.collection('users').get();
+    for (const userDoc of usersSnapshot.docs) {
+        const agentRef = firestore.collection('users').doc(userDoc.id).collection('agents').doc(agentId);
+        const agentDoc = await agentRef.get();
+        if (agentDoc.exists) {
+             // If found, create an index entry for next time.
+            await firestore.collection('agentIndex').doc(agentId).set({ ownerId: userDoc.id });
+            console.log(`[ACTION] Agent ${agentId} found via fallback for owner ${userDoc.id}. Index entry created.`);
+            return {
+                agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
+                agentRef,
+                ownerId: userDoc.id,
+            };
+        }
     }
 
-    const agentDoc = agentsSnapshot.docs[0];
-    const agentRef = agentDoc.ref;
-    const ownerId = agentRef.parent.parent!.id; // users/{userId}/agents/{agentId}
-
-    return {
-        agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
-        agentRef: agentRef,
-        ownerId: ownerId,
-    };
+    console.error(`[ACTION] No agent found with ID ${agentId} in index or collection group.`);
+    return null;
 }
 
 
@@ -423,7 +425,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       ].join('\n\n---\n\n');
 
       const chatResult = await agentChat({
-        message: input.message,
+        latestUserMessage: input.message,
         instructions: agent.instructions || '',
         knowledge: knowledge,
       });
