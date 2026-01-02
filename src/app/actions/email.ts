@@ -88,10 +88,6 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     // Deduct credit before generating a response
     const creditResult = await deductCredits(ownerId, 1);
     
-    // --- TEMPORARY LOG FOR TESTING ---
-    console.log('[TEST LOG] Credit Deduction Result:', creditResult);
-    // -----------------------------------
-
     if (!creditResult.success) {
       // Don't send a reply if credits are insufficient. Log the error.
       console.error(`Credit deduction failed for user ${ownerId}: ${creditResult.error}`);
