@@ -21,6 +21,24 @@ interface EmailData {
 
 const agentEmailDomain = process.env.NEXT_PUBLIC_AGENT_EMAIL_DOMAIN || process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN;
 
+
+async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId: string): Promise<{ agent: Agent, agentRef: FirebaseFirestore.DocumentReference, ownerId: string } | null> {
+    const usersSnapshot = await firestore.collection('users').get();
+    for (const userDoc of usersSnapshot.docs) {
+        const agentRef = firestore.collection('users').doc(userDoc.id).collection('agents').doc(agentId);
+        const agentDoc = await agentRef.get();
+        if (agentDoc.exists) {
+            return {
+                agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
+                agentRef: agentRef,
+                ownerId: userDoc.id,
+            };
+        }
+    }
+    return null;
+}
+
+
 export async function processInboundEmail(emailData: EmailData): Promise<{ success: boolean } | { error: string }> {
   console.log('[ACTION]  bước 1: processInboundEmail iniciado.');
   const { from, to, subject, body, messageId, inReplyTo, references } = emailData;
@@ -42,16 +60,14 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     const firestore = firebaseAdmin.firestore();
     console.log('[ACTION] 🔥 Firestore instance obtained.');
     
-    const agentQuerySnapshot = await firestore.collectionGroup('agents').where('__name__', '==', agentId).limit(1).get();
+    const agentInfo = await findAgentAndOwner(firestore, agentId);
     
-    if (agentQuerySnapshot.empty) {
+    if (!agentInfo) {
         console.error(`[ACTION] ❌ Agent with ID ${agentId} not found in any user's collection.`);
         return { error: `Agent with ID ${agentId} not found.` };
     }
-    const agentDoc = agentQuerySnapshot.docs[0];
-    const agent = agentDoc.data() as Agent;
-    const agentRef = agentDoc.ref;
-    const ownerId = agentRef.parent.parent!.id;
+
+    const { agent, agentRef, ownerId } = agentInfo;
     console.log(`[ACTION] 👤 Agent found. Owner ID: ${ownerId}`);
     
     const emailSessionsRef = agentRef.collection('emailSessions');

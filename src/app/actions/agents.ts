@@ -208,7 +208,7 @@ async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId
         const agentDoc = await agentRef.get();
         if (agentDoc.exists) {
             return {
-                agent: agentDoc.data() as Agent,
+                agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
                 agentRef: agentRef,
                 ownerId: userDoc.id,
             };
