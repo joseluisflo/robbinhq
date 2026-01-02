@@ -19,6 +19,24 @@
           "type": "string",
           "format": "uri",
           "description": "URL of the user's profile picture."
+        },
+        "credits": {
+            "type": "number",
+            "description": "The user's current credit balance."
+        },
+        "planId": {
+            "type": "string",
+            "enum": ["free", "essential", "pro"],
+            "description": "The ID of the user's subscription plan."
+        },
+        "creditResetDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date when the user's credits will be reset or replenished."
+        },
+        "stripeCustomerId": {
+            "type": "string",
+            "description": "The user's unique customer ID in Stripe."
         }
       },
       "required": ["displayName", "email"]
@@ -133,6 +151,18 @@
         }
       },
       "required": ["name", "userId", "createdAt"]
+    },
+    "agentIndex": {
+      "title": "Agent Index",
+      "description": "A top-level collection for efficiently looking up an agent's owner.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "The UID of the user who owns the agent."
+        }
+      },
+      "required": ["ownerId"]
     },
     "agentText": {
       "title": "Agent Text Source",
@@ -266,6 +296,43 @@
             "type": "string",
             "format": "date-time",
             "description": "The timestamp when this chat session was last analyzed for lead generation."
+        },
+        "visitorInfo": {
+          "type": "object",
+          "properties": {
+            "ip": { "type": ["string", "null"] },
+            "userAgent": { "type": ["string", "null"] },
+            "location": {
+              "type": "object",
+              "properties": {
+                "city": { "type": ["string", "null"] },
+                "region": { "type": ["string", "null"] },
+                "country": { "type": ["string", "null"] }
+              }
+            },
+            "browser": {
+              "type": "object",
+              "properties": {
+                "name": { "type": ["string", "null"] },
+                "version": { "type": ["string", "null"] }
+              }
+            },
+            "os": {
+              "type": "object",
+              "properties": {
+                "name": { "type": ["string", "null"] },
+                "version": { "type": ["string", "null"] }
+              }
+            },
+            "device": {
+              "type": "object",
+              "properties": {
+                "vendor": { "type": ["string", "null"] },
+                "model": { "type": ["string", "null"] },
+                "type": { "type": ["string", "null"] }
+              }
+            }
+          }
         }
       },
       "required": ["title", "createdAt", "lastActivity"]
@@ -320,6 +387,11 @@
           "type": "string",
           "format": "date-time",
           "description": "The timestamp when the lead was created."
+        },
+        "source": {
+          "type": "string",
+          "enum": ["Widget", "Email", "Phone"],
+          "description": "The source channel where the lead was captured."
         }
       }
     },
@@ -425,6 +497,12 @@
         "$ref": "#/entities/agent"
       },
       "description": "Stores the agents created by a specific user."
+    },
+    "/agentIndex/{agentId}": {
+      "schema": {
+        "$ref": "#/entities/agentIndex"
+      },
+      "description": "A top-level index for fast, cost-effective lookups of an agent's owner."
     },
     "/users/{userId}/agents/{agentId}/texts/{textId}": {
       "schema": {

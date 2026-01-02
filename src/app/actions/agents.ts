@@ -62,6 +62,10 @@ export async function createAgent(userId: string, name: string, description: str
 
     await agentRef.set(newAgent);
 
+    // Create a record in the top-level index for efficient lookups
+    const agentIndexRef = firestore.collection('agentIndex').doc(agentRef.id);
+    await agentIndexRef.set({ ownerId: userId });
+
     return { id: agentRef.id };
   } catch (e: any) {
     console.error('Failed to create agent:', e);
@@ -202,19 +206,35 @@ async function addLogStep(logRef: FirebaseFirestore.DocumentReference, descripti
 
 
 async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId: string): Promise<{ agent: Agent, agentRef: FirebaseFirestore.DocumentReference, ownerId: string } | null> {
-    const usersSnapshot = await firestore.collection('users').get();
-    for (const userDoc of usersSnapshot.docs) {
-        const agentRef = firestore.collection('users').doc(userDoc.id).collection('agents').doc(agentId);
-        const agentDoc = await agentRef.get();
-        if (agentDoc.exists) {
-            return {
-                agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
-                agentRef: agentRef,
-                ownerId: userDoc.id,
-            };
-        }
+    const indexRef = firestore.collection('agentIndex').doc(agentId);
+    const indexDoc = await indexRef.get();
+
+    if (!indexDoc.exists) {
+        console.error(`[ACTION] No index found for agent ID ${agentId}.`);
+        return null;
     }
-    return null;
+
+    const { ownerId } = indexDoc.data() as { ownerId: string };
+    if (!ownerId) {
+        console.error(`[ACTION] Index for agent ID ${agentId} is missing ownerId.`);
+        return null;
+    }
+
+    const agentRef = firestore.collection('users').doc(ownerId).collection('agents').doc(agentId);
+    const agentDoc = await agentRef.get();
+
+    if (!agentDoc.exists) {
+        console.error(`[ACTION] Agent document not found at path users/${ownerId}/agents/${agentId}, but index exists.`);
+        // Optional: Clean up the stale index entry
+        await indexRef.delete();
+        return null;
+    }
+
+    return {
+        agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
+        agentRef: agentRef,
+        ownerId: ownerId,
+    };
 }
 
 
@@ -431,19 +451,29 @@ export async function deleteAgent(userId: string, agentId: string): Promise<{ su
 
     const firestore = firebaseAdmin.firestore();
     const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+    const agentIndexRef = firestore.collection('agentIndex').doc(agentId);
 
     try {
+        // Start a batch write to perform atomic deletes
+        const batch = firestore.batch();
+
+        // 1. Delete all subcollections
         const collections = await agentRef.listCollections();
         for (const collection of collections) {
             const snapshot = await collection.get();
-            const batch = firestore.batch();
             snapshot.docs.forEach(doc => {
                 batch.delete(doc.ref);
             });
-            await batch.commit();
         }
 
-        await agentRef.delete();
+        // 2. Delete the agent document itself
+        batch.delete(agentRef);
+
+        // 3. Delete the corresponding index document
+        batch.delete(agentIndexRef);
+        
+        // 4. Commit all deletes in one go
+        await batch.commit();
 
         return { success: true };
     } catch (e: any) {
