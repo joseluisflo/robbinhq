@@ -33,10 +33,9 @@ export async function sendEmail({ to, subject, text, fromName, inReplyTo, refere
     if (references) headers['References'] = references;
     if (replyTo) headers['Reply-To'] = replyTo;
     
-    const formattedFrom = `"${fromName}" <${PLUNK_SENDER_EMAIL}>`;
-    
     const response = await plunk.emails.send({
-      from: formattedFrom,
+      from: PLUNK_SENDER_EMAIL,
+      name: fromName, // Use the separate 'name' parameter
       to,
       subject,
       body: text,

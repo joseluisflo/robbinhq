@@ -136,14 +136,12 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     console.log(`[ACTION] 💰 Attempting to deduct 1 credit from user ${ownerId}.`);
     const creditResult = await deductCredits(ownerId, 1);
     
-    // --- START: ADDED LOGIC ---
     console.log('[ACTION] 📊 Credit deduction result:', JSON.stringify(creditResult));
     if (!creditResult.success) {
       console.error(`[ACTION] ❌ Credit deduction failed for user ${ownerId}: ${creditResult.error}. Halting process.`);
       return { error: 'Insufficient credits or billing issue.' }; // We stop here.
     }
     console.log('[ACTION] ✅ Credit deduction successful. Proceeding with AI response.');
-    // --- END: ADDED LOGIC ---
 
 
     const textsSnapshot = await agentRef.collection('texts').get();
