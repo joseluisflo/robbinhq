@@ -1,0 +1,20 @@
+name = "emailing-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Binding para el Durable Object del PartyKit (si es necesario para llamadas de voz)
+[[durable_objects.bindings]]
+name = "PARTYKIT_DURABLE"
+class_name = "PartyKitDurable"
+
+# Regla para activar el worker en el enrutamiento de email
+[[rules]]
+type = "Email"
+# El patrón ".*" hace que se active para CUALQUIER dirección de correo en tu dominio.
+# ¡Asegúrate de que tus agentes tengan direcciones únicas para el enrutamiento!
+pattern = ".*@agents.tryrobbin.com"
+
+# Migración para crear la clase del Durable Object
+[[migrations]]
+tag = "v1"
+new_classes = ["PartyKitDurable"]
