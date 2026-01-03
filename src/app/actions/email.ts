@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
@@ -8,7 +7,6 @@ import type { Agent, AgentFile, TextSource, EmailMessage, EmailSession } from '@
 import { sendEmail } from '@/lib/email-service';
 import { FieldValue } from 'firebase-admin/firestore';
 import { deductCredits } from '@/lib/credit-service';
-
 
 interface EmailData {
   from: string;
@@ -65,8 +63,6 @@ async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId
     return null;
 }
 
-
-
 export async function processInboundEmail(emailData: EmailData): Promise<{ success: boolean } | { error: string }> {
   console.log('[ACTION]  bước 1: processInboundEmail iniciado.');
   const { from, to, subject, body, messageId, inReplyTo, references } = emailData;
@@ -102,6 +98,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     let sessionRef;
     let messages: EmailMessage[] = [];
     
+    // Find existing session
     const sessionQuery = await emailSessionsRef
         .where('participants', 'array-contains', from)
         .where('subject', '==', subject.replace(/^Re: /i, ''))
@@ -110,6 +107,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
     if (!sessionQuery.empty) {
         sessionRef = sessionQuery.docs[0].ref;
+        // Get previous messages
         const messagesSnapshot = await sessionRef.collection('messages').orderBy('timestamp', 'asc').get();
         messages = messagesSnapshot.docs.map(doc => doc.data() as EmailMessage);
         console.log(`[ACTION] 📂 Found existing session with ${messages.length} messages.`);
@@ -123,13 +121,22 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
         console.log('[ACTION] 📝 Created new email session.');
     }
     
-    await sessionRef.collection('messages').doc(messageId || `no-id-${Date.now()}`).set({
-        messageId: messageId,
-        sender: from,
-        text: body,
-        timestamp: FieldValue.serverTimestamp(),
-    });
+    // Create the new message object
+    const newMessage: EmailMessage = {
+      messageId: messageId,
+      sender: from,
+      text: body,
+      timestamp: FieldValue.serverTimestamp(),
+    };
+
+    // Save the new message to the database
+    await sessionRef.collection('messages').doc(messageId || `no-id-${Date.now()}`).set(newMessage);
     console.log(`[ACTION] 📩 Saved incoming message with ID: ${messageId || 'N/A'}`);
+    
+    // --- CRITICAL FIX ---
+    // Add the new message to our in-memory list to build the full history
+    messages.push(newMessage);
+    // --- END FIX ---
 
 
     // Deduct credit before generating a response
@@ -139,11 +146,11 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     console.log('[ACTION] 📊 Credit deduction result:', JSON.stringify(creditResult));
     if (!creditResult.success) {
       console.error(`[ACTION] ❌ Credit deduction failed for user ${ownerId}: ${creditResult.error}. Halting process.`);
-      return { error: 'Insufficient credits or billing issue.' }; // We stop here.
+      return { error: 'Insufficient credits or billing issue.' };
     }
     console.log('[ACTION] ✅ Credit deduction successful. Proceeding with AI response.');
 
-
+    // Get knowledge
     const textsSnapshot = await agentRef.collection('texts').get();
     const filesSnapshot = await agentRef.collection('files').get();
     console.log(`[ACTION] 🧠 Fetched ${textsSnapshot.size} text sources and ${filesSnapshot.size} file sources.`);
@@ -156,6 +163,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
         ...fileSources.map(f => `File: ${f.name}\nContent: ${f.extractedText || ''}`)
     ].join('\n\n---\n\n');
 
+    // Build history from the now-complete list of messages
     const conversationHistory = messages.map(msg => {
         const senderPrefix = msg.sender === from ? 'User' : 'Agent';
         return `${senderPrefix}: ${msg.text}`;
@@ -182,7 +190,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
       to: from,
       subject: replySubject,
       text: replyBody,
-      fromName: agent.name, // Pass the agent's name to the email service
+      fromName: agent.name,
       inReplyTo: messageId,
       references: newReferences,
       replyTo: to,
