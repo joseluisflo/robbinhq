@@ -1,4 +1,3 @@
-
 'use server';
 
 import { NextResponse } from 'next/server';
@@ -29,11 +28,22 @@ export async function POST(request: Request) {
     const from = payload.from;
     const to = payload.to;
     const subject = payload.subject;
-    const body = payload.text || payload.html || 'No content';
-    const messageId = payload.headers?.['message-id'] || `no-id-${Date.now()}`;
-    const inReplyTo = payload.headers?.['in-reply-to'];
-    const references = payload.headers?.['references'];
+    
+    // ✅ FIX: Primero buscar en payload.body (que es lo que envía el worker)
+    const body = payload.body || payload.text || payload.html || 'No content';
+    
+    const messageId = payload.messageId || payload.headers?.['message-id'] || `no-id-${Date.now()}`;
+    const inReplyTo = payload.inReplyTo || payload.headers?.['in-reply-to'];
+    const references = payload.references || payload.headers?.['references'];
 
+    // 🔍 LOG: Verificar qué se extrajo
+    console.log('[API] 📧 Extracted data:');
+    console.log('[API]   from:', from);
+    console.log('[API]   to:', to);
+    console.log('[API]   subject:', subject);
+    console.log('[API]   body:', body);
+    console.log('[API]   body length:', body ? body.length : 0);
+    console.log('[API]   messageId:', messageId);
 
     if (!from || !to || !subject) {
         console.error('[API] ❌ Missing required email fields (from, to, subject).');
@@ -66,6 +76,7 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('[API] ❌ Critical error in email-ingest webhook:', error);
+    console.error('[API] ❌ Error stack:', error.stack);
     return NextResponse.json({ success: false, error: 'Failed to process the request body.' }, { status: 500 });
   }
 }
