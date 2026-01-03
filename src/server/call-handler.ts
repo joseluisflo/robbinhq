@@ -1,12 +1,42 @@
 import { WebSocket } from 'ws';
 import { GoogleGenAI, type LiveSession, Modality } from "@google/genai";
 import { Buffer } from "node:buffer";
+import { firebaseAdmin } from '@/firebase/admin';
+import type { Agent } from '@/lib/types';
+
 
 // -------------------------------------------------------------------------
-// FUNCIONES DE AUDIO (Optimizadas y corregidas)
+// HELPER FUNCTIONS
 // -------------------------------------------------------------------------
 
-// 1. Entrada: Mu-Law (Twilio 8k) -> PCM 16-bit
+async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId: string): Promise<{ agent: Agent, ownerId: string } | null> {
+    if (!agentId) return null;
+    const indexRef = firestore.collection('agentIndex').doc(agentId);
+    const indexDoc = await indexRef.get();
+
+    if (indexDoc.exists) {
+        const { ownerId } = indexDoc.data() as { ownerId: string };
+        if (ownerId) {
+            const agentRef = firestore.collection('users').doc(ownerId).collection('agents').doc(agentId);
+            const agentDoc = await agentRef.get();
+            if (agentDoc.exists) {
+                console.log(`[CallHandler] Agent ${agentId} found in index for owner ${ownerId}.`);
+                return {
+                    agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
+                    ownerId: ownerId,
+                };
+            }
+        }
+    }
+    console.error(`[CallHandler] Agent with ID ${agentId} not found in index.`);
+    return null;
+}
+
+
+// -------------------------------------------------------------------------
+// AUDIO FUNCTIONS
+// -------------------------------------------------------------------------
+
 function muLawToLinear16(muLawBuffer: Buffer): Buffer {
   const pcmBuffer = Buffer.alloc(muLawBuffer.length * 2);
   for (let i = 0; i < muLawBuffer.length; i++) {
@@ -23,7 +53,6 @@ function muLawToLinear16(muLawBuffer: Buffer): Buffer {
   return pcmBuffer;
 }
 
-// 2. Entrada: Upsample 8k -> 16k
 function upsample8kTo16k(buffer8k: Buffer): Buffer {
   const buffer16k = Buffer.alloc(buffer8k.length * 2);
   for (let i = 0; i < buffer8k.length / 2; i++) {
@@ -34,7 +63,6 @@ function upsample8kTo16k(buffer8k: Buffer): Buffer {
   return buffer16k;
 }
 
-// 3. Salida: Downsample 24k -> 8k
 function downsampleBuffer(buffer: Buffer, inputRate: number, outputRate: number): Buffer {
   if (inputRate === outputRate) return buffer;
   const ratio = inputRate / outputRate;
@@ -51,7 +79,6 @@ function downsampleBuffer(buffer: Buffer, inputRate: number, outputRate: number)
   return result;
 }
 
-// 4. Salida: PCM 16-bit -> Mu-Law (Twilio)
 function linear16ToMuLaw(pcmBuffer: Buffer): Buffer {
   const muBuffer = Buffer.alloc(pcmBuffer.length / 2);
   for (let i = 0; i < pcmBuffer.length; i += 2) {
@@ -59,7 +86,6 @@ function linear16ToMuLaw(pcmBuffer: Buffer): Buffer {
     const sign = sample < 0 ? 0x80 : 0;
     if (sample < 0) sample = -sample;
     
-    // Clipping
     sample = Math.min(sample + 0x84, 0x7fff);
     
     let exponent = 7;
@@ -73,9 +99,6 @@ function linear16ToMuLaw(pcmBuffer: Buffer): Buffer {
     let mantissa = (sample >> (exponent + 3)) & 0x0f;
     
     let mu = ~(sign | (exponent << 4) | mantissa);
-    
-    // 🔥 CORRECCIÓN VITAL: Forzamos que sea un byte positivo (0-255)
-    // Esto evita el RangeError que estaba saturando tus logs y tu CPU
     mu &= 0xFF; 
 
     muBuffer.writeUInt8(mu, i / 2);
@@ -84,7 +107,7 @@ function linear16ToMuLaw(pcmBuffer: Buffer): Buffer {
 }
 
 // -------------------------------------------------------------------------
-// CLASE PRINCIPAL
+// MAIN CLASS
 // -------------------------------------------------------------------------
 
 interface MinimalLiveSession extends LiveSession {
@@ -96,7 +119,10 @@ export class CallHandler {
   private ws: WebSocket;
   private googleAISession: MinimalLiveSession | null = null;
   private twilioStreamSid: string | null = null;
-  private audioChunkCount: number = 0;
+  
+  // New properties for agent context
+  private agentId: string | null = null;
+  private ownerId: string | null = null;
 
   constructor(ws: WebSocket) {
     this.ws = ws;
@@ -112,7 +138,24 @@ export class CallHandler {
 
       if (twilioMessage.event === "start") {
         this.twilioStreamSid = twilioMessage.start.streamSid;
-        console.log(`[Handler] 🎬 Stream started: ${this.twilioStreamSid}`);
+        this.agentId = twilioMessage.start.customParameters?.agentId || null;
+        console.log(`[Handler] 🎬 Stream started: ${this.twilioStreamSid} for Agent: ${this.agentId}`);
+
+        if (!this.agentId) {
+            console.error("[Handler] ❌ Agent ID is missing from custom parameters. Closing connection.");
+            this.ws.close(1011, "Agent ID not provided.");
+            return;
+        }
+
+        const agentInfo = await findAgentAndOwner(firebaseAdmin.firestore(), this.agentId);
+        if (!agentInfo) {
+            console.error(`[Handler] ❌ Agent ${this.agentId} not found. Closing connection.`);
+            this.ws.close(1011, "Agent not found.");
+            return;
+        }
+        this.ownerId = agentInfo.ownerId;
+        console.log(`[Handler] 👤 Agent owner identified: ${this.ownerId}`);
+
 
         const params = twilioMessage.start.customParameters || {};
         const systemInstruction = params.systemInstruction 
@@ -126,7 +169,6 @@ export class CallHandler {
       } else if (twilioMessage.event === 'media') {
         if (!this.googleAISession) return;
         
-        // Procesamos audio entrante
         const audioBuffer = Buffer.from(twilioMessage.media.payload, 'base64');
         const pcm8k = muLawToLinear16(audioBuffer);
         const pcm16k = upsample8kTo16k(pcm8k);
@@ -156,8 +198,6 @@ export class CallHandler {
     }
   }
 
-  // 🔥 NUEVA FUNCIÓN: Limpia el buffer de audio de Twilio
-  // Esto hace que la interrupción se sienta instantánea
   private sendClearToTwilio() {
     if (this.ws.readyState === WebSocket.OPEN && this.twilioStreamSid) {
         const clearMessage = {
@@ -187,7 +227,6 @@ export class CallHandler {
             encoding: 'PCM16',
             sampleRateHertz: 16000,
           },
-          // ✅ Configuración correcta de interrupciones
           inputAudioTranscription: {
             interruptions: true
           },
@@ -211,8 +250,6 @@ export class CallHandler {
             try {
               const serverContent = message.serverContent;
 
-              // 🔥 DETECCIÓN DE INTERRUPCIÓN
-              // Si Google nos dice que hubo una interrupción, borramos lo que Twilio tenga en cola.
               if (serverContent?.turnComplete && serverContent?.interrupted) {
                   console.log("[Handler] ⚡ Interruption detected! Clearing Twilio buffer.");
                   this.sendClearToTwilio();
@@ -221,7 +258,6 @@ export class CallHandler {
               const audioData = serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
               
               if (audioData && this.twilioStreamSid) {
-                // Conversión inversa: 24k -> 8k -> MuLaw
                 const pcm24kBuffer = Buffer.from(audioData, 'base64');
                 const pcm8kBuffer = downsampleBuffer(pcm24kBuffer, 24000, 8000);
                 const muLawBuffer = linear16ToMuLaw(pcm8kBuffer);
