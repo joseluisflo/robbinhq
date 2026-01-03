@@ -191,23 +191,25 @@ export class CallHandler {
 
   private startBilling() {
     if (this.minuteInterval) {
-        clearInterval(this.minuteInterval);
-    }
-    
-    // Deduct initial credit for the first minute
-    if (this.ownerId) {
-        deductCredits(this.ownerId, 2);
+      clearInterval(this.minuteInterval);
     }
 
-    this.minuteInterval = setInterval(async () => {
-        if (this.ownerId) {
-            console.log(`[Handler] 💳 Attempting to deduct 2 credits for user ${this.ownerId} for another minute of call.`);
-            const result = await deductCredits(this.ownerId, 2);
-            if (!result.success) {
-                console.warn(`[Handler] ⚠️ Insufficient credits for user ${this.ownerId}. Terminating call.`);
-                this.ws.close(4002, "Insufficient credits"); // This will trigger the onClose event
-            }
+    const deductAndCheck = async (amount: number) => {
+      if (this.ownerId) {
+        console.log(`[Handler] 💳 Attempting to deduct ${amount} credits for user ${this.ownerId}.`);
+        const result = await deductCredits(this.ownerId, amount);
+        if (!result.success) {
+          console.warn(`[Handler] ⚠️ Insufficient credits for user ${this.ownerId}. Terminating call.`);
+          this.ws.close(4002, "Insufficient credits"); // This will trigger the onClose event
         }
+      }
+    };
+    
+    // Deduct initial credit for the first minute
+    deductAndCheck(2);
+
+    this.minuteInterval = setInterval(() => {
+        deductAndCheck(2);
     }, 60000);
   }
 
