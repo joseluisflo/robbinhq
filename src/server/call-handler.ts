@@ -1,8 +1,10 @@
+
 import { WebSocket } from 'ws';
 import { GoogleGenAI, type LiveSession, Modality } from "@google/genai";
 import { Buffer } from "node:buffer";
 import { firebaseAdmin } from '@/firebase/admin';
 import type { Agent } from '@/lib/types';
+import { deductCredits } from '@/lib/credit-service';
 
 
 // -------------------------------------------------------------------------
@@ -120,9 +122,9 @@ export class CallHandler {
   private googleAISession: MinimalLiveSession | null = null;
   private twilioStreamSid: string | null = null;
   
-  // New properties for agent context
   private agentId: string | null = null;
   private ownerId: string | null = null;
+  private minuteInterval: NodeJS.Timer | null = null;
 
   constructor(ws: WebSocket) {
     this.ws = ws;
@@ -156,6 +158,9 @@ export class CallHandler {
         this.ownerId = agentInfo.ownerId;
         console.log(`[Handler] 👤 Agent owner identified: ${this.ownerId}`);
 
+        // Start billing timer
+        this.startBilling();
+
 
         const params = twilioMessage.start.customParameters || {};
         const systemInstruction = params.systemInstruction 
@@ -182,6 +187,24 @@ export class CallHandler {
     } catch (e) {
       console.error("[Handler] ❌ Error processing message:", e);
     }
+  }
+
+  private startBilling() {
+    if (this.minuteInterval) {
+        clearInterval(this.minuteInterval);
+    }
+    
+    // Deduct initial credit for the first minute
+    if (this.ownerId) {
+        deductCredits(this.ownerId, 2);
+    }
+
+    this.minuteInterval = setInterval(() => {
+        if (this.ownerId) {
+            console.log(`[Handler] 💳 Deducting 2 credits for user ${this.ownerId} for another minute of call.`);
+            deductCredits(this.ownerId, 2);
+        }
+    }, 60000);
   }
 
   private sendAudioToGoogle(base64Payload: string) {
@@ -292,6 +315,11 @@ export class CallHandler {
 
   private onClose() {
     console.log("[Handler] 🔌 Connection closed.");
+    if (this.minuteInterval) {
+        clearInterval(this.minuteInterval);
+        this.minuteInterval = null;
+        console.log("[Handler] ⏱️ Billing timer stopped.");
+    }
     if (this.googleAISession) {
       this.googleAISession.close();
       this.googleAISession = null;

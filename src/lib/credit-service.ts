@@ -99,10 +99,11 @@ export async function deductCredits(
         credits: FieldValue.increment(-amount),
       });
 
+      console.log(`[CreditService] ✅ Successfully deducted ${amount} credits from user ${userId}.`);
       return { success: true };
     });
   } catch (error: any) {
-    console.error(`Failed to deduct ${amount} credits for user ${userId}:`, error);
+    console.error(`[CreditService] ❌ Failed to deduct ${amount} credits for user ${userId}:`, error);
     return { success: false, error: error.message || 'An unknown error occurred during credit deduction.' };
   }
 }
