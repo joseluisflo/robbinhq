@@ -199,10 +199,14 @@ export class CallHandler {
         deductCredits(this.ownerId, 2);
     }
 
-    this.minuteInterval = setInterval(() => {
+    this.minuteInterval = setInterval(async () => {
         if (this.ownerId) {
-            console.log(`[Handler] 💳 Deducting 2 credits for user ${this.ownerId} for another minute of call.`);
-            deductCredits(this.ownerId, 2);
+            console.log(`[Handler] 💳 Attempting to deduct 2 credits for user ${this.ownerId} for another minute of call.`);
+            const result = await deductCredits(this.ownerId, 2);
+            if (!result.success) {
+                console.warn(`[Handler] ⚠️ Insufficient credits for user ${this.ownerId}. Terminating call.`);
+                this.ws.close(4002, "Insufficient credits"); // This will trigger the onClose event
+            }
         }
     }, 60000);
   }
