@@ -1,4 +1,3 @@
-
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
@@ -64,8 +63,18 @@ async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId
 }
 
 export async function processInboundEmail(emailData: EmailData): Promise<{ success: boolean } | { error: string }> {
-  console.log('[ACTION]  bước 1: processInboundEmail iniciado.');
+  console.log('[ACTION] 🚀 Step 1: processInboundEmail started.');
   const { from, to, subject, body, messageId, inReplyTo, references } = emailData;
+  
+  // 🔍 LOG: Verificar que el body llegó desde el worker
+  console.log('[ACTION] 📧 Email data received from worker:');
+  console.log('[ACTION]   From:', from);
+  console.log('[ACTION]   To:', to);
+  console.log('[ACTION]   Subject:', subject);
+  console.log('[ACTION]   Body:', body);
+  console.log('[ACTION]   Body length:', body ? body.length : 0);
+  console.log('[ACTION]   Body is empty?:', !body || body.trim().length === 0);
+  console.log('[ACTION]   Body type:', typeof body);
 
   if (!agentEmailDomain) {
     console.error('[ACTION] ❌ Agent email domain (NEXT_PUBLIC_AGENT_EMAIL_DOMAIN or NEXT_PUBLIC_EMAIL_INGEST_DOMAIN) is not configured.');
@@ -74,7 +83,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
   const agentIdMatch = to.match(new RegExp(`^agent-([a-zA-Z0-9_-]+)@`));
   if (!agentIdMatch || !agentIdMatch[1]) {
-    console.error(`[API] ❌ Could not parse agentId from email address: ${to}`);
+    console.error(`[ACTION] ❌ Could not parse agentId from email address: ${to}`);
     return { error: `Could not parse agentId from email address: ${to}` };
   }
   const agentId = agentIdMatch[1];
@@ -110,7 +119,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
         // Get previous messages
         const messagesSnapshot = await sessionRef.collection('messages').orderBy('timestamp', 'asc').get();
         messages = messagesSnapshot.docs.map(doc => doc.data() as EmailMessage);
-        console.log(`[ACTION] 📂 Found existing session with ${messages.length} messages.`);
+        console.log(`[ACTION] 📂 Found existing session with ${messages.length} previous messages.`);
     } else {
         sessionRef = emailSessionsRef.doc();
         await sessionRef.set({
@@ -129,15 +138,23 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
       timestamp: FieldValue.serverTimestamp(),
     };
 
+    // 🔍 LOG: Verificar el mensaje antes de guardar
+    console.log('[ACTION] 💾 Preparing to save new message:');
+    console.log('[ACTION]   MessageId:', newMessage.messageId);
+    console.log('[ACTION]   Sender:', newMessage.sender);
+    console.log('[ACTION]   Text:', newMessage.text);
+    console.log('[ACTION]   Text length:', newMessage.text ? newMessage.text.length : 0);
+    console.log('[ACTION]   Text is empty?:', !newMessage.text || newMessage.text.trim().length === 0);
+
     // Save the new message to the database
     await sessionRef.collection('messages').doc(messageId || `no-id-${Date.now()}`).set(newMessage);
-    console.log(`[ACTION] 📩 Saved incoming message with ID: ${messageId || 'N/A'}`);
+    console.log(`[ACTION] 📩 Saved incoming message with ID: ${messageId || 'no-id-' + Date.now()}`);
     
     // --- CRITICAL FIX ---
     // Add the new message to our in-memory list to build the full history
     messages.push(newMessage);
+    console.log(`[ACTION] 📚 Total messages in conversation history now: ${messages.length}`);
     // --- END FIX ---
-
 
     // Deduct credit before generating a response
     console.log(`[ACTION] 💰 Attempting to deduct 1 credit from user ${ownerId}.`);
@@ -163,21 +180,34 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
         ...fileSources.map(f => `File: ${f.name}\nContent: ${f.extractedText || ''}`)
     ].join('\n\n---\n\n');
 
+    console.log(`[ACTION] 📖 Knowledge base size: ${knowledge.length} characters`);
+
     // Build history from the now-complete list of messages
     const conversationHistory = messages.map(msg => {
         const senderPrefix = msg.sender === from ? 'User' : 'Agent';
         return `${senderPrefix}: ${msg.text}`;
     }).join('\n');
     
+    // 🔍 LOG: Verificar el historial completo antes de llamar a la IA
+    console.log('[ACTION] 📜 Building conversation history for AI:');
+    console.log('[ACTION]   Number of messages:', messages.length);
+    console.log('[ACTION]   History length (chars):', conversationHistory.length);
+    console.log('[ACTION]   History is empty?:', !conversationHistory || conversationHistory.trim().length === 0);
+    console.log('[ACTION]   History preview (first 300 chars):', conversationHistory.substring(0, 300));
+    
     console.log('[ACTION] 🤖 Calling agentChat with compiled history and knowledge.');
 
     const chatResult = await agentChat({
       conversationHistory: conversationHistory,
-      latestUserMessage: body,
+      latestUserMessage: '', // Vacío porque el mensaje nuevo ya está incluido en conversationHistory
       instructions: agent.instructions || 'You are a helpful assistant responding to an email. Your response should be in plain text, not markdown.',
       knowledge: knowledge,
     });
-    console.log('[ACTION] ✨ AI response generated.');
+    
+    console.log('[ACTION] ✨ AI response generated successfully.');
+    console.log('[ACTION] 💬 AI response length:', chatResult.response ? chatResult.response.length : 0);
+    console.log('[ACTION] 💬 AI response is empty?:', !chatResult.response || chatResult.response.trim().length === 0);
+    console.log('[ACTION] 💬 AI response preview (first 200 chars):', chatResult.response ? chatResult.response.substring(0, 200) : 'NO RESPONSE');
     
     const replySubject = subject.toLowerCase().startsWith('re:') ? subject : `Re: ${subject}`;
     const agentSignature = agent.emailSignature ? `\n\n${agent.emailSignature}` : `\n\n--\nSent by ${agent.name}`;
@@ -186,6 +216,9 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     const newReferences = [references, inReplyTo].filter(Boolean).join(' ');
 
     console.log(`[ACTION] 📤 Sending email response to ${from} via Plunk.`);
+    console.log(`[ACTION] 📤 Reply subject: ${replySubject}`);
+    console.log(`[ACTION] 📤 Reply body length: ${replyBody.length}`);
+    
     await sendEmail({
       to: from,
       subject: replySubject,
@@ -201,6 +234,8 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
   } catch (error: any) {
     console.error('[ACTION] ❌ Critical error in processInboundEmail:', error);
+    console.error('[ACTION] ❌ Error message:', error.message);
+    console.error('[ACTION] ❌ Error stack:', error.stack);
     return { error: `Could not send email. Reason: ${error.message || 'An unknown error occurred.'}` };
   }
 }
