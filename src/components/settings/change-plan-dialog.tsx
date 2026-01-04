@@ -128,7 +128,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                 onValueChange={(value: CreditPackageId) => setSelectedPackageId(value)}
               >
                 {Object.values(creditPackages).map(pkg => (
-                  <Label key={pkg.id} htmlFor={`${id}-${pkg.id}`} className="relative flex w-full cursor-pointer items-start gap-2 rounded-md border border-input p-4 shadow-xs outline-none has-[:checked]:border-primary/50 has-[:checked]:bg-accent">
+                  <Label key={pkg.id} htmlFor={`${id}-${pkg.id}`} className="relative flex w-full cursor-pointer items-start gap-3 rounded-md border border-input p-4 shadow-xs outline-none has-[:checked]:border-primary/50 has-[:checked]:bg-accent">
                     <RadioGroupItem
                       aria-describedby={`${id}-${pkg.id}-description`}
                       className="mt-0.5"
@@ -139,9 +139,9 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                       <p className="font-semibold">{pkg.name}</p>
                       
                        {pkg.id === 'custom' ? (
-                          <>
+                          <div className="space-y-2">
                             <p className="text-muted-foreground text-xs" id={`${id}-${pkg.id}-description`}>
-                                Enter an amount between $5 and $500
+                                Enter an amount between $5 and $500.
                             </p>
                             {selectedPackageId === 'custom' && (
                                 <div className="relative mt-2">
@@ -157,17 +157,19 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                                     />
                                 </div>
                             )}
-                          </>
+                          </div>
                         ) : (
-                           <ul className="space-y-1.5 text-xs text-muted-foreground">
-                            {pkg.features.map((feature, idx) => (
-                                <li key={idx} className={cn("flex items-center gap-2", !feature.included && "opacity-60")}>
-                                {feature.included ? <CheckIcon className="size-3 text-green-500" /> : <XIcon className="size-3" />}
-                                {feature.text}
-                                </li>
-                            ))}
-                           </ul>
+                          null // No description for fixed packages now
                         )}
+                        
+                        <ul className="space-y-1.5 text-xs text-muted-foreground pt-2">
+                        {pkg.features.map((feature, idx) => (
+                            <li key={idx} className={cn("flex items-center gap-2", !feature.included && "opacity-60")}>
+                            {feature.included ? <CheckIcon className="size-3 text-green-500" /> : <XIcon className="size-3" />}
+                            {feature.text}
+                            </li>
+                        ))}
+                        </ul>
                     </div>
                   </Label>
                 ))}
