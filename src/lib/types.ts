@@ -9,6 +9,9 @@ export type userProfile = {
   planId?: 'free' | 'essential' | 'pro';
   creditResetDate?: any;
   stripeCustomerId?: string;
+  autoRechargeEnabled?: boolean;
+  rechargeThreshold?: number;
+  rechargeAmount?: number;
 };
 
 export type Task = {
