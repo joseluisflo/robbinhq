@@ -10,6 +10,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogBody,
+  DialogFooter,
 } from "@/components/ui/dialog";
 
 interface CheckoutFormProps {
@@ -29,10 +31,9 @@ export function CheckoutForm({ onGoBack, plan, setPaymentStatus, setStep }: Chec
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   
-  const priceString = (plan.price / 100).toLocaleString('en-US', {
-      style: 'currency',
-      currency: 'USD',
-  });
+  const priceString = plan.id === 'custom' 
+      ? (plan.price / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+      : (plan.price / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -72,31 +73,31 @@ export function CheckoutForm({ onGoBack, plan, setPaymentStatus, setStep }: Chec
 
   return (
     <>
-      <DialogHeader className="mb-4">
-        <DialogTitle className="text-left">Confirm and pay</DialogTitle>
-        <DialogDescription className="text-left">
+      <DialogHeader>
+        <DialogTitle>Confirm and pay</DialogTitle>
+        <DialogDescription>
           You are about to purchase {plan.name}.
         </DialogDescription>
       </DialogHeader>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <PaymentElement id="payment-element" />
-
-        {message && <div id="payment-message" className="text-red-500 text-sm">{message}</div>}
-
-        <div className="grid grid-cols-2 gap-2 pt-4">
-          <Button className="w-full" type="button" variant="ghost" onClick={onGoBack} disabled={isLoading}>
-            Go Back
-          </Button>
-          <Button className="w-full" type="submit" disabled={isLoading || !stripe || !elements}>
-            {isLoading ? <Loader2 className="animate-spin" /> : `Pay ${priceString}`}
-          </Button>
-        </div>
-
-        <p className="text-center text-muted-foreground text-xs mt-4">
-          Payments are non-refundable. Cancel anytime.
-        </p>
-      </form>
+      <DialogBody>
+        <form onSubmit={handleSubmit} className="space-y-5">
+            <PaymentElement id="payment-element" />
+            {message && <div id="payment-message" className="text-red-500 text-sm">{message}</div>}
+            
+            <div className="grid grid-cols-2 gap-2 pt-4">
+              <Button className="w-full" type="button" variant="ghost" onClick={onGoBack} disabled={isLoading}>
+                Go Back
+              </Button>
+              <Button className="w-full" type="submit" disabled={isLoading || !stripe || !elements}>
+                {isLoading ? <Loader2 className="animate-spin" /> : `Pay ${priceString}`}
+              </Button>
+            </div>
+        </form>
+      </DialogBody>
+      <DialogFooter className="text-center text-muted-foreground text-xs px-6">
+         Payments are non-refundable. Cancel anytime.
+      </DialogFooter>
     </>
   );
 }
