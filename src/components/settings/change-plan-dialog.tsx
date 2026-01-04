@@ -14,14 +14,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CheckoutForm } from "./checkout-form";
 import { createPaymentIntent } from "@/app/actions/stripe";
 import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Elements } from "@stripe/react-stripe-js";
 import { PaymentStatus } from "./payment-status";
-import { Card, CardContent } from "../ui/card";
 import { NumberInput } from "../ui/number-input";
 import { cn } from "@/lib/utils";
 
@@ -144,13 +142,16 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="space-y-6">
-              <RadioGroup 
-                className="gap-2" 
-                value={selectedPackageId}
-                onValueChange={(value: CreditPackageId) => setSelectedPackageId(value)}
-              >
+               <div className="gap-2 flex flex-col">
                 {Object.values(creditPackages).map((pkg) => (
-                  <Label key={pkg.id} htmlFor={`${id}-${pkg.id}`} className="relative flex w-full cursor-pointer items-start gap-3 rounded-md border border-input p-4 shadow-xs outline-none has-[:checked]:border-primary has-[:checked]:bg-accent">
+                  <div
+                    key={pkg.id}
+                    onClick={() => setSelectedPackageId(pkg.id)}
+                    className={cn(
+                        "relative flex w-full cursor-pointer items-start gap-3 rounded-md border border-input p-4 shadow-xs outline-none",
+                        selectedPackageId === pkg.id && "border-primary bg-accent"
+                    )}
+                  >
                     <div className="grid grow gap-2">
                       <p className="font-semibold">{pkg.name}</p>
                       <p className="text-muted-foreground text-sm">
@@ -174,15 +175,9 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                           </div>
                       )}
                     </div>
-                     <RadioGroupItem
-                      aria-describedby={`${id}-${pkg.id}-description`}
-                      className="mt-0.5"
-                      id={`${id}-${pkg.id}`}
-                      value={pkg.id}
-                    />
-                  </Label>
+                  </div>
                 ))}
-              </RadioGroup>
+              </div>
 
               <div className="space-y-2 pt-4">
                   <p className="font-semibold text-sm">Features include:</p>
