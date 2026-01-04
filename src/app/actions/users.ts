@@ -63,7 +63,15 @@ export async function createUserProfile(userId: string, name: string, email: str
   }
 }
 
-export async function updateUserProfile(userId: string, data: { displayName?: string }): Promise<{ success: boolean } | { error: string }> {
+export async function updateUserProfile(
+    userId: string, 
+    data: { 
+        displayName?: string;
+        autoRechargeEnabled?: boolean;
+        rechargeThreshold?: number;
+        rechargeAmount?: number;
+    }
+): Promise<{ success: boolean } | { error: string }> {
   if (!userId || !data) {
     return { error: 'User ID and data are required.' };
   }
@@ -76,6 +84,16 @@ export async function updateUserProfile(userId: string, data: { displayName?: st
     if (data.displayName) {
       updateData.displayName = data.displayName;
     }
+    if (data.autoRechargeEnabled !== undefined) {
+        updateData.autoRechargeEnabled = data.autoRechargeEnabled;
+    }
+    if (data.rechargeThreshold !== undefined) {
+        updateData.rechargeThreshold = data.rechargeThreshold;
+    }
+    if (data.rechargeAmount !== undefined) {
+        updateData.rechargeAmount = data.rechargeAmount;
+    }
+
 
     if (Object.keys(updateData).length === 0) {
       return { error: 'No data provided to update.' };

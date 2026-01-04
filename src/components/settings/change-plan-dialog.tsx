@@ -27,6 +27,7 @@ import { NumberInput } from "../ui/number-input";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { updateUserProfile } from "@/app/actions/users";
 
 
 type CreditPackageId = '20' | '40' | 'custom';
@@ -92,19 +93,35 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    let amountInCents = 0;
-    if (selectedPackageId === 'custom') {
-        amountInCents = Number(customAmount) * 100;
-    } else {
-        amountInCents = creditPackages[selectedPackageId].price;
-    }
-
     startTransition(async () => {
-        const result = await createPaymentIntent({ userId: user.uid, amount: amountInCents, planId: 'credits' });
-        if (result.error) {
-            toast({ title: "Payment Error", description: result.error, variant: "destructive" });
-        } else if (result.clientSecret) {
-            setClientSecret(result.clientSecret);
+        // First, save the auto-recharge settings
+        const settingsToUpdate = {
+            autoRechargeEnabled: autoRecharge,
+            ...(autoRecharge && { 
+                rechargeThreshold: Number(rechargeThreshold), 
+                rechargeAmount: Number(rechargeAmount) 
+            })
+        };
+        
+        const updateResult = await updateUserProfile(user.uid, settingsToUpdate);
+        if (updateResult.error) {
+            toast({ title: "Settings Error", description: `Could not save auto-recharge settings: ${updateResult.error}`, variant: "destructive" });
+            // We can decide to stop here or continue with the payment. For now, let's continue.
+        }
+
+        // Then, proceed with payment intent creation
+        let amountInCents = 0;
+        if (selectedPackageId === 'custom') {
+            amountInCents = Number(customAmount) * 100;
+        } else {
+            amountInCents = creditPackages[selectedPackageId].price;
+        }
+
+        const paymentResult = await createPaymentIntent({ userId: user.uid, amount: amountInCents });
+        if (paymentResult.error) {
+            toast({ title: "Payment Error", description: paymentResult.error, variant: "destructive" });
+        } else if (paymentResult.clientSecret) {
+            setClientSecret(paymentResult.clientSecret);
             setStep(2);
         }
     });
@@ -166,7 +183,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px]">
         {step === 1 && (
           <>
             <DialogHeader>
