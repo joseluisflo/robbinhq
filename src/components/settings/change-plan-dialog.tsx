@@ -22,47 +22,20 @@ import { useToast } from "@/hooks/use-toast";
 import { Elements } from "@stripe/react-stripe-js";
 import { PaymentStatus } from "./payment-status";
 
-type PlanId = 'free' | 'essential' | 'pro';
+type CreditPackageId = '20' | '40';
 
-const plans = {
-  free: {
-    id: 'free',
-    name: 'Free',
-    price: '$0 per month',
-    features: [
-      { text: '150 credits', included: true },
-      { text: '1 Agent', included: true },
-      { text: '400kb Training Data', included: true },
-      { text: '2 Channel Deploy', included: false },
-      { text: 'Limited Data retention', included: false },
-      { text: 'Watermark', included: true },
-    ],
+const creditPackages = {
+  '20': {
+    id: '20',
+    name: '$20 in credits',
+    description: 'A quick top-up for your account.',
+    amount: 2000,
   },
-  essential: {
-    id: 'essential',
-    name: 'Essential',
-    price: '$15 per month',
-    features: [
-      { text: '1500 Credits', included: true },
-      { text: 'Unlimited Agents', included: true },
-      { text: '40MB Training Data', included: true },
-      { text: '3 Channel Deploy', included: true },
-      { text: 'Unlimited Data retention', included: true },
-      { text: 'No Watermark', included: true },
-    ],
-  },
-  pro: {
-    id: 'pro',
-    name: 'Pro',
-    price: '$29 per month',
-    features: [
-      { text: '5000 Credits', included: true },
-      { text: 'Unlimited Agents', included: true },
-      { text: '40MB Training Data', included: true },
-      { text: '3 Channel Deploy', included: true },
-      { text: 'Unlimited Data Retention', included: true },
-      { text: 'No watermark', included: true },
-    ],
+  '40': {
+    id: '40',
+    name: '$40 in credits',
+    description: 'Best value for frequent users.',
+    amount: 4000,
   },
 };
 
@@ -73,7 +46,7 @@ const stripePromise = loadStripe(
 export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const id = useId();
   const [step, setStep] = useState(1);
-  const [selectedPlanId, setSelectedPlanId] = useState<PlanId>('free');
+  const [selectedPackageId, setSelectedPackageId] = useState<CreditPackageId>('20');
   const [isProcessing, startTransition] = useTransition();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
@@ -82,17 +55,8 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   
   const handleContinue = () => {
-    if (step === 1 && selectedPlanId !== 'free' && user) {
-        startTransition(async () => {
-            const result = await createPaymentIntent({ userId: user.uid, planId: selectedPlanId });
-            if (result.error) {
-                toast({ title: "Error", description: result.error, variant: "destructive" });
-            } else {
-                setClientSecret(result.clientSecret);
-                setStep(2);
-            }
-        });
-    }
+    // Logic will be added later
+    return;
   }
 
   const handleGoBack = () => {
@@ -103,13 +67,13 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const selectedPlan = plans[selectedPlanId];
+  const selectedPackage = creditPackages[selectedPackageId];
 
   return (
     <Dialog onOpenChange={(open) => {
         if (!open) {
             setStep(1);
-            setSelectedPlanId('free');
+            setSelectedPackageId('20');
             setClientSecret(null);
             setPaymentStatus(null);
         }
@@ -128,9 +92,9 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                 <RefreshCcwIcon className="opacity-80" size={16} />
               </div>
               <DialogHeader>
-                <DialogTitle className="text-left">Change your plan</DialogTitle>
+                <DialogTitle className="text-left">Buy Credits</DialogTitle>
                 <DialogDescription className="text-left">
-                  Pick one of the following plans.
+                  Select a credit package to add to your account.
                 </DialogDescription>
               </DialogHeader>
             </div>
@@ -138,48 +102,29 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
             <form className="space-y-5">
               <RadioGroup 
                 className="gap-2" 
-                defaultValue={selectedPlanId}
-                onValueChange={(value: PlanId) => setSelectedPlanId(value)}
+                defaultValue={selectedPackageId}
+                onValueChange={(value: CreditPackageId) => setSelectedPackageId(value)}
               >
-                {/* Plans Radio Cards */}
-                {Object.values(plans).map(plan => (
-                  <div key={plan.id} className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
+                {Object.values(creditPackages).map(pkg => (
+                  <div key={pkg.id} className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
                     <RadioGroupItem
-                      aria-describedby={`${id}-${plan.id}-description`}
+                      aria-describedby={`${id}-${pkg.id}-description`}
                       className="order-1 after:absolute after:inset-0"
-                      id={`${id}-${plan.id}`}
-                      value={plan.id}
+                      id={`${id}-${pkg.id}`}
+                      value={pkg.id}
                     />
                     <div className="grid grow gap-1">
-                      <Label htmlFor={`${id}-${plan.id}`}>{plan.name}</Label>
-                      <p className="text-muted-foreground text-xs" id={`${id}-${plan.id}-description`}>
-                        {plan.price}
+                      <Label htmlFor={`${id}-${pkg.id}`}>{pkg.name}</Label>
+                      <p className="text-muted-foreground text-xs" id={`${id}-${pkg.id}-description`}>
+                        {pkg.description}
                       </p>
                     </div>
                   </div>
                 ))}
               </RadioGroup>
 
-              <div className="space-y-3">
-                <p>
-                  <strong className="font-medium text-sm">Features include:</strong>
-                </p>
-                <ul className="space-y-2 text-muted-foreground text-sm">
-                  {selectedPlan.features.map((feature, index) => (
-                    <li key={index} className="flex gap-2">
-                      {feature.included ? (
-                        <CheckIcon aria-hidden="true" className="mt-0.5 shrink-0 text-primary" size={16} />
-                      ) : (
-                        <XIcon aria-hidden="true" className="mt-0.5 shrink-0 text-muted-foreground/50" size={16} />
-                      )}
-                      <span className={!feature.included ? 'text-muted-foreground/50' : ''}>{feature.text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
               <div className="grid grid-cols-1">
-                <Button className="w-full" type="button" onClick={handleContinue} disabled={isProcessing || selectedPlanId === 'free'}>
+                <Button className="w-full" type="button" onClick={handleContinue} disabled={isProcessing}>
                    {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Continue"}
                 </Button>
               </div>
@@ -191,7 +136,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
           <Elements options={{ clientSecret }} stripe={stripePromise}>
             <CheckoutForm 
               onGoBack={handleGoBack} 
-              plan={selectedPlan}
+              plan={selectedPackage} // This will be adapted
               setPaymentStatus={setPaymentStatus}
               setStep={setStep}
             />
@@ -199,7 +144,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
         )}
         
         {step === 3 && paymentStatus && (
-           <PaymentStatus status={paymentStatus} planName={selectedPlan.name} />
+           <PaymentStatus status={paymentStatus} planName={selectedPackage.name} />
         )}
 
       </DialogContent>
