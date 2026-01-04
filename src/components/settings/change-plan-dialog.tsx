@@ -148,8 +148,8 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                     key={pkg.id}
                     onClick={() => setSelectedPackageId(pkg.id)}
                     className={cn(
-                        "relative flex w-full cursor-pointer items-start gap-3 rounded-md border border-input p-4 shadow-xs outline-none",
-                        selectedPackageId === pkg.id && "border-primary bg-accent"
+                        "relative flex w-full cursor-pointer items-start gap-3 rounded-md border border-input p-4 shadow-xs outline-none transition-colors",
+                        selectedPackageId === pkg.id && "border-primary"
                     )}
                   >
                     <div className="grid grow gap-2">
