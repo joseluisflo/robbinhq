@@ -1,3 +1,4 @@
+
 "use client";
 
 import { CheckIcon, RefreshCcwIcon, XIcon, Loader2 } from "lucide-react";
@@ -76,7 +77,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [autoRecharge, setAutoRecharge] = useState(false);
-  const [rechargeThreshold, setRechargeThreshold] = useState<number | string>(100);
+  const [rechargeThreshold, setRechargeThreshold] = useState<number | string>(10);
   const [rechargeAmount, setRechargeAmount] = useState<number | string>(20);
 
   const { user } = useUser();
@@ -207,10 +208,10 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                             <NumberInput 
                                 value={rechargeThreshold}
                                 onChange={setRechargeThreshold}
-                                min={50}
-                                max={1000}
-                                step={10}
-                                symbol="cr"
+                                min={5}
+                                max={100}
+                                step={5}
+                                symbol="$"
                             />
                         </div>
                          <div className="space-y-2">
