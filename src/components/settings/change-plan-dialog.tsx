@@ -1,4 +1,3 @@
-
 "use client";
 
 import { CheckIcon, RefreshCcwIcon, XIcon, Loader2 } from "lucide-react";
@@ -151,12 +150,6 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
         {step === 1 && (
           <>
             <DialogHeader>
-              <div
-                aria-hidden="true"
-                className="mx-auto mb-4 flex size-11 shrink-0 items-center justify-center rounded-full border sm:mx-0"
-              >
-                <RefreshCcwIcon className="opacity-80" size={16} />
-              </div>
               <div>
                 <DialogTitle>Buy Credits</DialogTitle>
                 <DialogDescription>
