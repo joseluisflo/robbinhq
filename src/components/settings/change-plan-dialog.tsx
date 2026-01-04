@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Elements } from "@stripe/react-stripe-js";
 import { PaymentStatus } from "./payment-status";
 import { Card, CardContent } from "../ui/card";
-import { Input } from "../ui/input";
+import { NumberInput } from "../ui/number-input";
 import { cn } from "@/lib/utils";
 
 type CreditPackageId = '20' | '40' | 'custom';
@@ -91,20 +91,11 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleCustomAmountChange = (value: number) => {
     setCustomAmount(value);
-
-    const numericValue = Number(value);
-    if (value === '' || isNaN(numericValue) || numericValue < 10 || numericValue > 500) {
-      setCustomAmountError("The amount needs to be between $10 and $500.");
-    } else {
-      setCustomAmountError(null);
-    }
   };
 
   useEffect(() => {
-    // Validate custom amount when package selection changes
     if (selectedPackageId === 'custom') {
       const numericValue = Number(customAmount);
       if (isNaN(numericValue) || numericValue < 10 || numericValue > 500) {
@@ -167,18 +158,15 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                       </p>
                        {pkg.id === 'custom' && selectedPackageId === 'custom' && (
                           <div className="relative mt-2">
-                              <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground">$</span>
-                              <Input 
-                                  type="number"
-                                  className={cn(
-                                    "pl-6",
-                                    customAmountError && "border-destructive focus-visible:ring-destructive"
-                                  )}
-                                  value={customAmount}
-                                  onChange={handleCustomAmountChange}
-                                  min={10}
-                                  max={500}
-                                  onClick={(e) => e.preventDefault()}
+                              <NumberInput
+                                className={cn(customAmountError && "border-destructive focus-visible:ring-destructive")}
+                                value={customAmount}
+                                onChange={handleCustomAmountChange}
+                                min={10}
+                                max={500}
+                                step={1}
+                                symbol="$"
+                                onClick={(e) => e.preventDefault()}
                               />
                                {customAmountError && (
                                 <p className="text-xs text-destructive mt-1.5">{customAmountError}</p>
