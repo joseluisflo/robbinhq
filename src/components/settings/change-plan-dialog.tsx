@@ -22,6 +22,9 @@ import { Elements } from "@stripe/react-stripe-js";
 import { PaymentStatus } from "./payment-status";
 import { NumberInput } from "../ui/number-input";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+
 
 type CreditPackageId = '20' | '40' | 'custom';
 
@@ -72,6 +75,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const [isProcessing, startTransition] = useTransition();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const [autoRecharge, setAutoRecharge] = useState(false);
 
   const { user } = useUser();
   const { toast } = useToast();
@@ -97,7 +101,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
     if (selectedPackageId === 'custom') {
       const numericValue = Number(customAmount);
       if (isNaN(numericValue) || numericValue < 10 || numericValue > 500) {
-        setCustomAmountError("The amount needs to be between $10 and $500.");
+        setCustomAmountError("The amount need to be between $10 and $500.");
       } else {
         setCustomAmountError(null);
       }
@@ -148,7 +152,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                     key={pkg.id}
                     onClick={() => setSelectedPackageId(pkg.id)}
                     className={cn(
-                        "relative flex w-full cursor-pointer items-start gap-3 rounded-md border border-input p-4 shadow-xs outline-none transition-colors",
+                        "relative flex w-full cursor-pointer items-start gap-3 rounded-lg border bg-background p-4 shadow-sm transition-colors",
                         selectedPackageId === pkg.id && "border-primary"
                     )}
                   >
@@ -178,6 +182,24 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                   </div>
                 ))}
               </div>
+
+              <div className="space-y-4 pt-4">
+                <Separator />
+                <div className="flex items-center justify-between">
+                    <div>
+                        <Label htmlFor="auto-recharge-toggle">Auto recharge</Label>
+                        <p className="text-sm text-muted-foreground">
+                            Automatically buy credits when your balance is low.
+                        </p>
+                    </div>
+                    <Switch
+                        id="auto-recharge-toggle"
+                        checked={autoRecharge}
+                        onCheckedChange={setAutoRecharge}
+                    />
+                </div>
+              </div>
+
 
               <div className="space-y-2 pt-4">
                   <p className="font-semibold text-sm">Features include:</p>
