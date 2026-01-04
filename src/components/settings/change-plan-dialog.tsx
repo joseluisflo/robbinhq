@@ -224,6 +224,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                                 step={5}
                                 symbol="$"
                             />
+                            <p className="text-xs text-muted-foreground pt-1">Min amount is $10</p>
                         </div>
                     </div>
                 )}
