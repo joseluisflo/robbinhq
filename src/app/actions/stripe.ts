@@ -11,7 +11,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 interface CreatePaymentIntentParams {
   userId: string;
   amount: number; // Amount in cents
-  planId?: 'essential' | 'pro' | 'credits'; // Optional planId for metadata
 }
 
 /**
@@ -25,7 +24,6 @@ interface CreatePaymentIntentParams {
 export async function createPaymentIntent({
   userId,
   amount,
-  planId = 'credits',
 }: CreatePaymentIntentParams): Promise<{ clientSecret: string } | { error: string }> {
   if (!userId || !amount) {
     return { error: 'User ID and amount are required.' };
@@ -46,10 +44,19 @@ export async function createPaymentIntent({
     }
 
     const userData = userDoc.data() as userProfile;
-    const stripeCustomerId = userData.stripeCustomerId;
+    let stripeCustomerId = userData.stripeCustomerId;
 
+    // Create a Stripe customer if one doesn't exist
     if (!stripeCustomerId) {
-      return { error: 'Stripe customer ID not found for this user.' };
+        const customer = await stripe.customers.create({
+            email: userData.email,
+            name: userData.displayName,
+            metadata: {
+                firebaseUID: userId,
+            },
+        });
+        stripeCustomerId = customer.id;
+        await userRef.update({ stripeCustomerId });
     }
     
     // Create a PaymentIntent with the order amount and currency
@@ -57,13 +64,14 @@ export async function createPaymentIntent({
       amount: amount,
       currency: 'usd',
       customer: stripeCustomerId,
+      setup_future_usage: 'off_session',
       automatic_payment_methods: {
         enabled: true,
       },
-      // Add metadata to link the payment to the user and plan/purchase
+      // Add metadata to link the payment to the user and purchase type
       metadata: {
         firebaseUID: userId,
-        purchaseType: planId,
+        purchaseType: 'credits',
         creditAmount: amount / 100, // Store amount in dollars for clarity
       }
     });
@@ -80,3 +88,4 @@ export async function createPaymentIntent({
     return { error: e.message || 'An unknown error occurred.' };
   }
 }
+
