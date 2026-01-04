@@ -8,15 +8,10 @@ import type { userProfile } from '@/lib/types';
 // Initialize Stripe with the secret key from environment variables
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
-// Define plan prices in cents
-const PLAN_PRICES = {
-  essential: 1500, // $15.00
-  pro: 2900, // $29.00
-};
-
 interface CreatePaymentIntentParams {
   userId: string;
-  planId: 'essential' | 'pro';
+  amount: number; // Amount in cents
+  planId?: 'essential' | 'pro' | 'credits'; // Optional planId for metadata
 }
 
 /**
@@ -24,20 +19,22 @@ interface CreatePaymentIntentParams {
  * This is the first step in processing a payment. It generates a client_secret
  * that the frontend uses to securely complete the payment with Stripe Elements.
  *
- * @param {CreatePaymentIntentParams} params - The user ID and the ID of the plan they wish to purchase.
+ * @param {CreatePaymentIntentParams} params - The user ID and the amount to be charged.
  * @returns {Promise<{ clientSecret: string } | { error: string }>} An object with the clientSecret or an error message.
  */
 export async function createPaymentIntent({
   userId,
-  planId,
+  amount,
+  planId = 'credits',
 }: CreatePaymentIntentParams): Promise<{ clientSecret: string } | { error: string }> {
-  if (!userId || !planId) {
-    return { error: 'User ID and Plan ID are required.' };
+  if (!userId || !amount) {
+    return { error: 'User ID and amount are required.' };
+  }
+  
+  if (amount < 500) { // Stripe's minimum is usually $0.50
+      return { error: 'Amount must be at least $5.00.' };
   }
 
-  if (planId !== 'essential' && planId !== 'pro') {
-    return { error: 'Invalid plan ID provided.' };
-  }
 
   const firestore = firebaseAdmin.firestore();
   const userRef = firestore.collection('users').doc(userId);
@@ -55,8 +52,6 @@ export async function createPaymentIntent({
       return { error: 'Stripe customer ID not found for this user.' };
     }
     
-    const amount = PLAN_PRICES[planId];
-
     // Create a PaymentIntent with the order amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
@@ -65,10 +60,11 @@ export async function createPaymentIntent({
       automatic_payment_methods: {
         enabled: true,
       },
-      // Add metadata to link the payment to the user and plan
+      // Add metadata to link the payment to the user and plan/purchase
       metadata: {
         firebaseUID: userId,
-        planId: planId,
+        purchaseType: planId,
+        creditAmount: amount / 100, // Store amount in dollars for clarity
       }
     });
 

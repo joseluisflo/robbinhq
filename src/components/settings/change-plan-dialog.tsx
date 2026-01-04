@@ -1,6 +1,7 @@
+
 "use client";
 
-import { CheckIcon, RefreshCcwIcon, XIcon, Loader2 } from "lucide-react";
+import { CheckIcon, XIcon, Loader2 } from "lucide-react";
 import { useId, useState, useTransition, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 
@@ -86,9 +87,28 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   
   const handleContinue = () => {
-    // Logic will be added later
-    return;
-  }
+    if (!user) {
+      toast({ title: "Authentication Error", description: "You must be logged in to make a purchase.", variant: "destructive"});
+      return;
+    }
+
+    let amountInCents = 0;
+    if (selectedPackageId === 'custom') {
+        amountInCents = Number(customAmount) * 100;
+    } else {
+        amountInCents = creditPackages[selectedPackageId].price;
+    }
+
+    startTransition(async () => {
+        const result = await createPaymentIntent({ userId: user.uid, amount: amountInCents, planId: 'credits' });
+        if (result.error) {
+            toast({ title: "Payment Error", description: result.error, variant: "destructive" });
+        } else if (result.clientSecret) {
+            setClientSecret(result.clientSecret);
+            setStep(2);
+        }
+    });
+  };
 
   const handleGoBack = () => {
     if (step > 1) {
@@ -268,7 +288,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
           <Elements options={{ clientSecret }} stripe={stripePromise}>
             <CheckoutForm 
               onGoBack={handleGoBack} 
-              plan={selectedPackage} // This will be adapted
+              plan={selectedPackage}
               setPaymentStatus={setPaymentStatus}
               setStep={setStep}
             />
