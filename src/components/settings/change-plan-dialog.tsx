@@ -1,3 +1,4 @@
+
 "use client";
 
 import { CheckIcon, RefreshCcwIcon, XIcon, Loader2 } from "lucide-react";
@@ -21,23 +22,42 @@ import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Elements } from "@stripe/react-stripe-js";
 import { PaymentStatus } from "./payment-status";
+import { Card, CardContent } from "../ui/card";
+import { Input } from "../ui/input";
+import { cn } from "@/lib/utils";
 
-type CreditPackageId = '20' | '40';
+type CreditPackageId = '20' | '40' | 'custom';
 
 const creditPackages = {
   '20': {
-    id: '20',
+    id: '20' as CreditPackageId,
     name: '$20 in credits',
-    description: 'A quick top-up for your account.',
-    amount: 2000,
+    price: 2000, // in cents
+    features: [
+      { text: "Remove Watermark", included: false },
+      { text: "Phone Channel", included: false },
+    ],
   },
   '40': {
-    id: '40',
+    id: '40' as CreditPackageId,
     name: '$40 in credits',
-    description: 'Best value for frequent users.',
-    amount: 4000,
+    price: 4000,
+    features: [
+      { text: "Remove Watermark", included: true },
+      { text: "Phone Channel", included: false },
+    ],
   },
+  'custom': {
+    id: 'custom' as CreditPackageId,
+    name: 'Custom credits',
+    price: 0, // This will be dynamic
+    features: [
+       { text: "Remove Watermark", included: true },
+       { text: "Phone Channel", included: true },
+    ]
+  }
 };
+
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
@@ -47,6 +67,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const id = useId();
   const [step, setStep] = useState(1);
   const [selectedPackageId, setSelectedPackageId] = useState<CreditPackageId>('20');
+  const [customAmount, setCustomAmount] = useState<number | string>(5);
   const [isProcessing, startTransition] = useTransition();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
@@ -76,6 +97,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
             setSelectedPackageId('20');
             setClientSecret(null);
             setPaymentStatus(null);
+            setCustomAmount(5);
         }
     }}>
       <DialogTrigger asChild>
@@ -99,27 +121,55 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
               </DialogHeader>
             </div>
 
-            <form className="space-y-5">
+            <form className="space-y-4">
               <RadioGroup 
                 className="gap-2" 
-                defaultValue={selectedPackageId}
+                value={selectedPackageId}
                 onValueChange={(value: CreditPackageId) => setSelectedPackageId(value)}
               >
                 {Object.values(creditPackages).map(pkg => (
-                  <div key={pkg.id} className="relative flex w-full items-center gap-2 rounded-md border border-input px-4 py-3 shadow-xs outline-none has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent">
+                  <Label key={pkg.id} htmlFor={`${id}-${pkg.id}`} className="relative flex w-full cursor-pointer items-start gap-2 rounded-md border border-input p-4 shadow-xs outline-none has-[:checked]:border-primary/50 has-[:checked]:bg-accent">
                     <RadioGroupItem
                       aria-describedby={`${id}-${pkg.id}-description`}
-                      className="order-1 after:absolute after:inset-0"
+                      className="mt-0.5"
                       id={`${id}-${pkg.id}`}
                       value={pkg.id}
                     />
-                    <div className="grid grow gap-1">
-                      <Label htmlFor={`${id}-${pkg.id}`}>{pkg.name}</Label>
-                      <p className="text-muted-foreground text-xs" id={`${id}-${pkg.id}-description`}>
-                        {pkg.description}
-                      </p>
+                    <div className="grid grow gap-2">
+                      <p className="font-semibold">{pkg.name}</p>
+                      
+                       {pkg.id === 'custom' ? (
+                          <>
+                            <p className="text-muted-foreground text-xs" id={`${id}-${pkg.id}-description`}>
+                                Enter an amount between $5 and $500
+                            </p>
+                            {selectedPackageId === 'custom' && (
+                                <div className="relative mt-2">
+                                    <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground">$</span>
+                                    <Input 
+                                        type="number"
+                                        className="pl-6"
+                                        value={customAmount}
+                                        onChange={(e) => setCustomAmount(e.target.value)}
+                                        min={5}
+                                        max={500}
+                                        onClick={(e) => e.preventDefault()}
+                                    />
+                                </div>
+                            )}
+                          </>
+                        ) : (
+                           <ul className="space-y-1.5 text-xs text-muted-foreground">
+                            {pkg.features.map((feature, idx) => (
+                                <li key={idx} className={cn("flex items-center gap-2", !feature.included && "opacity-60")}>
+                                {feature.included ? <CheckIcon className="size-3 text-green-500" /> : <XIcon className="size-3" />}
+                                {feature.text}
+                                </li>
+                            ))}
+                           </ul>
+                        )}
                     </div>
-                  </div>
+                  </Label>
                 ))}
               </RadioGroup>
 
