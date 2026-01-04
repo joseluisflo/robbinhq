@@ -79,6 +79,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const [autoRecharge, setAutoRecharge] = useState(false);
   const [rechargeThreshold, setRechargeThreshold] = useState<number | string>(10);
   const [rechargeAmount, setRechargeAmount] = useState<number | string>(20);
+  const [rechargeAmountError, setRechargeAmountError] = useState<string | null>(null);
 
   const { user } = useUser();
   const { toast } = useToast();
@@ -113,8 +114,22 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
     }
   }, [selectedPackageId, customAmount]);
 
+  useEffect(() => {
+    if (autoRecharge) {
+        const numericValue = Number(rechargeAmount);
+        if (isNaN(numericValue) || numericValue < 10) {
+            setRechargeAmountError("Min amount is $10");
+        } else {
+            setRechargeAmountError(null);
+        }
+    } else {
+        setRechargeAmountError(null);
+    }
+  }, [autoRecharge, rechargeAmount]);
+
+
   const selectedPackage = creditPackages[selectedPackageId];
-  const isContinueDisabled = isProcessing || (selectedPackageId === 'custom' && !!customAmountError);
+  const isContinueDisabled = isProcessing || (selectedPackageId === 'custom' && !!customAmountError) || (autoRecharge && !!rechargeAmountError);
 
   return (
     <Dialog onOpenChange={(open) => {
@@ -199,6 +214,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                         id="auto-recharge-toggle"
                         checked={autoRecharge}
                         onCheckedChange={setAutoRecharge}
+                        className="h-5 w-9"
                     />
                 </div>
                 {autoRecharge && (
@@ -217,6 +233,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                          <div className="space-y-2">
                             <Label>Recharge with</Label>
                             <NumberInput 
+                                className={cn(rechargeAmountError && "border-destructive focus-visible:ring-destructive")}
                                 value={rechargeAmount}
                                 onChange={setRechargeAmount}
                                 min={10}
@@ -224,7 +241,9 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                                 step={5}
                                 symbol="$"
                             />
-                            <p className="text-xs text-muted-foreground pt-1">Min amount is $10</p>
+                            {rechargeAmountError && (
+                               <p className="text-xs text-destructive pt-1">{rechargeAmountError}</p>
+                            )}
                         </div>
                     </div>
                 )}
