@@ -69,7 +69,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const id = useId();
   const [step, setStep] = useState(1);
   const [selectedPackageId, setSelectedPackageId] = useState<CreditPackageId>('20');
-  const [customAmount, setCustomAmount] = useState<number | string>(5);
+  const [customAmount, setCustomAmount] = useState<number | string>(10);
   const [isProcessing, startTransition] = useTransition();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
@@ -99,7 +99,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
             setSelectedPackageId('20');
             setClientSecret(null);
             setPaymentStatus(null);
-            setCustomAmount(5);
+            setCustomAmount(10);
         }
     }}>
       <DialogTrigger asChild>
@@ -134,7 +134,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                     <div className="grid grow gap-2">
                       <p className="font-semibold">{pkg.name}</p>
                       <p className="text-muted-foreground text-sm">
-                        {pkg.id === 'custom' ? "Enter an amount between $5 and $500." : pkg.description}
+                        {pkg.id === 'custom' ? "Enter an amount between $10 and $500." : pkg.description}
                       </p>
                        {pkg.id === 'custom' && selectedPackageId === 'custom' && (
                           <div className="relative mt-2">
@@ -144,7 +144,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                                   className="pl-6"
                                   value={customAmount}
                                   onChange={(e) => setCustomAmount(e.target.value)}
-                                  min={5}
+                                  min={10}
                                   max={500}
                                   onClick={(e) => e.preventDefault()}
                               />
