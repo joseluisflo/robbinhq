@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckIcon, RefreshCcwIcon, XIcon, Loader2 } from "lucide-react";
-import { useId, useState, useTransition } from "react";
+import { useId, useState, useTransition, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 
 import { Button } from "@/components/ui/button";
@@ -70,6 +70,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const [step, setStep] = useState(1);
   const [selectedPackageId, setSelectedPackageId] = useState<CreditPackageId>('20');
   const [customAmount, setCustomAmount] = useState<number | string>(10);
+  const [customAmountError, setCustomAmountError] = useState<string | null>(null);
   const [isProcessing, startTransition] = useTransition();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
@@ -90,7 +91,34 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCustomAmount(value);
+
+    const numericValue = Number(value);
+    if (value === '' || isNaN(numericValue) || numericValue < 10 || numericValue > 500) {
+      setCustomAmountError("The amount needs to be between $10 and $500.");
+    } else {
+      setCustomAmountError(null);
+    }
+  };
+
+  useEffect(() => {
+    // Validate custom amount when package selection changes
+    if (selectedPackageId === 'custom') {
+      const numericValue = Number(customAmount);
+      if (isNaN(numericValue) || numericValue < 10 || numericValue > 500) {
+        setCustomAmountError("The amount needs to be between $10 and $500.");
+      } else {
+        setCustomAmountError(null);
+      }
+    } else {
+      setCustomAmountError(null);
+    }
+  }, [selectedPackageId, customAmount]);
+
   const selectedPackage = creditPackages[selectedPackageId];
+  const isContinueDisabled = isProcessing || (selectedPackageId === 'custom' && !!customAmountError);
 
   return (
     <Dialog onOpenChange={(open) => {
@@ -100,6 +128,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
             setClientSecret(null);
             setPaymentStatus(null);
             setCustomAmount(10);
+            setCustomAmountError(null);
         }
     }}>
       <DialogTrigger asChild>
@@ -141,13 +170,19 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                               <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground">$</span>
                               <Input 
                                   type="number"
-                                  className="pl-6"
+                                  className={cn(
+                                    "pl-6",
+                                    customAmountError && "border-destructive focus-visible:ring-destructive"
+                                  )}
                                   value={customAmount}
-                                  onChange={(e) => setCustomAmount(e.target.value)}
+                                  onChange={handleCustomAmountChange}
                                   min={10}
                                   max={500}
                                   onClick={(e) => e.preventDefault()}
                               />
+                               {customAmountError && (
+                                <p className="text-xs text-destructive mt-1.5">{customAmountError}</p>
+                               )}
                           </div>
                       )}
                     </div>
@@ -174,7 +209,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
               </div>
 
               <div className="grid grid-cols-1 pt-4">
-                <Button className="w-full" type="button" onClick={handleContinue} disabled={isProcessing}>
+                <Button className="w-full" type="button" onClick={handleContinue} disabled={isContinueDisabled}>
                    {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Continue"}
                 </Button>
               </div>
