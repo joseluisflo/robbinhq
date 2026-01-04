@@ -170,12 +170,10 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
         {step === 1 && (
           <>
             <DialogHeader>
-              <div>
-                <DialogTitle>Buy Credits</DialogTitle>
-                <DialogDescription>
-                  Pick one of the following credit packages.
-                </DialogDescription>
-              </div>
+              <DialogTitle>Buy Credits</DialogTitle>
+              <DialogDescription>
+                Pick one of the following credit packages.
+              </DialogDescription>
             </DialogHeader>
 
             <DialogBody className="space-y-6">
