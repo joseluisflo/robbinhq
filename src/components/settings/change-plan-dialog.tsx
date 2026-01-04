@@ -12,7 +12,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogBody,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { CheckoutForm } from "./checkout-form";
@@ -148,22 +149,22 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
       <DialogContent>
         {step === 1 && (
           <>
-            <div className="mb-2 flex flex-col gap-2">
+            <DialogHeader>
               <div
                 aria-hidden="true"
-                className="flex size-11 shrink-0 items-center justify-center rounded-full border"
+                className="mx-auto mb-4 flex size-11 shrink-0 items-center justify-center rounded-full border sm:mx-0"
               >
                 <RefreshCcwIcon className="opacity-80" size={16} />
               </div>
-              <DialogHeader>
-                <DialogTitle className="text-left">Buy Credits</DialogTitle>
-                <DialogDescription className="text-left">
+              <div>
+                <DialogTitle>Buy Credits</DialogTitle>
+                <DialogDescription>
                   Pick one of the following credit packages.
                 </DialogDescription>
-              </DialogHeader>
-            </div>
+              </div>
+            </DialogHeader>
 
-            <div className="space-y-6">
+            <DialogBody className="space-y-6">
                <div className="gap-2 flex flex-col">
                 {Object.values(creditPackages).map((pkg) => (
                   <div
@@ -171,7 +172,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                     onClick={() => setSelectedPackageId(pkg.id)}
                     className={cn(
                         "relative flex w-full cursor-pointer items-start gap-3 rounded-lg border bg-background p-4 shadow-sm transition-colors",
-                        selectedPackageId === pkg.id && "border-primary"
+                        selectedPackageId === pkg.id ? "border-primary" : ""
                     )}
                   >
                     <div className="grid grow gap-2">
@@ -260,13 +261,12 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                         ))}
                    </ul>
               </div>
-
-              <div className="grid grid-cols-1 pt-4">
+            </DialogBody>
+            <DialogFooter>
                 <Button className="w-full" type="button" onClick={handleContinue} disabled={isContinueDisabled}>
                    {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Continue"}
                 </Button>
-              </div>
-            </div>
+            </DialogFooter>
           </>
         )}
 
