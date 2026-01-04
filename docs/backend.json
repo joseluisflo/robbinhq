@@ -37,6 +37,18 @@
         "stripeCustomerId": {
             "type": "string",
             "description": "The user's unique customer ID in Stripe."
+        },
+        "autoRechargeEnabled": {
+          "type": "boolean",
+          "description": "Indicates if auto-recharge is enabled for the user."
+        },
+        "rechargeThreshold": {
+          "type": "number",
+          "description": "The credit balance threshold in dollars that triggers an auto-recharge."
+        },
+        "rechargeAmount": {
+          "type": "number",
+          "description": "The amount in dollars to automatically recharge when the threshold is met."
         }
       },
       "required": ["displayName", "email"]
@@ -151,6 +163,18 @@
         }
       },
       "required": ["name", "userId", "createdAt"]
+    },
+    "agentIndex": {
+      "title": "Agent Index",
+      "description": "A top-level collection for efficiently looking up an agent's owner.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "The UID of the user who owns the agent."
+        }
+      },
+      "required": ["ownerId"]
     },
     "agentText": {
       "title": "Agent Text Source",
@@ -485,6 +509,12 @@
         "$ref": "#/entities/agent"
       },
       "description": "Stores the agents created by a specific user."
+    },
+    "/agentIndex/{agentId}": {
+      "schema": {
+        "$ref": "#/entities/agentIndex"
+      },
+      "description": "A top-level index for fast, cost-effective lookups of an agent's owner."
     },
     "/users/{userId}/agents/{agentId}/texts/{textId}": {
       "schema": {
