@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { CheckIcon, RefreshCcwIcon, XIcon, Loader2 } from "lucide-react";
 import { useId, useState, useTransition, useEffect } from "react";
@@ -76,6 +76,8 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [autoRecharge, setAutoRecharge] = useState(false);
+  const [rechargeThreshold, setRechargeThreshold] = useState<number | string>(100);
+  const [rechargeAmount, setRechargeAmount] = useState<number | string>(20);
 
   const { user } = useUser();
   const { toast } = useToast();
@@ -198,8 +200,33 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                         onCheckedChange={setAutoRecharge}
                     />
                 </div>
+                {autoRecharge && (
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                        <div className="space-y-2">
+                            <Label>When balance goes below</Label>
+                            <NumberInput 
+                                value={rechargeThreshold}
+                                onChange={setRechargeThreshold}
+                                min={50}
+                                max={1000}
+                                step={10}
+                                symbol="cr"
+                            />
+                        </div>
+                         <div className="space-y-2">
+                            <Label>Recharge with</Label>
+                            <NumberInput 
+                                value={rechargeAmount}
+                                onChange={setRechargeAmount}
+                                min={10}
+                                max={500}
+                                step={5}
+                                symbol="$"
+                            />
+                        </div>
+                    </div>
+                )}
               </div>
-
 
               <div className="space-y-2 pt-4">
                   <p className="font-semibold text-sm">Features include:</p>
