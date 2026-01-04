@@ -1,4 +1,3 @@
-
 "use client";
 
 import { CheckIcon, RefreshCcwIcon, XIcon, Loader2 } from "lucide-react";
@@ -33,6 +32,7 @@ const creditPackages = {
     id: '20' as CreditPackageId,
     name: '$20 in credits',
     price: 2000, // in cents
+    description: "Perfect for getting started.",
     features: [
       { text: "Remove Watermark", included: false },
       { text: "Phone Channel", included: false },
@@ -42,6 +42,7 @@ const creditPackages = {
     id: '40' as CreditPackageId,
     name: '$40 in credits',
     price: 4000,
+    description: "Ideal for growing businesses.",
     features: [
       { text: "Remove Watermark", included: true },
       { text: "Phone Channel", included: false },
@@ -51,6 +52,7 @@ const creditPackages = {
     id: 'custom' as CreditPackageId,
     name: 'Custom credits',
     price: 0, // This will be dynamic
+    description: "For power users and enterprises.",
     features: [
        { text: "Remove Watermark", included: true },
        { text: "Phone Channel", included: true },
@@ -116,71 +118,67 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
               <DialogHeader>
                 <DialogTitle className="text-left">Buy Credits</DialogTitle>
                 <DialogDescription className="text-left">
-                  Select a credit package to add to your account.
+                  Pick one of the following credit packages.
                 </DialogDescription>
               </DialogHeader>
             </div>
 
-            <form className="space-y-4">
+            <div className="space-y-6">
               <RadioGroup 
                 className="gap-2" 
                 value={selectedPackageId}
                 onValueChange={(value: CreditPackageId) => setSelectedPackageId(value)}
               >
-                {Object.values(creditPackages).map(pkg => (
-                  <Label key={pkg.id} htmlFor={`${id}-${pkg.id}`} className="relative flex w-full cursor-pointer items-start gap-3 rounded-md border border-input p-4 shadow-xs outline-none has-[:checked]:border-primary/50 has-[:checked]:bg-accent">
-                    <RadioGroupItem
+                {Object.values(creditPackages).map((pkg) => (
+                  <Label key={pkg.id} htmlFor={`${id}-${pkg.id}`} className="relative flex w-full cursor-pointer items-start gap-3 rounded-md border border-input p-4 shadow-xs outline-none has-[:checked]:border-primary has-[:checked]:bg-accent">
+                    <div className="grid grow gap-2">
+                      <p className="font-semibold">{pkg.name}</p>
+                      <p className="text-muted-foreground text-sm">
+                        {pkg.id === 'custom' ? "Enter an amount between $5 and $500." : pkg.description}
+                      </p>
+                       {pkg.id === 'custom' && selectedPackageId === 'custom' && (
+                          <div className="relative mt-2">
+                              <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground">$</span>
+                              <Input 
+                                  type="number"
+                                  className="pl-6"
+                                  value={customAmount}
+                                  onChange={(e) => setCustomAmount(e.target.value)}
+                                  min={5}
+                                  max={500}
+                                  onClick={(e) => e.preventDefault()}
+                              />
+                          </div>
+                      )}
+                    </div>
+                     <RadioGroupItem
                       aria-describedby={`${id}-${pkg.id}-description`}
                       className="mt-0.5"
                       id={`${id}-${pkg.id}`}
                       value={pkg.id}
                     />
-                    <div className="grid grow gap-2">
-                      <p className="font-semibold">{pkg.name}</p>
-                      
-                       {pkg.id === 'custom' ? (
-                          <div className="space-y-2">
-                            <p className="text-muted-foreground text-xs" id={`${id}-${pkg.id}-description`}>
-                                Enter an amount between $5 and $500.
-                            </p>
-                            {selectedPackageId === 'custom' && (
-                                <div className="relative mt-2">
-                                    <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground">$</span>
-                                    <Input 
-                                        type="number"
-                                        className="pl-6"
-                                        value={customAmount}
-                                        onChange={(e) => setCustomAmount(e.target.value)}
-                                        min={5}
-                                        max={500}
-                                        onClick={(e) => e.preventDefault()}
-                                    />
-                                </div>
-                            )}
-                          </div>
-                        ) : (
-                          null // No description for fixed packages now
-                        )}
-                        
-                        <ul className="space-y-1.5 text-xs text-muted-foreground pt-2">
-                        {pkg.features.map((feature, idx) => (
-                            <li key={idx} className={cn("flex items-center gap-2", !feature.included && "opacity-60")}>
-                            {feature.included ? <CheckIcon className="size-3 text-green-500" /> : <XIcon className="size-3" />}
-                            {feature.text}
-                            </li>
-                        ))}
-                        </ul>
-                    </div>
                   </Label>
                 ))}
               </RadioGroup>
 
-              <div className="grid grid-cols-1">
+              <div className="space-y-2 pt-4">
+                  <p className="font-semibold text-sm">Features include:</p>
+                   <ul className="space-y-1.5 text-sm text-muted-foreground">
+                        {selectedPackage.features.map((feature, idx) => (
+                            <li key={idx} className={cn("flex items-center gap-2", !feature.included && "opacity-60")}>
+                            {feature.included ? <CheckIcon className="size-4 text-green-500" /> : <XIcon className="size-4" />}
+                            {feature.text}
+                            </li>
+                        ))}
+                   </ul>
+              </div>
+
+              <div className="grid grid-cols-1 pt-4">
                 <Button className="w-full" type="button" onClick={handleContinue} disabled={isProcessing}>
                    {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Continue"}
                 </Button>
               </div>
-            </form>
+            </div>
           </>
         )}
 
