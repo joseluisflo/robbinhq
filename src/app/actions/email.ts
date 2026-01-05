@@ -17,68 +17,79 @@ interface EmailData {
   inReplyTo?: string;
 }
 
-// +++ LÓGICA DE LIMPIEZA DE CORREO +++
+// +++ LÓGICA DE LIMPIEZA DE CORREO MEJORADA +++
 function cleanReplyText(text: string): string {
-    let cleanedText = text;
-    
-    // Patrones más agresivos que incluyen el contexto completo
-    // Estos buscan el patrón de fecha + email del agente + "escribió:"
-    const aggressivePatterns = [
-        // Español: "El lun, 5 ene 2026 a la(s) 2:39â¯a.m., ChatGPT ( agent@tryrobbin.com ) escribió:"
-        /El\s+\w+,\s+\d+\s+\w+\s+\d{4}\s+a\s+la\(s\)\s+[\d:]+[^\n]*agent@tryrobbin\.com[^\n]*escribió:/gi,
-        // Inglés: "On Mon, Jan 5, 2026 at 2:39 AM, ChatGPT ( agent@tryrobbin.com ) wrote:"
-        /On\s+\w+,\s+\w+\s+\d+,\s+\d{4}\s+at\s+[\d:]+[^\n]*agent@tryrobbin\.com[^\n]*wrote:/gi,
-        // Patrón más simple que captura cualquier línea con el email del agente seguido de escribió/wrote
-        /[^\n]*agent@tryrobbin\.com[^\n]*(escribió|wrote):/gi,
-    ];
-    
-    // Primero intentar con patrones agresivos
-    for (const pattern of aggressivePatterns) {
-        const match = cleanedText.search(pattern);
-        if (match !== -1) {
-            cleanedText = cleanedText.substring(0, match);
-            console.log('[CLEAN] Cut at aggressive pattern');
-            break;
-        }
-    }
-    
-    // Separadores tradicionales de email threads
-    const replySeparators = [
-        /^\s*On\s.*(wrote|escribió|a écrit):/im,
-        /^\s*El\s.*(escribió):/im,
-        /^From:.*$/im,
-        /^Sent:.*$/im,
-        /^To:.*$/im,
-        /^Subject:.*$/im,
-        /^Date:.*$/im,
-        /^Sent from my.*$/im,
-        /^---[- ]*Original Message[- ]*---*$/im,
-        /^\s*_{2,}\s*$/im,
-        /^--\s*$/im,
-        /^-- Sent by.*$/im,
-        /-- Sent by ChatGPT/im,
-    ];
-    
-    // Aplicar separadores tradicionales si no se cortó antes
-    for (const separator of replySeparators) {
-        const match = cleanedText.search(separator);
-        if (match !== -1) {
-            cleanedText = cleanedText.substring(0, match);
-            break;
-        }
-    }
-    
-    // Remover líneas citadas (que empiezan con >)
-    cleanedText = cleanedText.replace(/^>.*$/gm, '');
-    
-    // Remover líneas que son solo espacios o guiones
-    cleanedText = cleanedText.replace(/^\s*[-_=]+\s*$/gm, '');
-    
-    // Limpiar múltiples saltos de línea
-    cleanedText = cleanedText.replace(/\n{3,}/g, '\n\n');
-    
-    // Remover espacios al inicio/final
-    return cleanedText.trim();
+  let cleanedText = text;
+
+  // 1. NORMALIZACIÓN DE CARACTERES ROTOS (Encoding fix)
+  // Esto arregla el "escribiÃ³" -> "escribió" y los espacios corruptos "â¯"
+  cleanedText = cleanedText
+      .replace(/Ã³/g, 'ó')       // Arregla la ó acentuada rota
+      .replace(/â¯/g, ' ')       // Arregla el espacio "narrow no-break" roto
+      .replace(/â\x80\xaf/g, ' '); // Otra variante del espacio roto
+
+  // 2. Patrones agresivos
+  const aggressivePatterns = [
+      // TUS PATRONES ORIGINALES (Se mantienen)
+      /El\s+\w+,\s+\d+\s+\w+\s+\d{4}\s+a\s+la\(s\)\s+[\d:]+[^\n]*agent@tryrobbin\.com[^\n]*escribió:/gi,
+      /On\s+\w+,\s+\w+\s+\d+,\s+\d{4}\s+at\s+[\d:]+[^\n]*agent@tryrobbin\.com[^\n]*wrote:/gi,
+      
+      // NUEVO: Patrón "Catch-all" flexible (Magia aquí)
+      // Este patrón usa ".*?" para saltarse cualquier caracter basura entre la fecha y el email
+      // Detecta: (El o On) ...cualquier cosa... agent@... ...cualquier cosa... (escribi... o wrote):
+      /(El|On)\s+[^\n]+\d{4}.*?agent@tryrobbin\.com.*?(escribi|wrote).+:/gis,
+      
+      // Patrón simple de respaldo
+      /[^\n]*agent@tryrobbin\.com[^\n]*(escribió|wrote):/gi,
+  ];
+  
+  // Primero intentar con patrones agresivos
+  for (const pattern of aggressivePatterns) {
+      const match = cleanedText.search(pattern);
+      if (match !== -1) {
+          cleanedText = cleanedText.substring(0, match);
+          console.log('[CLEAN] Cut at aggressive pattern');
+          break;
+      }
+  }
+  
+  // Separadores tradicionales de email threads
+  const replySeparators = [
+      /^\s*On\s.*(wrote|escribió|a écrit):/im,
+      /^\s*El\s.*(escribió|escribi.):/im, // Agregado punto para tolerar caracteres raros al final
+      /^From:.*$/im,
+      /^Sent:.*$/im,
+      /^To:.*$/im,
+      /^Subject:.*$/im,
+      /^Date:.*$/im,
+      /^Sent from my.*$/im,
+      /^---[- ]*Original Message[- ]*---*$/im,
+      /^\s*_{2,}\s*$/im,
+      /^--\s*$/im,
+      /^-- Sent by.*$/im,
+      /-- Sent by ChatGPT/im,
+  ];
+  
+  // Aplicar separadores tradicionales si no se cortó antes
+  for (const separator of replySeparators) {
+      const match = cleanedText.search(separator);
+      if (match !== -1) {
+          cleanedText = cleanedText.substring(0, match);
+          break;
+      }
+  }
+  
+  // Remover líneas citadas (que empiezan con >)
+  cleanedText = cleanedText.replace(/^>.*$/gm, '');
+  
+  // Remover líneas que son solo espacios o guiones
+  cleanedText = cleanedText.replace(/^\s*[-_=]+\s*$/gm, '');
+  
+  // Limpiar múltiples saltos de línea
+  cleanedText = cleanedText.replace(/\n{3,}/g, '\n\n');
+  
+  // Remover espacios al inicio/final
+  return cleanedText.trim();
 }
 // +++ FIN LÓGICA DE LIMPIEZA +++
 
