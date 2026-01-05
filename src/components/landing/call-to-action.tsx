@@ -7,7 +7,7 @@ export default function CallToAction() {
             <div className="mx-auto max-w-5xl px-6">
                 <div className="text-center">
                     <h2 className="text-balance text-4xl font-medium lg:text-5xl">Start Building</h2>
-                    <p className="mt-4">Libero sapiente aliquam quibusdam aspernatur.</p>
+                    <p className="mt-4">Get started today and build the agent of your dreams.</p>
 
                     <div className="mt-12 flex flex-wrap justify-center gap-4">
                         <Button
