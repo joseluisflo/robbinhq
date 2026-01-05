@@ -162,8 +162,28 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
         console.log('[ACTION] 📝 Created new email session.');
     }
     
-    // Clean the incoming email body
-    const cleanedBody = cleanReplyText(body);
+    // Clean the incoming email body - AGGRESSIVELY remove quoted content
+    let cleanedBody = cleanReplyText(body);
+    
+    // Additional cleaning for user replies - remove any remaining quoted agent responses
+    // Look for patterns like "ChatGPT ( agent@tryrobbin.com ) escribió:" or similar
+    const agentQuotePatterns = [
+      /ChatGPT\s*\([^)]*agent@tryrobbin\.com[^)]*\)\s*escribió:/gi,
+      /ChatGPT\s*\([^)]*agent@tryrobbin\.com[^)]*\)\s*wrote:/gi,
+      /agent@tryrobbin\.com\s*escribió:/gi,
+      /agent@tryrobbin\.com\s*wrote:/gi,
+    ];
+    
+    for (const pattern of agentQuotePatterns) {
+      const match = cleanedBody.search(pattern);
+      if (match !== -1) {
+        // Keep only text BEFORE the quote
+        cleanedBody = cleanedBody.substring(0, match).trim();
+        break;
+      }
+    }
+    
+    console.log(`[ACTION] 🧹 Cleaned user message. Original length: ${body.length}, Clean length: ${cleanedBody.length}`);
 
     const newUserMessage: EmailMessage = {
       messageId: messageId,
