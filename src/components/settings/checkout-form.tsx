@@ -84,21 +84,19 @@ export function CheckoutForm({ onGoBack, plan, setPaymentStatus, setStep }: Chec
             {message && <div id="payment-message" className="text-red-500 text-sm">{message}</div>}
         </form>
       </DialogBody>
-      <DialogFooter className="flex-col !space-y-4 !space-x-0">
-         <div className="grid grid-cols-2 gap-2 w-full">
-            <Button className="w-full" type="button" variant="ghost" onClick={onGoBack} disabled={isLoading}>
+      <DialogFooter className="flex-col items-stretch !space-x-0">
+         <div className="flex justify-between items-center gap-4">
+            <Button className="w-1/2" type="button" variant="ghost" onClick={onGoBack} disabled={isLoading}>
                 Go Back
             </Button>
-            <Button form="payment-form" className="w-full" type="submit" disabled={isLoading || !stripe || !elements}>
+            <Button form="payment-form" className="w-1/2" type="submit" disabled={isLoading || !stripe || !elements}>
                 {isLoading ? <Loader2 className="animate-spin" /> : `Pay ${priceString}`}
             </Button>
         </div>
-        <p className="text-center text-muted-foreground text-xs px-6">
+        <p className="text-center text-muted-foreground text-xs px-6 mt-4">
             Payments are non-refundable. Cancel anytime.
         </p>
       </DialogFooter>
     </>
   );
 }
-
-    
