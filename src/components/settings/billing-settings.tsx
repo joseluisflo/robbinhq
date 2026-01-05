@@ -19,28 +19,27 @@ const PLAN_DETAILS = {
   free: { 
     name: "Free Plan", 
     price: "$0 per month", 
-    credits: 150, 
+    credits: 0, 
     agents: 1, 
     knowledgeKB: 400 
   },
   essential: { 
     name: "Essential Plan", 
     price: "$15 per month", 
-    credits: 2000, 
+    credits: 0, 
     agents: 3, 
     knowledgeKB: 40 * 1024 // 40MB
   },
   pro: { 
     name: "Pro Plan", 
     price: "$29 per month", 
-    credits: 5000, 
+    credits: 0, 
     agents: Infinity, 
     knowledgeKB: 40 * 1024 // 40MB
   },
 };
 
-function UsageMeter({ title, used, total, unit = '' }: { title: string, used: number, total: number, unit?: string }) {
-    const remaining = total - used;
+function UsageMeter({ title, used, total, unit = '', current }: { title: string, used: number, total: number, unit?: string, current: number }) {
     const percentage = total > 0 && total !== Infinity ? (used / total) * 100 : 0;
     const isInfinite = total === Infinity;
 
@@ -48,13 +47,13 @@ function UsageMeter({ title, used, total, unit = '' }: { title: string, used: nu
         <div className="space-y-2">
             <div className="flex justify-between items-baseline">
                 <p className="font-medium">{title}</p>
-                <p className="text-sm text-muted-foreground">
-                    {used.toLocaleString()}{unit} of {isInfinite ? 'Unlimited' : `${total.toLocaleString()}${unit}`}
+                <p className="text-sm font-semibold">
+                    {current.toLocaleString()}{unit}
                 </p>
             </div>
             {!isInfinite && <Progress value={percentage} />}
-            <p className="text-sm text-muted-foreground">
-                {isInfinite ? 'Unlimited' : `${remaining.toLocaleString()}${unit} remaining`}
+             <p className="text-sm text-muted-foreground">
+                {isInfinite ? 'Unlimited' : `Used ${used.toLocaleString()}${unit} of ${total.toLocaleString()}${unit}`}
             </p>
         </div>
     );
@@ -107,7 +106,11 @@ export function BillingSettings() {
     const loading = agentsLoading || textsLoading || filesLoading || chatLoading || emailLoading || leadsLoading;
     const planId = userProfile?.planId || 'free';
     const planDetails = PLAN_DETAILS[planId];
+    
+    const planCredits = planDetails?.credits ?? 0;
     const currentCredits = userProfile?.credits ?? 0;
+    const totalCredits = Math.max(planCredits, currentCredits);
+    const usedCredits = Math.max(0, totalCredits - currentCredits);
 
     return (
         <div className="space-y-8">
@@ -134,7 +137,7 @@ export function BillingSettings() {
                              </div>
                         )}
                         <ChangePlanDialog>
-                           <Button variant="outline">Change Plan</Button>
+                           <Button variant="outline">Buy Credits</Button>
                         </ChangePlanDialog>
                     </div>
                 </CardHeader>
@@ -147,9 +150,9 @@ export function BillingSettings() {
                         </div>
                      ) : (
                         <>
-                            <UsageMeter title="Credits" used={Math.max(0, planDetails.credits - currentCredits)} total={planDetails.credits} />
-                            <UsageMeter title="Agents" used={agents?.length || 0} total={planDetails.agents} />
-                            <UsageMeter title="Knowledge Storage" used={Math.round(currentUsageKB)} total={planDetails.knowledgeKB} unit="KB" />
+                            <UsageMeter title="Credits" used={usedCredits} total={totalCredits} current={currentCredits} />
+                            <UsageMeter title="Agents" used={agents?.length || 0} total={planDetails.agents} current={agents?.length || 0}/>
+                            <UsageMeter title="Knowledge Storage" used={Math.round(currentUsageKB)} total={planDetails.knowledgeKB} unit="KB" current={Math.round(currentUsageKB)} />
                         </>
                      )}
                 </CardContent>
