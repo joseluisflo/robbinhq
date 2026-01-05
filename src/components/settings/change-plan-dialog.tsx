@@ -82,6 +82,10 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   const [rechargeThreshold, setRechargeThreshold] = useState<number | string>(10);
   const [rechargeAmount, setRechargeAmount] = useState<number | string>(20);
   const [rechargeAmountError, setRechargeAmountError] = useState<string | null>(null);
+  
+  // State to hold the final package details for payment
+  const [finalPackage, setFinalPackage] = useState(creditPackages[selectedPackageId]);
+
 
   const { user } = useUser();
   const { toast } = useToast();
@@ -110,11 +114,18 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
 
         // Then, proceed with payment intent creation
         let amountInCents = 0;
+        let finalPkg;
+
         if (selectedPackageId === 'custom') {
-            amountInCents = Number(customAmount) * 100;
+            const numericValue = Number(customAmount);
+            amountInCents = numericValue * 100;
+            finalPkg = { ...creditPackages.custom, price: amountInCents, name: `$${numericValue} in credits` };
         } else {
-            amountInCents = creditPackages[selectedPackageId].price;
+            finalPkg = creditPackages[selectedPackageId];
+            amountInCents = finalPkg.price;
         }
+
+        setFinalPackage(finalPkg); // Set the final package details
 
         const paymentResult = await createPaymentIntent({ userId: user.uid, amount: amountInCents });
         if (paymentResult.error) {
@@ -171,18 +182,20 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
   return (
     <Dialog onOpenChange={(open) => {
         if (!open) {
-            setStep(1);
-            setSelectedPackageId('20');
-            setClientSecret(null);
-            setPaymentStatus(null);
-            setCustomAmount(10);
-            setCustomAmountError(null);
+            setTimeout(() => {
+                setStep(1);
+                setSelectedPackageId('20');
+                setClientSecret(null);
+                setPaymentStatus(null);
+                setCustomAmount(10);
+                setCustomAmountError(null);
+            }, 300); // Delay to allow animations
         }
     }}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="overflow-hidden p-0 sm:max-w-lg">
+      <DialogContent className="overflow-hidden p-0 sm:max-w-sm">
         {step === 1 && (
           <>
              <DialogHeader className="text-left">
@@ -218,7 +231,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
                                 max={500}
                                 step={1}
                                 symbol="$"
-                                onClick={(e) => e.preventDefault()}
+                                onClick={(e) => e.stopPropagation()}
                               />
                                {customAmountError && (
                                 <p className="text-xs text-destructive mt-1.5">{customAmountError}</p>
@@ -302,7 +315,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
           <Elements options={{ clientSecret }} stripe={stripePromise}>
             <CheckoutForm 
               onGoBack={handleGoBack} 
-              plan={selectedPackage}
+              plan={finalPackage}
               setPaymentStatus={setPaymentStatus}
               setStep={setStep}
             />
@@ -310,10 +323,14 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
         )}
         
         {step === 3 && paymentStatus && (
-           <PaymentStatus status={paymentStatus} planName={selectedPackage.name} />
+          <DialogBody>
+           <PaymentStatus status={paymentStatus} planName={finalPackage.name} />
+          </DialogBody>
         )}
 
       </DialogContent>
     </Dialog>
   );
 }
+
+    

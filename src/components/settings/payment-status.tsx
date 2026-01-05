@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,8 @@ export function PaymentStatus({ status, planName }: PaymentStatusProps) {
                 <CheckCircle2 className="h-16 w-16 text-green-500" />
                 <h3 className="text-xl font-semibold">Payment Successful!</h3>
                 <p className="text-muted-foreground">
-                    You have successfully subscribed to the <span className="font-semibold text-foreground">{planName}</span> plan.
-                    Your new features are now available.
+                    You have successfully purchased the <span className="font-semibold text-foreground">{planName}</span> package.
+                    Your credits have been added.
                 </p>
                 <DialogClose asChild>
                     <Button className="mt-4 w-full">Got it, thanks!</Button>
@@ -56,3 +57,5 @@ export function PaymentStatus({ status, planName }: PaymentStatusProps) {
         </div>
     );
 }
+
+    
