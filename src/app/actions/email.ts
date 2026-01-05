@@ -19,7 +19,30 @@ interface EmailData {
 
 // +++ LÓGICA DE LIMPIEZA DE CORREO +++
 function cleanReplyText(text: string): string {
-    // Separadores de email threads
+    let cleanedText = text;
+    
+    // Patrones más agresivos que incluyen el contexto completo
+    // Estos buscan el patrón de fecha + email del agente + "escribió:"
+    const aggressivePatterns = [
+        // Español: "El lun, 5 ene 2026 a la(s) 2:39â¯a.m., ChatGPT ( agent@tryrobbin.com ) escribió:"
+        /El\s+\w+,\s+\d+\s+\w+\s+\d{4}\s+a\s+la\(s\)\s+[\d:]+[^\n]*agent@tryrobbin\.com[^\n]*escribió:/gi,
+        // Inglés: "On Mon, Jan 5, 2026 at 2:39 AM, ChatGPT ( agent@tryrobbin.com ) wrote:"
+        /On\s+\w+,\s+\w+\s+\d+,\s+\d{4}\s+at\s+[\d:]+[^\n]*agent@tryrobbin\.com[^\n]*wrote:/gi,
+        // Patrón más simple que captura cualquier línea con el email del agente seguido de escribió/wrote
+        /[^\n]*agent@tryrobbin\.com[^\n]*(escribió|wrote):/gi,
+    ];
+    
+    // Primero intentar con patrones agresivos
+    for (const pattern of aggressivePatterns) {
+        const match = cleanedText.search(pattern);
+        if (match !== -1) {
+            cleanedText = cleanedText.substring(0, match);
+            console.log('[CLEAN] Cut at aggressive pattern');
+            break;
+        }
+    }
+    
+    // Separadores tradicionales de email threads
     const replySeparators = [
         /^\s*On\s.*(wrote|escribió|a écrit):/im,
         /^\s*El\s.*(escribió):/im,
@@ -33,21 +56,15 @@ function cleanReplyText(text: string): string {
         /^\s*_{2,}\s*$/im,
         /^--\s*$/im,
         /^-- Sent by.*$/im,
-        // Detectar patrones de respuestas con email del agente
-        /^.*agent@tryrobbin\.com.*escribió:/im,
-        /^.*agent@tryrobbin\.com.*wrote:/im,
-        // Detectar ChatGPT signature
         /-- Sent by ChatGPT/im,
     ];
     
-    let cleanedText = text;
-
-    // Cortar en el primer separador encontrado
+    // Aplicar separadores tradicionales si no se cortó antes
     for (const separator of replySeparators) {
         const match = cleanedText.search(separator);
         if (match !== -1) {
             cleanedText = cleanedText.substring(0, match);
-            break; // Salir después del primer match
+            break;
         }
     }
     
@@ -165,25 +182,8 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     // Clean the incoming email body - AGGRESSIVELY remove quoted content
     let cleanedBody = cleanReplyText(body);
     
-    // Additional cleaning for user replies - remove any remaining quoted agent responses
-    // Look for patterns like "ChatGPT ( agent@tryrobbin.com ) escribió:" or similar
-    const agentQuotePatterns = [
-      /ChatGPT\s*\([^)]*agent@tryrobbin\.com[^)]*\)\s*escribió:/gi,
-      /ChatGPT\s*\([^)]*agent@tryrobbin\.com[^)]*\)\s*wrote:/gi,
-      /agent@tryrobbin\.com\s*escribió:/gi,
-      /agent@tryrobbin\.com\s*wrote:/gi,
-    ];
-    
-    for (const pattern of agentQuotePatterns) {
-      const match = cleanedBody.search(pattern);
-      if (match !== -1) {
-        // Keep only text BEFORE the quote
-        cleanedBody = cleanedBody.substring(0, match).trim();
-        break;
-      }
-    }
-    
     console.log(`[ACTION] 🧹 Cleaned user message. Original length: ${body.length}, Clean length: ${cleanedBody.length}`);
+    console.log(`[ACTION] 📝 Preview of cleaned text: "${cleanedBody.substring(0, 100)}..."`);
 
     const newUserMessage: EmailMessage = {
       messageId: messageId,
