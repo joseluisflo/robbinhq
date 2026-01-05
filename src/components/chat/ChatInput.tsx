@@ -119,7 +119,7 @@ export function ChatInput({
       <div className="relative">
         <Textarea
           placeholder={isCallActive ? 'Call in progress...' : placeholder}
-          className="w-full resize-none pr-12 min-h-[52px] max-h-32 rounded-xl text-center"
+          className="w-full resize-none pr-12 pl-4 py-3 min-h-[52px] max-h-32 rounded-xl flex items-center"
           rows={1}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
