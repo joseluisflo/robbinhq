@@ -12,25 +12,8 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Aplica a todas las rutas
-        source: '/:path*',
+        source: '/widget/:path*',
         headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*', // O especifica tu dominio
-          },
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET, POST, PUT, DELETE, OPTIONS',
-          },
-          {
-            key: 'Access-Control-Allow-Headers',
-            value: 'X-Requested-With, Content-Type, Authorization',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'ALLOWALL', // Permite iframes
-          },
           {
             key: 'Content-Security-Policy',
             value: "frame-ancestors *",
