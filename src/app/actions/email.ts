@@ -19,27 +19,49 @@ interface EmailData {
 
 // +++ LÓGICA DE LIMPIEZA DE CORREO +++
 function cleanReplyText(text: string): string {
+    // Separadores de email threads
     const replySeparators = [
         /^\s*On\s.*(wrote|escribió|a écrit):/im,
         /^\s*El\s.*(escribió):/im,
         /^From:.*$/im,
+        /^Sent:.*$/im,
+        /^To:.*$/im,
+        /^Subject:.*$/im,
+        /^Date:.*$/im,
         /^Sent from my.*$/im,
         /^---[- ]*Original Message[- ]*---*$/im,
         /^\s*_{2,}\s*$/im,
-        /^--\s*$/im, // Signature separator
-        /^-- Sent by.*$/im, // Auto signatures
+        /^--\s*$/im,
+        /^-- Sent by.*$/im,
+        // Detectar patrones de respuestas con email del agente
+        /^.*agent@tryrobbin\.com.*escribió:/im,
+        /^.*agent@tryrobbin\.com.*wrote:/im,
+        // Detectar ChatGPT signature
+        /-- Sent by ChatGPT/im,
     ];
     
     let cleanedText = text;
 
+    // Cortar en el primer separador encontrado
     for (const separator of replySeparators) {
         const match = cleanedText.search(separator);
         if (match !== -1) {
             cleanedText = cleanedText.substring(0, match);
+            break; // Salir después del primer match
         }
     }
     
-    return cleanedText.replace(/^>.*$/gm, '').replace(/\n\s*\n/g, '\n').trim();
+    // Remover líneas citadas (que empiezan con >)
+    cleanedText = cleanedText.replace(/^>.*$/gm, '');
+    
+    // Remover líneas que son solo espacios o guiones
+    cleanedText = cleanedText.replace(/^\s*[-_=]+\s*$/gm, '');
+    
+    // Limpiar múltiples saltos de línea
+    cleanedText = cleanedText.replace(/\n{3,}/g, '\n\n');
+    
+    // Remover espacios al inicio/final
+    return cleanedText.trim();
 }
 // +++ FIN LÓGICA DE LIMPIEZA +++
 
