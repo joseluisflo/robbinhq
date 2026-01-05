@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import { firebaseAdmin } from '@/firebase/admin';
 import type { userProfile } from '@/lib/types';
 import { headers } from 'next/headers';
+import { addCredits } from '@/app/actions/users';
 
 // Force Node.js runtime to ensure Stripe webhook processing
 export const runtime = 'nodejs';
@@ -55,41 +56,56 @@ export async function POST(request: Request) {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
       
       const userId = paymentIntent.metadata?.firebaseUID;
-      const planId = paymentIntent.metadata?.planId as 'free' | 'essential' | 'pro';
+      const purchaseType = paymentIntent.metadata?.purchaseType;
 
-      if (!userId || !planId) {
-        console.error('Webhook Error: Missing firebaseUID or planId in payment intent metadata.');
-        return NextResponse.json({ error: 'Missing required metadata from payment intent.' }, { status: 400 });
+      if (!userId) {
+        console.error('Webhook Error: Missing firebaseUID in payment intent metadata.');
+        return NextResponse.json({ error: 'Missing user identifier from payment intent.' }, { status: 400 });
       }
 
       try {
         const firestore = firebaseAdmin.firestore();
         const userRef = firestore.collection('users').doc(userId);
-        
-        const now = new Date();
-        const nextResetDate = new Date(now.getFullYear(), now.getMonth(), 30, 23, 59, 59);
-        if (now > nextResetDate) {
-          nextResetDate.setMonth(nextResetDate.getMonth() + 1);
+
+        if (purchaseType === 'credits') {
+          const creditAmount = paymentIntent.metadata?.creditAmount;
+          if (!creditAmount) {
+             console.error('Webhook Error: Missing creditAmount for credits purchase.');
+             return NextResponse.json({ error: 'Missing credit amount metadata.' }, { status: 400 });
+          }
+          // Assuming $1 = 100 credits
+          const creditsToAdd = Number(creditAmount) * 100;
+          await addCredits(userId, creditsToAdd);
+          console.log(`✅ Successfully added ${creditsToAdd} credits to user ${userId}.`);
+
+        } else {
+           // Handle plan upgrade logic
+           const planId = paymentIntent.metadata?.planId as 'free' | 'essential' | 'pro';
+            if (!planId) {
+                console.error('Webhook Error: Missing planId for plan upgrade.');
+                return NextResponse.json({ error: 'Missing plan ID metadata for upgrade.' }, { status: 400 });
+            }
+            
+            const now = new Date();
+            const nextResetDate = new Date(now.getFullYear(), now.getMonth(), 30, 23, 59, 59);
+            if (now > nextResetDate) {
+              nextResetDate.setMonth(nextResetDate.getMonth() + 1);
+            }
+
+            await userRef.update({
+              planId: planId,
+              credits: PLAN_CREDITS[planId] || PLAN_CREDITS.free,
+              creditResetDate: nextResetDate,
+            });
+
+            console.log(`✅ Successfully updated user ${userId} to plan ${planId}.`);
         }
 
-        await userRef.update({
-          planId: planId,
-          credits: PLAN_CREDITS[planId] || PLAN_CREDITS.free,
-          creditResetDate: nextResetDate,
-        });
-
-        console.log(`✅ Successfully updated user ${userId} to plan ${planId}.`);
-
       } catch (error) {
-        console.error('Error updating user profile in Firestore:', error);
+        console.error('Error handling payment_intent.succeeded in Firestore:', error);
         return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
       }
       break;
-    
-    // You can add more event handlers here if needed
-    // case 'checkout.session.completed':
-    //    ...
-    //   break;
 
     default:
       console.warn(`🤷‍♀️ Unhandled event type: ${event.type}`);
