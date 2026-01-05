@@ -4,8 +4,9 @@
 import { useRef, useEffect, type MouseEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowUp, Paperclip, Phone, Bot } from 'lucide-react';
+import { ArrowUp, Paperclip, Phone } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
+import { Logo } from '../layout/logo';
 
 interface ChatInputProps {
   prompt: string;
@@ -161,9 +162,9 @@ export function ChatInput({
           </Button>
         </div>
         {isBrandingEnabled && (
-          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-            <Bot className="h-3 w-3" /> Powered by AgentVerse
-          </p>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            Powered by <Logo width={60} height={12} alt="Robbin logo" />
+          </div>
         )}
       </div>
     </div>
