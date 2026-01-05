@@ -10,7 +10,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
   DialogBody,
   DialogFooter,
@@ -183,10 +182,10 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px]">
+      <DialogContent className="overflow-hidden p-0 sm:max-w-lg">
         {step === 1 && (
           <>
-            <DialogHeader>
+             <DialogHeader className="text-left">
               <DialogTitle>Buy Credits</DialogTitle>
               <DialogDescription>
                 Pick one of the following credit packages.
