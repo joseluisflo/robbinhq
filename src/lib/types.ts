@@ -80,6 +80,15 @@ export type Agent = {
   anonymizeData?: boolean;
 };
 
+export type MessageFeedback = {
+  id?: string;
+  rating: 'positive' | 'negative';
+  comment?: string;
+  messageId: string;
+  sessionId: string;
+  timestamp: any;
+};
+
 export type WorkflowBlock = {
   id: string;
   type: string;
