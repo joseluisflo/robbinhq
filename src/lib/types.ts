@@ -14,6 +14,15 @@ export type userProfile = {
   rechargeAmount?: number;
 };
 
+export type CreditTransaction = {
+  id?: string;
+  type: 'purchase' | 'deduction';
+  amount: number;
+  description: string;
+  timestamp: any;
+  metadata?: Record<string, any>;
+};
+
 export type Task = {
   id: string;
   name: string;

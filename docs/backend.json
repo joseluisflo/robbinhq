@@ -53,6 +53,36 @@
       },
       "required": ["displayName", "email"]
     },
+    "creditTransaction": {
+      "title": "Credit Transaction",
+      "description": "Represents a single credit transaction, either a purchase or a deduction.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["purchase", "deduction"],
+          "description": "The type of transaction."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The number of credits. Positive for purchases, negative for deductions."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief summary of the transaction."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the transaction occurred."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Optional metadata, like a Stripe transaction ID."
+        }
+      },
+      "required": ["type", "amount", "description", "timestamp"]
+    },
     "agent": {
       "title": "Agent",
       "description": "Represents an AI agent workspace.",
@@ -503,6 +533,12 @@
         "$ref": "#/entities/userProfile"
       },
       "description": "Stores public profile information for each user."
+    },
+     "/users/{userId}/creditTransactions/{transactionId}": {
+      "schema": {
+        "$ref": "#/entities/creditTransaction"
+      },
+      "description": "Stores a log of all credit purchases and deductions for a user."
     },
     "/users/{userId}/agents/{agentId}": {
       "schema": {
