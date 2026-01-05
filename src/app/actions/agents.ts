@@ -288,7 +288,15 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
 
         try {
             if (ip !== 'Unknown') {
-                const geoResponse = await fetch(`https://get.geojs.io/v1/ip/geo/${ip}.json`);
+                 // Add a timeout to the fetch request to prevent it from hanging
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 seconds timeout
+                
+                const geoResponse = await fetch(`https://get.geojs.io/v1/ip/geo/${ip}.json`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
                 const geoData = await geoResponse.json();
                 visitorInfo.location = {
                     city: geoData.city || null,
