@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import type { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { TextTypingEffect } from '@/components/ui/text-typing-effect';
 import { motion } from 'motion/react';
+import { saveMessageFeedback } from '@/app/actions/feedback';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatMessageProps {
   message: Message;
@@ -15,6 +18,9 @@ interface ChatMessageProps {
   onOptionClick: (option: string) => void;
   isLastMessage: boolean;
   isResponding: boolean;
+  userId: string;
+  agentId: string;
+  sessionId: string;
 }
 
 export function ChatMessage({
@@ -25,7 +31,39 @@ export function ChatMessage({
   onOptionClick,
   isLastMessage,
   isResponding,
+  userId,
+  agentId,
+  sessionId,
 }: ChatMessageProps) {
+  const [feedbackSent, setFeedbackSent] = useState<boolean>(false);
+  const [selectedFeedback, setSelectedFeedback] = useState<'positive' | 'negative' | null>(null);
+  const { toast } = useToast();
+
+  const handleFeedback = async (rating: 'positive' | 'negative') => {
+    if (feedbackSent) return;
+
+    setFeedbackSent(true);
+    setSelectedFeedback(rating);
+
+    const result = await saveMessageFeedback({
+      userId,
+      agentId,
+      sessionId,
+      messageId: message.id!,
+      rating,
+    });
+    
+    if (result.error) {
+        toast({ title: 'Feedback Error', description: 'Could not save your feedback.', variant: 'destructive'});
+        // Optionally revert UI state on error
+        setFeedbackSent(false);
+        setSelectedFeedback(null);
+    } else {
+        toast({ title: 'Feedback received!', description: 'Thanks for helping us improve.' });
+    }
+  };
+
+
   return (
     <div className={cn("flex flex-col", message.sender === 'user' ? 'items-end' : 'items-start')}>
       <div className={cn("max-w-[75%]", message.sender === 'user' ? 'text-right' : 'text-left')}>
@@ -53,10 +91,28 @@ export function ChatMessage({
           </p>
           {message.sender === 'agent' && isFeedbackEnabled && (
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                    "h-4 w-4 text-muted-foreground hover:text-foreground",
+                    selectedFeedback === 'positive' && 'text-green-500 hover:text-green-500'
+                )}
+                onClick={() => handleFeedback('positive')}
+                disabled={feedbackSent}
+              >
                 <ThumbsUp className="h-3 w-3" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                    "h-4 w-4 text-muted-foreground hover:text-foreground",
+                    selectedFeedback === 'negative' && 'text-red-500 hover:text-red-500'
+                )}
+                onClick={() => handleFeedback('negative')}
+                disabled={feedbackSent}
+              >
                 <ThumbsDown className="h-3 w-3" />
               </Button>
             </div>

@@ -25,33 +25,23 @@ export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // --- FIX STARTS HERE ---
-  // Generate a session ID if one isn't present in the URL.
-  // This ensures the public iframe works standalone.
   const sessionId = useMemo(() => {
     let currentSessionId = searchParams.get('sessionId');
     if (!currentSessionId) {
       currentSessionId = uuidv4();
-      // We need to append it to the URL for useChatManager to pick it up.
-      // This happens on the client-side.
       if (typeof window !== 'undefined') {
         const newUrl = `${pathname}?sessionId=${currentSessionId}`;
-        // Use replace to avoid adding to browser history
         window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
       }
     }
     return currentSessionId;
   }, [pathname, searchParams]);
-  // --- FIX ENDS HERE ---
 
 
   useEffect(() => {
-    // If it's not in an iframe, it's a direct page load, so it should be "open".
     if (typeof window !== 'undefined' && window.self === window.top) {
       setIsWidgetOpen(true);
     } else {
-      // If in an iframe, let the parent know it's ready.
-      // This is for the bubble widget scenario.
       window.parent.postMessage({ type: 'AV_WIDGET_READY' }, '*');
 
       const handleMessage = (event: MessageEvent) => {
@@ -71,7 +61,9 @@ export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
     setPrompt,
     isResponding,
     handleSendMessage,
-    handleOptionClick
+    handleOptionClick,
+    userId,
+    agentId
   } = useChatManager({ agent });
 
   const { 
@@ -83,8 +75,6 @@ export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
     currentOutput 
   } = useLiveAgent(setMessages);
 
-  // If it's used in the bubble widget context, it might be initially hidden.
-  // The direct iframe embed will always have this as true.
   if (!isWidgetOpen) {
     return null;
   }
@@ -128,6 +118,9 @@ export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
           isFeedbackEnabled={isFeedbackEnabled}
           themeColor={themeColor}
           onOptionClick={handleOptionClick}
+          userId={userId || 'public-user'}
+          agentId={agentId || 'public-agent'}
+          sessionId={sessionId || 'public-session'}
         />
         <ChatInput 
           prompt={prompt}

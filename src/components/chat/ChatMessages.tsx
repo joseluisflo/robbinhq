@@ -19,6 +19,9 @@ interface ChatMessagesProps {
   isFeedbackEnabled: boolean;
   themeColor: string;
   onOptionClick: (option: string) => void;
+  userId: string;
+  agentId: string;
+  sessionId: string;
 }
 
 export function ChatMessages({
@@ -33,6 +36,9 @@ export function ChatMessages({
   isFeedbackEnabled,
   themeColor,
   onOptionClick,
+  userId,
+  agentId,
+  sessionId,
 }: ChatMessagesProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const displayedMessages = isCallActive ? liveTranscripts : messages;
@@ -56,6 +62,9 @@ export function ChatMessages({
             onOptionClick={onOptionClick}
             isLastMessage={index === displayedMessages.length - 1}
             isResponding={isResponding}
+            userId={userId}
+            agentId={agentId}
+            sessionId={sessionId}
           />
         ))}
 

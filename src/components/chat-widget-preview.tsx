@@ -31,7 +31,10 @@ export function ChatWidgetPreview({
     setPrompt,
     isResponding,
     handleSendMessage,
-    handleOptionClick
+    handleOptionClick,
+    userId,
+    agentId,
+    sessionId
   } = useChatManager({ agent });
   
   const { 
@@ -97,6 +100,9 @@ export function ChatWidgetPreview({
                 isFeedbackEnabled={isFeedbackEnabled}
                 themeColor={themeColor}
                 onOptionClick={handleOptionClick}
+                userId={userId || 'preview-user'}
+                agentId={agentId || 'preview-agent'}
+                sessionId={sessionId || 'preview-session'}
             />
             <ChatInput 
                 prompt={prompt}

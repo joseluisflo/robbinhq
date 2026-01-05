@@ -9,13 +9,13 @@ import { useSearchParams, useParams } from 'next/navigation';
 
 // Define the shape of the data the hook will manage and return
 export interface UseChatManagerProps {
-  agent: Agent | null;
+  agent: (Partial<Agent> & { id?: string }) | null;
 }
 
 export function useChatManager({ agent }: UseChatManagerProps) {
   const { user } = useUser();
   const searchParams = useSearchParams();
-  const params = useParams(); // Import and use useParams to get URL parameters
+  const params = useParams();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState('');
@@ -24,9 +24,8 @@ export function useChatManager({ agent }: UseChatManagerProps) {
 
   const sessionId = searchParams.get('sessionId');
   
-  // Determine the correct userId. If logged in, use the current user's ID. 
-  // If not (public widget), get the agent owner's ID from the URL.
-  const agentOwnerUserId = user ? user.uid : (params.userId as string);
+  const userId = user ? user.uid : (params.userId as string);
+  const agentId = agent?.id;
 
   // Effect to set initial welcome message
   useEffect(() => {
@@ -50,8 +49,7 @@ export function useChatManager({ agent }: UseChatManagerProps) {
   }, [agent]);
 
   const handleSendMessage = (messageText: string) => {
-    // The check now uses the determined agentOwnerUserId instead of relying on a logged-in user.
-    if (!messageText.trim() || !agent?.id || !agentOwnerUserId || !sessionId) return;
+    if (!messageText.trim() || !agentId || !userId || !sessionId) return;
 
     const newUserMessage: Message = {
       id: Date.now().toString(),
@@ -64,8 +62,8 @@ export function useChatManager({ agent }: UseChatManagerProps) {
     
     startResponding(async () => {
       const result = await getAgentResponse({
-        userId: agentOwnerUserId,
-        agentId: agent.id!,
+        userId: userId,
+        agentId: agentId,
         message: messageText,
         runId: currentWorkflowRunId,
         sessionId: sessionId,
@@ -127,5 +125,8 @@ export function useChatManager({ agent }: UseChatManagerProps) {
     isResponding,
     handleSendMessage,
     handleOptionClick,
+    userId,
+    agentId,
+    sessionId
   };
 }
