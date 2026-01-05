@@ -18,10 +18,35 @@ interface EmailData {
   inReplyTo?: string;
 }
 
+// +++ LÓGICA DE LIMPIEZA DE CORREO +++
+function cleanReplyText(text: string): string {
+    const replySeparators = [
+        /^\s*On\s.*(wrote|escribió|a écrit):/im, // English, Spanish, French
+        /^\s*El\s.*(escribió):/im, // Spanish variant
+        /^From:.*$/im,
+        /^Sent from my.*$/im,
+        /^---[- ]*Original Message[- ]*---*$/im,
+        /^\s*_{2,}\s*$/im, // Underscore separators
+    ];
+    
+    let cleanedText = text;
+
+    for (const separator of replySeparators) {
+        const match = cleanedText.search(separator);
+        if (match !== -1) {
+            cleanedText = cleanedText.substring(0, match);
+        }
+    }
+    
+    // Eliminar líneas de citación ('>' o '>> ') y espacios en blanco excesivos al final
+    return cleanedText.replace(/^>.*$/gm, '').replace(/\n\s*\n/g, '\n').trim();
+}
+// +++ FIN LÓGICA DE LIMPIEZA +++
+
+
 const agentEmailDomain = process.env.NEXT_PUBLIC_AGENT_EMAIL_DOMAIN || process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN;
 
 async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId: string): Promise<{ agent: Agent, agentRef: FirebaseFirestore.DocumentReference, ownerId: string } | null> {
-    // 1. Try the efficient index first
     const indexRef = firestore.collection('agentIndex').doc(agentId);
     const indexDoc = await indexRef.get();
 
@@ -41,7 +66,6 @@ async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId
         }
     }
     
-    // 2. Fallback for existing agents without an index entry
     console.warn(`[ACTION] Agent ${agentId} not found in index. Falling back to collection group query. This is less efficient.`);
     const usersSnapshot = await firestore.collection('users').get();
     for (const userDoc of usersSnapshot.docs) {
@@ -67,16 +91,6 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
   console.log('[ACTION] 🚀 Step 1: processInboundEmail started.');
   const { from, to, subject, body, messageId, inReplyTo, references } = emailData;
   
-  // 🔍 LOG: Verify that the body arrived from the worker
-  console.log('[ACTION] 📧 Email data received from worker:');
-  console.log('[ACTION]   From:', from);
-  console.log('[ACTION]   To:', to);
-  console.log('[ACTION]   Subject:', subject);
-  console.log('[ACTION]   Body:', body);
-  console.log('[ACTION]   Body length:', body ? body.length : 0);
-  console.log('[ACTION]   Body is empty?:', !body || body.trim().length === 0);
-  console.log('[ACTION]   Body type:', typeof body);
-
   if (!agentEmailDomain) {
     console.error('[ACTION] ❌ Agent email domain (NEXT_PUBLIC_AGENT_EMAIL_DOMAIN or NEXT_PUBLIC_EMAIL_INGEST_DOMAIN) is not configured.');
     return { error: 'Agent email domain is not configured.' };
@@ -92,8 +106,6 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
   try {
     const firestore = firebaseAdmin.firestore();
-    console.log('[ACTION] 🔥 Firestore instance obtained.');
-    
     const agentInfo = await findAgentAndOwner(firestore, agentId);
     
     if (!agentInfo) {
@@ -108,7 +120,6 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     let sessionRef;
     let messages: EmailMessage[] = [];
     
-    // Find existing session
     const sessionQuery = await emailSessionsRef
         .where('participants', 'array-contains', from)
         .where('subject', '==', subject.replace(/^Re: /i, ''))
@@ -117,7 +128,6 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
     if (!sessionQuery.empty) {
         sessionRef = sessionQuery.docs[0].ref;
-        // Get previous messages
         const messagesSnapshot = await sessionRef.collection('messages').orderBy('timestamp', 'asc').get();
         messages = messagesSnapshot.docs.map(doc => doc.data() as EmailMessage);
         console.log(`[ACTION] 📂 Found existing session with ${messages.length} previous messages.`);
@@ -131,44 +141,31 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
         console.log('[ACTION] 📝 Created new email session.');
     }
     
-    // Create the new message object
+    // Clean the incoming email body to get only the latest message
+    const cleanedBody = cleanReplyText(body);
+
     const newMessage: EmailMessage = {
       messageId: messageId,
       sender: from,
-      text: body,
+      text: cleanedBody, // Save only the cleaned text
       timestamp: FieldValue.serverTimestamp(),
     };
 
-    // 🔍 LOG: Verify message before saving
-    console.log('[ACTION] 💾 Preparing to save new message:');
-    console.log('[ACTION]   MessageId:', newMessage.messageId);
-    console.log('[ACTION]   Sender:', newMessage.sender);
-    console.log('[ACTION]   Text:', newMessage.text);
-    console.log('[ACTION]   Text length:', newMessage.text ? newMessage.text.length : 0);
-    console.log('[ACTION]   Text is empty?:', !newMessage.text || newMessage.text.trim().length === 0);
-
-    // Save the new message to the database
     await sessionRef.collection('messages').doc(messageId || `no-id-${Date.now()}`).set(newMessage);
-    console.log(`[ACTION] 📩 Saved incoming message with ID: ${messageId || 'no-id-' + Date.now()}`);
+    console.log(`[ACTION] 📩 Saved incoming CLEANED message with ID: ${messageId || 'no-id-' + Date.now()}`);
     
-    // --- CRITICAL FIX ---
-    // Add the new message to our in-memory list to build the full history
     messages.push(newMessage);
     console.log(`[ACTION] 📚 Total messages in conversation history now: ${messages.length}`);
-    // --- END FIX ---
 
-    // Deduct credit before generating a response
     console.log(`[ACTION] 💰 Attempting to deduct 1 credit from user ${ownerId}.`);
     const creditResult = await deductCredits(ownerId, 1, 'Email Response');
     
-    console.log('[ACTION] 📊 Credit deduction result:', JSON.stringify(creditResult));
     if (!creditResult.success) {
       console.error(`[ACTION] ❌ Credit deduction failed for user ${ownerId}: ${creditResult.error}. Halting process.`);
       return { error: 'Insufficient credits or billing issue.' };
     }
     console.log('[ACTION] ✅ Credit deduction successful. Proceeding with AI response.');
 
-    // Get knowledge
     const textsSnapshot = await agentRef.collection('texts').get();
     const filesSnapshot = await agentRef.collection('files').get();
     console.log(`[ACTION] 🧠 Fetched ${textsSnapshot.size} text sources and ${filesSnapshot.size} file sources.`);
@@ -181,35 +178,22 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
         ...fileSources.map(f => `File: ${f.name}\nContent: ${f.extractedText || ''}`)
     ].join('\n\n---\n\n');
 
-    console.log(`[ACTION] 📖 Knowledge base size: ${knowledge.length} characters`);
-
-    // Build history from the now-complete list of messages
     const conversationHistory = messages.map(msg => {
         const senderPrefix = msg.sender === from ? 'User' : 'Agent';
         return `${senderPrefix}: ${msg.text}`;
     }).join('\n');
     
-    // 🔍 LOG: Verify full history before calling AI
-    console.log('[ACTION] 📜 Building conversation history for AI:');
-    console.log('[ACTION]   Number of messages:', messages.length);
-    console.log('[ACTION]   History length (chars):', conversationHistory.length);
-    console.log('[ACTION]   History is empty?:', !conversationHistory || conversationHistory.trim().length === 0);
-    console.log('[ACTION]   History preview (first 300 chars):', conversationHistory.substring(0, 300));
-    
     console.log('[ACTION] 🤖 Calling agentChat with compiled history and knowledge.');
 
     const chatResult = await agentChat({
       conversationHistory: conversationHistory,
-      latestUserMessage: '', // Empty because the new message is already in conversationHistory
+      latestUserMessage: '', 
       instructions: agent.instructions || 'You are a helpful assistant responding to an email. Your response should be in plain text, not markdown.',
       knowledge: knowledge,
     });
     
     console.log('[ACTION] ✨ AI response generated successfully.');
-    console.log('[ACTION] 💬 AI response length:', chatResult.response ? chatResult.response.length : 0);
-    console.log('[ACTION] 💬 AI response is empty?:', !chatResult.response || chatResult.response.trim().length === 0);
-    console.log('[ACTION] 💬 AI response preview (first 200 chars):', chatResult.response ? chatResult.response.substring(0, 200) : 'NO RESPONSE');
-    
+
     const replySubject = subject.toLowerCase().startsWith('re:') ? subject : `Re: ${subject}`;
     const agentSignature = agent.emailSignature ? `\n\n${agent.emailSignature}` : `\n\n--\nSent by ${agent.name}`;
     const replyBody = `${chatResult.response}${agentSignature}`;
@@ -217,8 +201,6 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     const newReferences = [references, inReplyTo].filter(Boolean).join(' ');
 
     console.log(`[ACTION] 📤 Sending email response to ${from} via Plunk.`);
-    console.log(`[ACTION] 📤 Reply subject: ${replySubject}`);
-    console.log(`[ACTION] 📤 Reply body length: ${replyBody.length}`);
     
     await sendEmail({
       to: from,
@@ -235,8 +217,6 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
   } catch (error: any) {
     console.error('[ACTION] ❌ Critical error in processInboundEmail:', error);
-    console.error('[ACTION] ❌ Error message:', error.message);
-    console.error('[ACTION] ❌ Error stack:', error.stack);
     return { error: `Could not send email. Reason: ${error.message || 'An unknown error occurred.'}` };
   }
 }
