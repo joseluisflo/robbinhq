@@ -196,7 +196,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="overflow-hidden p-0 sm:max-w-sm">
+      <DialogContent className="overflow-hidden p-0 sm:max-w-lg">
         {step === 1 && (
           <>
              <DialogHeader className="text-left">
@@ -333,5 +333,3 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
     </Dialog>
   );
 }
-
-    
