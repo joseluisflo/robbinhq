@@ -29,10 +29,7 @@ export function CreditUsageCard() {
   // the total should reflect their actual current balance.
   const totalCredits = Math.max(planCredits, currentCredits);
   
-  // Used credits is the difference from the base plan total, not the potentially higher current total.
-  // This correctly reflects consumption against the monthly allowance.
-  const usedCredits = Math.max(0, planCredits - currentCredits);
-  const percentage = totalCredits > 0 ? (usedCredits / totalCredits) * 100 : 0;
+  const percentage = totalCredits > 0 ? (currentCredits / totalCredits) * 100 : 0;
   
   const resetDate = userProfile?.creditResetDate ? (userProfile.creditResetDate as Timestamp).toDate() : null;
   const formattedResetDate = resetDate ? format(resetDate, "MMM d") : 'N/A';
