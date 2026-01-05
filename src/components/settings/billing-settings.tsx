@@ -111,20 +111,7 @@ export function BillingSettings() {
             </div>
             <Card>
                 <CardHeader>
-                    <div className="flex justify-between items-start">
-                        {loading ? (
-                            <div className="space-y-2">
-                                <Skeleton className="h-5 w-24" />
-                                <Skeleton className="h-6 w-32" />
-                                <Skeleton className="h-4 w-20" />
-                            </div>
-                        ) : (
-                             <div>
-                                 <p className="text-sm font-semibold text-primary uppercase">{planId}</p>
-                                 <h4 className="text-xl font-bold">{planDetails.name}</h4>
-                                 <p className="text-muted-foreground mt-1">{planDetails.price}</p>
-                             </div>
-                        )}
+                    <div className="flex justify-end items-start">
                         <ChangePlanDialog>
                            <Button variant="outline">Buy Credits</Button>
                         </ChangePlanDialog>
