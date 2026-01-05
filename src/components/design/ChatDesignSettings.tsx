@@ -203,7 +203,7 @@ export function ChatDesignSettings({
                 </div>
                 <div className="flex items-center justify-between">
                     <Label htmlFor="branding-toggle" className="font-medium flex items-center gap-2">
-                        Remove AgentVerse branding
+                        Remove branding
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Info className="h-4 w-4 text-muted-foreground" />
