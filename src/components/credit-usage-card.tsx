@@ -22,11 +22,16 @@ export function CreditUsageCard() {
   const { userProfile, agentsLoading: profileLoading } = useActiveAgent();
 
   const planId = userProfile?.planId || 'free';
-  const totalCredits = PLAN_CREDITS[planId] || PLAN_CREDITS.free;
+  const planCredits = PLAN_CREDITS[planId] || PLAN_CREDITS.free;
   const currentCredits = userProfile?.credits ?? 0;
   
-  // Ensure usedCredits doesn't go below 0 if currentCredits > totalCredits (e.g., admin grant)
-  const usedCredits = Math.max(0, totalCredits - currentCredits);
+  // If user has more credits than their plan (e.g. they bought more),
+  // the total should reflect their actual current balance.
+  const totalCredits = Math.max(planCredits, currentCredits);
+  
+  // Used credits is the difference from the base plan total, not the potentially higher current total.
+  // This correctly reflects consumption against the monthly allowance.
+  const usedCredits = Math.max(0, planCredits - currentCredits);
   const percentage = totalCredits > 0 ? (usedCredits / totalCredits) * 100 : 0;
   
   const resetDate = userProfile?.creditResetDate ? (userProfile.creditResetDate as Timestamp).toDate() : null;
@@ -53,7 +58,7 @@ export function CreditUsageCard() {
         <div className="flex items-center justify-between text-sm">
           <CardTitle className="text-sm font-medium">Credits</CardTitle>
           <p className="text-muted-foreground">
-            {usedCredits.toLocaleString()}/{totalCredits.toLocaleString()}
+            {currentCredits.toLocaleString()}/{totalCredits.toLocaleString()}
           </p>
         </div>
         <Progress value={percentage} className="h-1" />
