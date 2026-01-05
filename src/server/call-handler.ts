@@ -197,7 +197,7 @@ export class CallHandler {
     const deductAndCheck = async (amount: number) => {
       if (this.ownerId) {
         console.log(`[Handler] 💳 Attempting to deduct ${amount} credits for user ${this.ownerId}.`);
-        const result = await deductCredits(this.ownerId, amount);
+        const result = await deductCredits(this.ownerId, amount, 'Voice Call Usage');
         if (!result.success) {
           console.warn(`[Handler] ⚠️ Insufficient credits for user ${this.ownerId}. Terminating call.`);
           this.ws.close(4002, "Insufficient credits"); // This will trigger the onClose event

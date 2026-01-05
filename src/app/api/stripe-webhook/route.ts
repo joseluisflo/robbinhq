@@ -5,6 +5,8 @@ import { firebaseAdmin } from '@/firebase/admin';
 import type { userProfile } from '@/lib/types';
 import { headers } from 'next/headers';
 import { addCredits } from '@/app/actions/users';
+import { FieldValue } from 'firebase-admin/firestore';
+
 
 // Force Node.js runtime to ensure Stripe webhook processing
 export const runtime = 'nodejs';
@@ -57,6 +59,7 @@ export async function POST(request: Request) {
       
       const userId = paymentIntent.metadata?.firebaseUID;
       const purchaseType = paymentIntent.metadata?.purchaseType;
+      const creditAmount = paymentIntent.metadata?.creditAmount; // In dollars
 
       if (!userId) {
         console.error('Webhook Error: Missing firebaseUID in payment intent metadata.');
@@ -66,9 +69,9 @@ export async function POST(request: Request) {
       try {
         const firestore = firebaseAdmin.firestore();
         const userRef = firestore.collection('users').doc(userId);
+        const transactionCollection = userRef.collection('creditTransactions');
 
-        if (purchaseType === 'credits') {
-          const creditAmount = paymentIntent.metadata?.creditAmount;
+        if (purchaseType === 'credits' || purchaseType === 'auto-recharge-credits') {
           if (!creditAmount) {
              console.error('Webhook Error: Missing creditAmount for credits purchase.');
              return NextResponse.json({ error: 'Missing credit amount metadata.' }, { status: 400 });
@@ -76,7 +79,18 @@ export async function POST(request: Request) {
           // Assuming $1 = 100 credits
           const creditsToAdd = Number(creditAmount) * 100;
           await addCredits(userId, creditsToAdd);
-          console.log(`✅ Successfully added ${creditsToAdd} credits to user ${userId}.`);
+
+          // Log the purchase transaction
+          await transactionCollection.add({
+              type: 'purchase',
+              amount: creditsToAdd,
+              description: purchaseType === 'auto-recharge-credits' 
+                ? `Auto-recharge: ${creditsToAdd} credits`
+                : `Purchase of ${creditsToAdd} credits`,
+              timestamp: FieldValue.serverTimestamp(),
+              metadata: { stripePaymentIntentId: paymentIntent.id }
+          });
+          console.log(`✅ Successfully added ${creditsToAdd} credits and logged transaction for user ${userId}.`);
 
         } else {
            // Handle plan upgrade logic
@@ -91,14 +105,25 @@ export async function POST(request: Request) {
             if (now > nextResetDate) {
               nextResetDate.setMonth(nextResetDate.getMonth() + 1);
             }
-
+            
+            const creditsForPlan = PLAN_CREDITS[planId] || PLAN_CREDITS.free;
+            
             await userRef.update({
               planId: planId,
-              credits: PLAN_CREDITS[planId] || PLAN_CREDITS.free,
+              credits: creditsForPlan,
               creditResetDate: nextResetDate,
             });
 
-            console.log(`✅ Successfully updated user ${userId} to plan ${planId}.`);
+            // Log the plan change transaction
+            await transactionCollection.add({
+                type: 'purchase',
+                amount: creditsForPlan,
+                description: `Subscribed to ${planId} plan`,
+                timestamp: FieldValue.serverTimestamp(),
+                metadata: { stripePaymentIntentId: paymentIntent.id }
+            });
+
+            console.log(`✅ Successfully updated user ${userId} to plan ${planId} and logged transaction.`);
         }
 
       } catch (error) {

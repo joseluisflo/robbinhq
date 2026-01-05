@@ -157,7 +157,7 @@ export async function runOrResumeWorkflow(
     // --- CREDIT DEDUCTION ---
     const cost = blockCosts[currentBlock.type] ?? 0;
     if (cost > 0) {
-        const creditResult = await deductCredits(userId, cost);
+        const creditResult = await deductCredits(userId, cost, `Workflow Step: ${currentBlock.type}`);
         if (!creditResult.success) {
             run.status = 'failed';
             run.context.error = `Credit deduction failed: ${creditResult.error || 'Insufficient credits.'}`;
@@ -262,5 +262,3 @@ export async function updateWorkflowStatus(
     return { error: e.message || 'Failed to update workflow status.' };
   }
 }
-
-    

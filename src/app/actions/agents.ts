@@ -411,7 +411,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       };
     } else {
       // Standard Chat: Deduct 1 credit for a simple chat response.
-      const creditResult = await deductCredits(agentOwnerUserId, 1);
+      const creditResult = await deductCredits(agentOwnerUserId, 1, 'Chat Response');
       if (!creditResult.success) {
         await addLogStep(logRef, `Credit deduction failed: ${creditResult.error}`);
         await logRef.update({ status: 'error' });

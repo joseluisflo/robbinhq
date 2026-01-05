@@ -1,3 +1,4 @@
+
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
@@ -66,7 +67,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
   console.log('[ACTION] 🚀 Step 1: processInboundEmail started.');
   const { from, to, subject, body, messageId, inReplyTo, references } = emailData;
   
-  // 🔍 LOG: Verificar que el body llegó desde el worker
+  // 🔍 LOG: Verify that the body arrived from the worker
   console.log('[ACTION] 📧 Email data received from worker:');
   console.log('[ACTION]   From:', from);
   console.log('[ACTION]   To:', to);
@@ -138,7 +139,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
       timestamp: FieldValue.serverTimestamp(),
     };
 
-    // 🔍 LOG: Verificar el mensaje antes de guardar
+    // 🔍 LOG: Verify message before saving
     console.log('[ACTION] 💾 Preparing to save new message:');
     console.log('[ACTION]   MessageId:', newMessage.messageId);
     console.log('[ACTION]   Sender:', newMessage.sender);
@@ -158,7 +159,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
     // Deduct credit before generating a response
     console.log(`[ACTION] 💰 Attempting to deduct 1 credit from user ${ownerId}.`);
-    const creditResult = await deductCredits(ownerId, 1);
+    const creditResult = await deductCredits(ownerId, 1, 'Email Response');
     
     console.log('[ACTION] 📊 Credit deduction result:', JSON.stringify(creditResult));
     if (!creditResult.success) {
@@ -188,7 +189,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
         return `${senderPrefix}: ${msg.text}`;
     }).join('\n');
     
-    // 🔍 LOG: Verificar el historial completo antes de llamar a la IA
+    // 🔍 LOG: Verify full history before calling AI
     console.log('[ACTION] 📜 Building conversation history for AI:');
     console.log('[ACTION]   Number of messages:', messages.length);
     console.log('[ACTION]   History length (chars):', conversationHistory.length);
@@ -199,7 +200,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
     const chatResult = await agentChat({
       conversationHistory: conversationHistory,
-      latestUserMessage: '', // Vacío porque el mensaje nuevo ya está incluido en conversationHistory
+      latestUserMessage: '', // Empty because the new message is already in conversationHistory
       instructions: agent.instructions || 'You are a helpful assistant responding to an email. Your response should be in plain text, not markdown.',
       knowledge: knowledge,
     });

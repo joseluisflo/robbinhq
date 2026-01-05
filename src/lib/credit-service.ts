@@ -53,7 +53,7 @@ async function handleAutoRecharge(
     const currentCreditsInDollars = (userData.credits || 0) / 100;
     
     if (currentCreditsInDollars <= userData.rechargeThreshold) {
-        console.log(`[CreditService] 触发自动充值，用户 ${userRef.id}。余额 ${currentCreditsInDollars}$ <= 阈值 ${userData.rechargeThreshold}$`);
+        console.log(`[CreditService] Triggering auto-recharge for user ${userRef.id}. Balance ${currentCreditsInDollars}$ <= threshold ${userData.rechargeThreshold}$`);
 
         const paymentMethods = await stripe.paymentMethods.list({
             customer: userData.stripeCustomerId,
@@ -62,12 +62,12 @@ async function handleAutoRecharge(
 
         const paymentMethod = paymentMethods.data[0];
         if (!paymentMethod) {
-            console.warn(`[CreditService] 自动充值失败：用户 ${userRef.id} 未找到已保存的支付方式。`);
+            console.warn(`[CreditService] Auto-recharge failed: No saved payment method found for user ${userRef.id}.`);
             return userData.credits || 0; 
         }
 
         try {
-            const amountToCharge = userData.rechargeAmount * 100; // 转换为分
+            const amountToCharge = userData.rechargeAmount * 100; // to cents
             
             await stripe.paymentIntents.create({
                 amount: amountToCharge,
@@ -84,15 +84,24 @@ async function handleAutoRecharge(
             });
 
             const creditsToAdd = userData.rechargeAmount * 100;
+            const newTransactionRef = userRef.collection('creditTransactions').doc();
+            
             transaction.update(userRef, {
                 credits: FieldValue.increment(creditsToAdd)
             });
+            transaction.set(newTransactionRef, {
+                type: 'purchase',
+                amount: creditsToAdd,
+                description: `Auto-recharge of ${creditsToAdd} credits`,
+                timestamp: FieldValue.serverTimestamp(),
+                metadata: { source: 'auto-recharge' }
+            });
 
-            console.log(`[CreditService] ✅ 自动充值成功：为用户 ${userRef.id} 增加了 ${creditsToAdd} 积分。`);
+            console.log(`[CreditService] ✅ Auto-recharge successful: Added ${creditsToAdd} credits for user ${userRef.id}.`);
             return (userData.credits || 0) + creditsToAdd;
 
         } catch (error: any) {
-            console.error(`[CreditService] ❌ Stripe 自动充值失败，用户 ${userRef.id}:`, error.message);
+            console.error(`[CreditService] ❌ Stripe auto-recharge failed for user ${userRef.id}:`, error.message);
             // Don't throw, just log and continue. The outer transaction will handle insufficient credits.
             return userData.credits || 0;
         }
@@ -107,14 +116,19 @@ async function handleAutoRecharge(
  * This is an atomic operation.
  * @param userId The ID of the user.
  * @param amount The number of credits to deduct.
+ * @param description A brief description of the transaction.
  * @returns An object indicating success or failure.
  */
 export async function deductCredits(
   userId: string,
-  amount: number
+  amount: number,
+  description: string
 ): Promise<{ success: boolean; error?: string }> {
   if (!userId || !amount || amount <= 0) {
     return { success: false, error: 'Invalid user ID or amount.' };
+  }
+   if (!description) {
+    return { success: false, error: 'Transaction description is required.' };
   }
 
   const firestore = firebaseAdmin.firestore();
@@ -155,6 +169,16 @@ export async function deductCredits(
       if (currentCredits < amount) {
         throw new Error('Insufficient credits to perform this action.');
       }
+      
+      // Create a new transaction log entry
+      const newTransactionRef = userRef.collection('creditTransactions').doc();
+      transaction.set(newTransactionRef, {
+        type: 'deduction',
+        amount: -amount, // Store as a negative number
+        description: description,
+        timestamp: FieldValue.serverTimestamp(), // Use server timestamp for consistency
+      });
+
 
       transaction.update(userRef, {
         credits: FieldValue.increment(-amount),
@@ -167,33 +191,4 @@ export async function deductCredits(
     console.error(`[CreditService] ❌ Failed to deduct ${amount} credits for user ${userId}:`, error);
     return { success: false, error: error.message || 'An unknown error occurred during credit deduction.' };
   }
-}
-
-/**
- * Adds a specified amount of credits to a user's account.
- * This is an atomic operation.
- * @param userId The ID of the user.
- * @param amount The number of credits to add.
- * @returns An object indicating success or failure.
- */
-export async function addCredits(
-  userId: string,
-  amount: number
-): Promise<{ success: boolean; error?: string }> {
-    if (!userId || !amount || amount <= 0) {
-        return { success: false, error: 'Invalid user ID or amount.' };
-    }
-
-    const firestore = firebaseAdmin.firestore();
-    const userRef = firestore.collection('users').doc(userId);
-
-    try {
-        await userRef.update({
-            credits: FieldValue.increment(amount)
-        });
-        return { success: true };
-    } catch (error: any) {
-         console.error(`Failed to add ${amount} credits for user ${userId}:`, error);
-        return { success: false, error: 'Failed to update user credits.' };
-    }
 }
