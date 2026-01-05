@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     
     await s3Client.send(putObjectCommand);
 
-    const publicUrl = `${R2_PUBLIC_HOSTNAME}/${storagePath}`;
+    const publicUrl = `https://${R2_PUBLIC_HOSTNAME}/${storagePath}`;
 
     // If it's a logo, we just return the URL. The client will update the agent document.
     if (uploadType === 'logo') {
