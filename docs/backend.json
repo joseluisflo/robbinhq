@@ -83,6 +83,36 @@
       },
       "required": ["type", "amount", "description", "timestamp"]
     },
+    "messageFeedback": {
+      "title": "Message Feedback",
+      "description": "Represents user feedback for a specific agent message.",
+      "type": "object",
+      "properties": {
+        "rating": {
+          "type": "string",
+          "enum": ["positive", "negative"],
+          "description": "The user's rating for the message."
+        },
+        "comment": {
+          "type": "string",
+          "description": "An optional detailed comment from the user."
+        },
+        "messageId": {
+          "type": "string",
+          "description": "The ID of the message being rated."
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "The ID of the session the message belongs to."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the feedback was submitted."
+        }
+      },
+      "required": ["rating", "messageId", "sessionId", "timestamp"]
+    },
     "agent": {
       "title": "Agent",
       "description": "Represents an AI agent workspace.",
@@ -545,6 +575,12 @@
         "$ref": "#/entities/agent"
       },
       "description": "Stores the agents created by a specific user."
+    },
+    "/users/{userId}/agents/{agentId}/feedback/{feedbackId}": {
+      "schema": {
+        "$ref": "#/entities/messageFeedback"
+      },
+      "description": "Stores user feedback for agent messages."
     },
     "/agentIndex/{agentId}": {
       "schema": {
