@@ -11,9 +11,12 @@ import { useActiveAgent } from "@/app/(main)/layout";
 import { Skeleton } from "../ui/skeleton";
 import type { Timestamp } from "firebase/firestore";
 import { useKnowledgeUsage } from "@/hooks/use-knowledge-usage";
-import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
-import type { TextSource, AgentFile, ChatSession, EmailSession, Lead } from '@/lib/types';
+import { useUser, useFirestore, useCollection, query, collection, orderBy } from '@/firebase';
+import type { TextSource, AgentFile, ChatSession, EmailSession, Lead, CreditTransaction } from '@/lib/types';
 import { useMemo } from 'react';
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+
 
 const PLAN_DETAILS = {
   free: { 
@@ -33,8 +36,7 @@ const PLAN_DETAILS = {
   pro: { 
     name: "Pro Plan", 
     price: "$29 per month", 
-    credits: 0, 
-    agents: Infinity, 
+    credits: Infinity, 
     knowledgeKB: 40 * 1024 // 40MB
   },
 };
@@ -59,25 +61,6 @@ function UsageMeter({ title, used, total, unit = '', current }: { title: string,
     );
 }
 
-const invoices = [
-    {
-        date: "July 15, 2024",
-        description: "Subscription - Pro Plan",
-        amount: "$29.00",
-    },
-    {
-        date: "June 15, 2024",
-        description: "Subscription - Pro Plan",
-        amount: "$29.00",
-    },
-    {
-        date: "May 15, 2024",
-        description: "Subscription - Pro Plan",
-        amount: "$29.00",
-    },
-];
-
-
 export function BillingSettings() {
     const { user } = useUser();
     const firestore = useFirestore();
@@ -100,10 +83,16 @@ export function BillingSettings() {
     const leadsQuery = useMemo(() => user && activeAgent?.id ? query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'leads')) : null, [user, firestore, activeAgent?.id]);
     const { data: leads, loading: leadsLoading } = useCollection<Lead>(leadsQuery);
 
-    const interactions = (chatSessions?.length || 0) + (emailSessions?.length || 0);
-    // --- End data fetching ---
+    const transactionsQuery = useMemo(() => {
+        if (!user) return null;
+        return query(
+            collection(firestore, 'users', user.uid, 'creditTransactions'),
+            orderBy('timestamp', 'desc')
+        );
+    }, [user, firestore]);
+    const { data: transactions, loading: transactionsLoading } = useCollection<CreditTransaction>(transactionsQuery);
 
-    const loading = agentsLoading || textsLoading || filesLoading || chatLoading || emailLoading || leadsLoading;
+    const loading = agentsLoading || textsLoading || filesLoading || chatLoading || emailLoading || leadsLoading || transactionsLoading;
     const planId = userProfile?.planId || 'free';
     const planDetails = PLAN_DETAILS[planId];
     
@@ -176,19 +165,41 @@ export function BillingSettings() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {invoices.map((invoice, index) => (
-                            <TableRow key={index}>
-                                <TableCell className="font-medium">{invoice.date}</TableCell>
-                                <TableCell>{invoice.description}</TableCell>
-                                <TableCell className="text-right">{invoice.amount}</TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="outline" size="sm">
-                                        <Download className="h-4 w-4 mr-2" />
-                                        Download
-                                    </Button>
+                        {transactionsLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">
+                                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : !transactions || transactions.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">
+                                    No transactions found.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            transactions.map((tx) => (
+                                <TableRow key={tx.id}>
+                                    <TableCell className="font-medium">
+                                        {tx.timestamp ? format((tx.timestamp as Timestamp).toDate(), 'MMM d, yyyy') : 'N/A'}
+                                    </TableCell>
+                                    <TableCell>{tx.description}</TableCell>
+                                    <TableCell className={cn("text-right font-semibold", 
+                                        tx.type === 'purchase' ? 'text-green-600' : 'text-red-600'
+                                    )}>
+                                        {tx.type === 'purchase' ? `+${tx.amount.toLocaleString()}` : tx.amount.toLocaleString()}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {tx.type === 'purchase' && (
+                                            <Button variant="outline" size="sm">
+                                                <Download className="h-4 w-4 mr-2" />
+                                                Download
+                                            </Button>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </Card>
