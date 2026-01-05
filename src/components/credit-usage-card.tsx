@@ -29,7 +29,10 @@ export function CreditUsageCard() {
   // the total should reflect their actual current balance.
   const totalCredits = Math.max(planCredits, currentCredits);
   
-  const percentage = totalCredits > 0 ? (currentCredits / totalCredits) * 100 : 0;
+  // Calculate used credits based on the effective total.
+  const usedCredits = Math.max(0, totalCredits - currentCredits);
+
+  const percentage = totalCredits > 0 ? (usedCredits / totalCredits) * 100 : 0;
   
   const resetDate = userProfile?.creditResetDate ? (userProfile.creditResetDate as Timestamp).toDate() : null;
   const formattedResetDate = resetDate ? format(resetDate, "MMM d") : 'N/A';
@@ -53,9 +56,9 @@ export function CreditUsageCard() {
     <Card>
       <CardHeader className="p-2">
         <div className="flex items-center justify-between text-sm">
-          <CardTitle className="text-sm font-medium">Credits</CardTitle>
+          <CardTitle className="text-sm font-medium">Credits Used</CardTitle>
           <p className="text-muted-foreground">
-            {currentCredits.toLocaleString()}/{totalCredits.toLocaleString()}
+            {usedCredits.toLocaleString()}/{totalCredits.toLocaleString()}
           </p>
         </div>
         <Progress value={percentage} className="h-1" />
