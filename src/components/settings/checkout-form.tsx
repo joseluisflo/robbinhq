@@ -84,6 +84,7 @@ export function CheckoutForm({ onGoBack, plan, setPaymentStatus, setStep }: Chec
             {message && <div id="payment-message" className="text-red-500 text-sm">{message}</div>}
         </form>
       </DialogBody>
+      
       <DialogFooter className="flex-col items-stretch !space-x-0">
          <div className="flex justify-between items-center gap-4">
             <Button className="w-1/2" type="button" variant="ghost" onClick={onGoBack} disabled={isLoading}>
@@ -93,10 +94,10 @@ export function CheckoutForm({ onGoBack, plan, setPaymentStatus, setStep }: Chec
                 {isLoading ? <Loader2 className="animate-spin" /> : `Pay ${priceString}`}
             </Button>
         </div>
-        <p className="text-center text-muted-foreground text-xs px-6 mt-4">
-            Payments are non-refundable. Cancel anytime.
-        </p>
       </DialogFooter>
+      <p className="text-center text-muted-foreground text-xs px-6 pb-6">
+        Payments are non-refundable. Cancel anytime.
+      </p>
     </>
   );
 }
