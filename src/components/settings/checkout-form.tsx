@@ -79,17 +79,17 @@ export function CheckoutForm({ onGoBack, plan, setPaymentStatus, setStep }: Chec
       </DialogHeader>
 
       <DialogBody>
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form id="payment-form" onSubmit={handleSubmit} className="space-y-5">
             <PaymentElement id="payment-element" />
             {message && <div id="payment-message" className="text-red-500 text-sm">{message}</div>}
         </form>
       </DialogBody>
-      <DialogFooter className="flex-col !space-y-2">
+      <DialogFooter className="flex-col !space-y-4 !space-x-0">
          <div className="grid grid-cols-2 gap-2 w-full">
             <Button className="w-full" type="button" variant="ghost" onClick={onGoBack} disabled={isLoading}>
                 Go Back
             </Button>
-            <Button form="payment-element" className="w-full" type="submit" disabled={isLoading || !stripe || !elements}>
+            <Button form="payment-form" className="w-full" type="submit" disabled={isLoading || !stripe || !elements}>
                 {isLoading ? <Loader2 className="animate-spin" /> : `Pay ${priceString}`}
             </Button>
         </div>
