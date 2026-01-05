@@ -3,6 +3,7 @@
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
 
 const PLAN_CREDITS = {
@@ -123,9 +124,9 @@ export async function addCredits(
     const userRef = firestore.collection('users').doc(userId);
 
     try {
-        await userRef.set({
-            credits: amount
-        }, { merge: true });
+        await userRef.update({
+            credits: FieldValue.increment(amount)
+        });
         return { success: true };
     } catch (error: any) {
          console.error(`Failed to add ${amount} credits for user ${userId}:`, error);
