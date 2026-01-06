@@ -218,6 +218,9 @@ export type EmailMessage = {
   timestamp: any;
 };
 
+export type CombinedMessage = ChatMessage | EmailMessage;
+
+
 export type InteractionLog = {
     id?: string;
     title: string;
@@ -225,6 +228,7 @@ export type InteractionLog = {
     status: 'success' | 'error' | 'in-progress';
     timestamp: any;
     steps?: LogStep[];
+    metadata?: Record<string, any>;
 };
 
 export type LogStep = {

@@ -381,11 +381,11 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         workflowId: selectedWorkflowId,
         runId,
         userInput: message,
+        logRef,
       });
 
       if ('error' in workflowResult) {
         await saveMessage(firestore, messagesPath, { sender: 'agent', text: workflowResult.error });
-        await addLogStep(logRef, `Workflow Error: ${workflowResult.error}`);
         await logRef.update({ status: 'error' });
         return { error: `Workflow error: ${workflowResult.error}` };
       }
@@ -419,7 +419,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         return { error: "Oops! It seems I'm having a little trouble on my end. Please try again in a moment." };
       }
       
-      await addLogStep(logRef, "Searching knowledge base for answer (cost: 1 credit).");
+      await addLogStep(logRef, "Answering with standard chat (cost: 1 credit).");
 
       const textsSnapshot = await agentRef.collection('texts').get();
       const filesSnapshot = await agentRef.collection('files').get();

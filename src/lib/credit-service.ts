@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { firebaseAdmin } from '@/firebase/admin';
@@ -124,12 +125,18 @@ export async function deductCredits(
   amount: number,
   description: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!userId || !amount || amount <= 0) {
+  if (!userId || amount < 0) { // Allow deducting 0 credits
     return { success: false, error: 'Invalid user ID or amount.' };
   }
    if (!description) {
     return { success: false, error: 'Transaction description is required.' };
   }
+  
+  // If amount is 0, we can just return success without a transaction.
+  if (amount === 0) {
+      return { success: true };
+  }
+
 
   const firestore = firebaseAdmin.firestore();
   const userRef = firestore.collection('users').doc(userId);

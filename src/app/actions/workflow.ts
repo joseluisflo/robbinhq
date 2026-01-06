@@ -13,7 +13,7 @@ import {
 } from '@/app/workflows/agent-steps';
 import type { Workflow, WorkflowRun, WorkflowBlock } from '@/lib/types';
 import { firebaseAdmin } from '@/firebase/admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue }from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { deductCredits } from '@/lib/credit-service';
 
@@ -26,6 +26,7 @@ interface RunWorkflowParams {
   workflowId: string;
   runId: string | null;
   userInput: any;
+  logRef: FirebaseFirestore.DocumentReference;
 }
 
 
@@ -83,6 +84,15 @@ function processParams(params: Record<string, any>, context: Record<string, any>
     return processedParams;
 }
 
+// Helper to add log steps
+async function addLogStep(logRef: FirebaseFirestore.DocumentReference, description: string, metadata: Record<string, any> = {}) {
+    await logRef.collection('steps').add({
+        description,
+        timestamp: FieldValue.serverTimestamp(),
+        metadata,
+    });
+}
+
 
 /**
  * Runs a new workflow or resumes a paused one.
@@ -92,7 +102,7 @@ function processParams(params: Record<string, any>, context: Record<string, any>
 export async function runOrResumeWorkflow(
   params: RunWorkflowParams
 ): Promise<Partial<WorkflowRun> | { error: string }> {
-  const { userId, agentId, workflowId, runId, userInput } = params;
+  const { userId, agentId, workflowId, runId, userInput, logRef } = params;
   const firestore = firebaseAdmin.firestore();
 
   let run: WorkflowRun;
@@ -121,6 +131,7 @@ export async function runOrResumeWorkflow(
     if (run.status === 'awaiting_input' && run.currentStepIndex > 0) {
         const previousBlockId = blocks[run.currentStepIndex - 1].id;
         run.context[previousBlockId] = { ...run.context[previousBlockId], answer: userInput };
+        await addLogStep(logRef, `Resuming workflow with user input: "${userInput}"`);
     } else {
         run.context.userInput = userInput; // Initial input
     }
@@ -145,11 +156,13 @@ export async function runOrResumeWorkflow(
     if (!currentBlock) {
       run.status = 'failed';
       run.context.error = 'Invalid step index.';
+      await addLogStep(logRef, `Workflow failed: Invalid step index.`, { error: true });
       break;
     }
     
     // If the block is a Trigger, just skip to the next one.
     if (currentBlock.type === 'Trigger') {
+      await addLogStep(logRef, `Executing: Trigger`, { blockId: currentBlock.id, blockType: currentBlock.type, params: currentBlock.params });
       run.currentStepIndex++;
       continue;
     }
@@ -160,17 +173,22 @@ export async function runOrResumeWorkflow(
         const creditResult = await deductCredits(userId, cost, `Workflow Step: ${currentBlock.type}`);
         if (!creditResult.success) {
             run.status = 'failed';
-            run.context.error = `Credit deduction failed: ${creditResult.error || 'Insufficient credits.'}`;
+            const errorMsg = `Credit deduction failed: ${creditResult.error || 'Insufficient credits.'}`;
+            run.context.error = errorMsg;
+            await addLogStep(logRef, `Workflow failed: ${errorMsg}`, { error: true, cost });
             break; // Exit loop if credits can't be deducted
         }
     }
+    await addLogStep(logRef, `Executing: ${currentBlock.type}`, { blockId: currentBlock.id, blockType: currentBlock.type, cost });
     // --- END CREDIT DEDUCTION ---
 
 
     const stepFunction = stepRegistry.get(currentBlock.type);
     if (!stepFunction) {
       run.status = 'failed';
-      run.context.error = `Unknown step type: ${currentBlock.type}`;
+      const errorMsg = `Unknown step type: ${currentBlock.type}`;
+      run.context.error = errorMsg;
+      await addLogStep(logRef, `Workflow failed: ${errorMsg}`, { error: true });
       break;
     }
 
@@ -190,19 +208,23 @@ export async function runOrResumeWorkflow(
                 delete run.context.options;
             }
 
+            await addLogStep(logRef, `Workflow paused. Prompting user: "${run.promptForUser}"`, { result: stepResult });
             // IMPORTANT: Increment step index BEFORE pausing, so we resume at the next step.
             run.currentStepIndex++;
             break; // Exit the loop to wait for user input
         } else {
             // Continue execution: Store step result and move to the next step
             run.context[currentBlock.id] = stepResult;
+            await addLogStep(logRef, `Step completed. Result stored.`, { result: stepResult });
             run.currentStepIndex++;
         }
 
     } catch (e: any) {
         console.error(`Error executing step ${run.currentStepIndex}:`, e);
         run.status = 'failed';
-        run.context.error = e.message || 'An unknown error occurred during step execution.';
+        const errorMsg = e.message || 'An unknown error occurred during step execution.';
+        run.context.error = errorMsg;
+        await addLogStep(logRef, `Workflow failed: ${errorMsg}`, { error: true, stack: e.stack });
         break;
     }
   }
@@ -222,6 +244,7 @@ export async function runOrResumeWorkflow(
       } else {
           run.context.finalResult = "Workflow finished.";
       }
+      await addLogStep(logRef, `Workflow completed successfully. Final result: "${run.context.finalResult}"`);
   }
 
   // 4. Persist the final state of the run to Firestore
