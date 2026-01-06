@@ -121,7 +121,7 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
 
       const systemInstruction = `
 You are a voice AI. Your goal is to be as responsive as possible. Your first response to a user MUST be an immediate, short acknowledgment like "Of course, let me check that" or "Sure, one moment". Then, you will provide the full answer.
-This is a real-time conversation. Keep all your answers concise and to the point. Prioritize speed. Do not use filler phrases.
+This is a real-time conversation. Keep all your answers concise and to the point. Do not use filler phrases.
 ${agent.inCallWelcomeMessage ? `Your very first response in this conversation must be: "${agent.inCallWelcomeMessage}"` : ''}
 
 Your instructions and persona are defined below.
@@ -178,6 +178,12 @@ ${knowledge}
             }
 
             streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            if (!inputAudioContextRef.current || !streamRef.current) {
+              console.error("Audio context or media stream is not available.");
+              return;
+            }
+
             const source = inputAudioContextRef.current.createMediaStreamSource(streamRef.current);
             workletNodeRef.current = new AudioWorkletNode(inputAudioContextRef.current, 'audio-recorder-processor');
 
