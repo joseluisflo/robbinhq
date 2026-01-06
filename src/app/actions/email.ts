@@ -209,8 +209,8 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     messages.push(newUserMessage);
     console.log(`[ACTION] 📚 Total messages in conversation: ${messages.length}`);
 
-    console.log(`[ACTION] 💰 Attempting to deduct 1 credit from user ${ownerId}.`);
-    const creditResult = await deductCredits(ownerId, 1, 'Email Response');
+    console.log(`[ACTION] 💰 Attempting to deduct 2 credits from user ${ownerId}.`);
+    const creditResult = await deductCredits(ownerId, 2, 'Email Response');
     
     if (!creditResult.success) {
       console.error(`[ACTION] ❌ Credit deduction failed: ${creditResult.error}`);

@@ -206,10 +206,10 @@ export class CallHandler {
     };
     
     // Deduct initial credit for the first minute
-    deductAndCheck(2);
+    deductAndCheck(10);
 
     this.minuteInterval = setInterval(() => {
-        deductAndCheck(2);
+        deductAndCheck(10);
     }, 60000);
   }
 
