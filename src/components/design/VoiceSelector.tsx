@@ -24,7 +24,7 @@ export function VoiceSelector({ selectedValue, onValueChange }: VoiceSelectorPro
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          className="w-full justify-between rounded-lg shadow-sm"
         >
           {selectedValue ? availableVoices.find((v) => v.name === selectedValue)?.name : 'Select a voice...'}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
