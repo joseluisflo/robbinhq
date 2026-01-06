@@ -64,7 +64,7 @@
     iframe.style.zIndex = '9999';
     
     // FIX: Permisos necesarios para micrófono y autoplay
-    iframe.allow = "microphone *; autoplay *";
+    iframe.allow = "microphone; camera; autoplay";
     
     widgetContainer.appendChild(iframe);
 
