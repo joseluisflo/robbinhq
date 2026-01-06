@@ -90,7 +90,7 @@ export function CreateWorkflowDialog({ children }: { children: React.ReactNode }
             />
           </div>
         )}
-        <div className="space-y-6 px-6 pt-3 pb-6">
+        <div className="space-y-6 p-6">
           <DialogHeader>
             <DialogTitle>Name your workflow</DialogTitle>
             <DialogDescription>
