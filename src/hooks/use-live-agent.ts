@@ -52,30 +52,38 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
   const { toast } = useToast();
 
   const cleanup = useCallback(() => {
-    console.log("Running cleanup...");
+    console.log("[useLiveAgent] Running cleanup...");
     isAgentSpeakingRef.current = false;
     playingSourcesRef.current.forEach(source => source.stop());
     playingSourcesRef.current.clear();
     
     if (workletNodeRef.current) {
+        console.log("[useLiveAgent] Disconnecting worklet node.");
         workletNodeRef.current.port.close();
         workletNodeRef.current.disconnect();
         workletNodeRef.current = null;
     }
     if (streamRef.current) {
+        console.log("[useLiveAgent] Stopping media stream tracks.");
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
     }
     if (inputAudioContextRef.current && inputAudioContextRef.current.state !== 'closed') {
+        console.log("[useLiveAgent] Closing input audio context.");
         inputAudioContextRef.current.close().catch(console.error);
         inputAudioContextRef.current = null;
     }
      if (outputAudioContextRef.current && outputAudioContextRef.current.state !== 'closed') {
+      console.log("[useLiveAgent] Closing output audio context.");
       outputAudioContextRef.current.close().catch(console.error);
       outputAudioContextRef.current = null;
     }
     
-    sessionRef.current = null;
+    if (sessionRef.current) {
+        console.log("[useLiveAgent] Closing AI session.");
+        sessionRef.current = null;
+    }
+
     setConnectionState('idle');
     setCurrentInput('');
     setCurrentOutput('');
@@ -83,19 +91,23 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
     currentInputRef.current = '';
     currentOutputRef.current = '';
     setLiveTranscripts([]);
+    console.log("[useLiveAgent] Cleanup complete.");
   }, []);
 
   const toggleCall = useCallback(async (agent: Agent & { textSources?: TextSource[], fileSources?: AgentFile[] }) => {
     if (connectionState === 'connected') {
+      console.log("[useLiveAgent] ToggleCall: Closing connection.");
       setConnectionState('closing');
       sessionRef.current?.close(); 
       return;
     }
 
     if (connectionState === 'connecting' || connectionState === 'closing') {
+      console.log(`[useLiveAgent] ToggleCall: Call in progress (state: ${connectionState}). Aborting.`);
       return;
     }
 
+    console.log("[useLiveAgent] ToggleCall: Starting new call.");
     setConnectionState('connecting');
     setLiveTranscripts([]);
     setCurrentInput('');
@@ -120,11 +132,14 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
     try {
       const ai = new GoogleGenAI({ apiKey });
 
+      console.log("[useLiveAgent] Initializing output audio context...");
       if (!outputAudioContextRef.current || outputAudioContextRef.current.state === 'closed') {
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
         outputAudioContextRef.current = new AudioContext({ sampleRate: 24000, latencyHint: 'interactive' });
       }
       nextStartTimeRef.current = 0;
+      console.log("[useLiveAgent] Output audio context ready.");
+
 
       const knowledge = [
         ...(agent.textSources || []).map(t => `Title: ${t.title}\\nContent: ${t.content}`),
@@ -148,6 +163,7 @@ ${knowledge}
 ---
       `;
 
+      console.log("[useLiveAgent] Connecting to Google AI Live session...");
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         config: {
@@ -161,44 +177,61 @@ ${knowledge}
         },
         callbacks: {
           onopen: async () => {
+            console.log("[useLiveAgent] AI session opened. Starting audio setup.");
             setConnectionState('connected');
             setLiveTranscripts(prev => [...prev, { id: Date.now().toString(), sender: 'system', text: 'Connection established.', timestamp: new Date().toISOString() }]);
 
             const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
             
+            console.log("[useLiveAgent] Initializing input audio context...");
             if (!inputAudioContextRef.current || inputAudioContextRef.current.state === 'closed') {
               inputAudioContextRef.current = new AudioContext({ sampleRate: 16000, latencyHint: 'interactive' });
             }
             
             await inputAudioContextRef.current.resume();
+            console.log(`[useLiveAgent] Input audio context state: ${inputAudioContextRef.current.state}`);
 
-            if (!inputAudioContextRef.current || inputAudioContextRef.current.state === 'closed') {
-                console.error("AudioContext could not be created or resumed.");
-                toast({ title: 'Audio Error', description: 'Could not initialize audio context.', variant: 'destructive' });
-                cleanup();
+
+            if (!inputAudioContextRef.current || inputAudioContextRef.current.state !== 'running') {
+                console.error("[useLiveAgent] AudioContext could not be created or resumed.");
+                toast({ title: 'Audio Error', description: 'Could not initialize audio context. Please check browser permissions.', variant: 'destructive' });
+                cleanup(); // This will set state to idle
                 return;
             }
 
             try {
+              console.log("[useLiveAgent] Loading audio worklet module...");
               const audioProcessorBlob = new Blob([audioProcessorCode], { type: 'application/javascript' });
               const audioProcessorUrl = URL.createObjectURL(audioProcessorBlob);
               await inputAudioContextRef.current.audioWorklet.addModule(audioProcessorUrl);
               URL.revokeObjectURL(audioProcessorUrl);
+              console.log("[useLiveAgent] Audio worklet module loaded.");
             } catch (e) {
-              console.error('Error loading audio worklet module:', e);
+              console.error('[useLiveAgent] Error loading audio worklet module:', e);
               toast({ title: 'Audio Error', description: 'Failed to load audio processor.', variant: 'destructive' });
-              setConnectionState('error');
               cleanup();
               return;
             }
 
-            streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+            try {
+                console.log("[useLiveAgent] Requesting microphone access...");
+                streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+                console.log("[useLiveAgent] Microphone access granted.");
+            } catch (e) {
+                console.error('[useLiveAgent] Microphone access denied:', e);
+                toast({ title: 'Microphone Access Denied', description: 'Please allow microphone access in your browser settings to use voice calls.', variant: 'destructive' });
+                cleanup();
+                return;
+            }
             
             if (!inputAudioContextRef.current || !streamRef.current) {
-              console.error("Audio context or media stream is not available.");
+              console.error("[useLiveAgent] Audio context or media stream is not available after setup.");
+              toast({ title: 'Setup Error', description: 'Audio components became unavailable during setup.', variant: 'destructive' });
+              cleanup();
               return;
             }
 
+            console.log("[useLiveAgent] Creating media stream source and worklet node...");
             const source = inputAudioContextRef.current.createMediaStreamSource(streamRef.current);
             workletNodeRef.current = new AudioWorkletNode(inputAudioContextRef.current, 'audio-recorder-processor');
 
@@ -212,9 +245,11 @@ ${knowledge}
 
             source.connect(workletNodeRef.current);
             workletNodeRef.current.connect(inputAudioContextRef.current.destination);
+            console.log("[useLiveAgent] Audio pipeline connected.");
 
             // Programmatically start the conversation
             sessionRef.current?.sendRealtimeInput({ text: "start" });
+            console.log("[useLiveAgent] 'start' signal sent to AI.");
           },
           onmessage: async (message: LiveServerMessage) => {
             if (message.serverContent?.inputTranscription) {
@@ -285,12 +320,12 @@ ${knowledge}
             }
           },
           onerror: (e) => {
-            console.error('API Error:', e);
+            console.error('[useLiveAgent] API Error:', e);
             toast({ title: 'Connection Error', description: 'An error occurred with the AI service.', variant: 'destructive' });
-            setConnectionState('error');
             cleanup();
           },
           onclose: () => {
+            console.log('[useLiveAgent] AI session closed by server.');
             cleanup();
             toast({ title: 'Call Ended'});
           },
@@ -298,9 +333,8 @@ ${knowledge}
       });
       sessionRef.current = await sessionPromise as LiveSession;
     } catch (error: any) {
-      console.error("Failed to start call:", error);
+      console.error("[useLiveAgent] Failed to start call:", error);
       toast({ title: 'Failed to start call', description: error.message || 'Check permissions and API key.', variant: 'destructive' });
-      setConnectionState('error');
       cleanup();
     }
   }, [connectionState, cleanup, toast, setMessages]);
