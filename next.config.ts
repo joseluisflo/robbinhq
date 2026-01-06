@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
           },
+          {
+            key: 'Permissions-Policy',
+            value: 'microphone=*',
+          }
         ],
       },
     ];
