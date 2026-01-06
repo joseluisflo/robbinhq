@@ -68,47 +68,49 @@ export function useChatManager({ agent }: UseChatManagerProps) {
         runId: currentWorkflowRunId,
         sessionId: sessionId,
       });
-
+      
+      let agentMessage: Message | null = null;
+      
       if ('error' in result) {
-         const agentMessage: Message = {
+         agentMessage = {
             id: (Date.now() + 1).toString(),
             sender: 'agent',
             text: result.error,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           };
-          setMessages(prev => [...prev, agentMessage]);
           setCurrentWorkflowRunId(null);
       } else if (result.type === 'workflow') {
         setCurrentWorkflowRunId(result.runId);
         if (result.status === 'awaiting_input' && result.promptForUser) {
-          const agentMessage: Message = {
+          agentMessage = {
             id: (Date.now() + 1).toString(),
             sender: 'agent',
             text: result.promptForUser,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             options: result.options,
           };
-          setMessages(prev => [...prev, agentMessage]);
         } else if (result.status === 'completed') {
           const finalResult = result.finalResult || "Workflow completed.";
-          const agentMessage: Message = {
+          agentMessage = {
             id: (Date.now() + 1).toString(),
             sender: 'agent',
             text: finalResult,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           };
-          setMessages(prev => [...prev, agentMessage]);
           setCurrentWorkflowRunId(null);
         }
       } else if (result.type === 'chat') {
-         const agentMessage: Message = {
+         agentMessage = {
             id: (Date.now() + 1).toString(),
             sender: 'agent',
             text: result.response,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           };
-          setMessages(prev => [...prev, agentMessage]);
           setCurrentWorkflowRunId(null);
+      }
+      
+      if (agentMessage) {
+        setMessages(prev => [...prev, agentMessage!]);
       }
     });
   };
