@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -5,6 +6,7 @@ import { GoogleGenAI, LiveServerMessage, Modality } from "@google/genai";
 import type { Agent, Message, ConnectionState, TextSource, AgentFile } from '@/lib/types';
 import { decode, decodeAudioData, createBlob } from '@/lib/audioUtils';
 import { useToast } from './use-toast';
+import { getGeminiApiKey } from '@/app/actions/genai';
 
 // The LiveSession type is not officially exported, so we define a minimal
 // interface based on its usage to satisfy TypeScript.
@@ -102,16 +104,17 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
     currentInputRef.current = '';
     currentOutputRef.current = '';
     
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) {
+    const apiKeyResult = await getGeminiApiKey();
+    if (apiKeyResult.error || !apiKeyResult.apiKey) {
       toast({
         title: 'Configuration Error',
-        description: 'Gemini API key is not configured for voice calls.',
+        description: apiKeyResult.error || 'Gemini API key is not configured for voice calls.',
         variant: 'destructive',
       });
       setConnectionState('error');
       return;
     }
+    const apiKey = apiKeyResult.apiKey;
 
 
     try {
@@ -124,9 +127,9 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
       nextStartTimeRef.current = 0;
 
       const knowledge = [
-        ...(agent.textSources || []).map(t => `Title: ${t.title}\nContent: ${t.content}`),
-        ...(agent.fileSources || []).map(f => `File: ${f.name}\nContent: ${f.extractedText || ''}`)
-      ].join('\n\n---\n\n');
+        ...(agent.textSources || []).map(t => `Title: ${t.title}\\nContent: ${t.content}`),
+        ...(agent.fileSources || []).map(f => `File: ${f.name}\\nContent: ${f.extractedText || ''}`)
+      ].join('\\n\\n---\\n\\n');
 
       const systemInstruction = `
 You are a voice AI. Your goal is to be as responsive as possible. Your first response to a user MUST be an immediate, short acknowledgment like "Of course, let me check that" or "Sure, one moment". Then, you will provide the full answer.
@@ -304,5 +307,3 @@ ${knowledge}
 
   return { connectionState, toggleCall, liveTranscripts, isThinking, currentInput, currentOutput };
 }
-
-    
