@@ -1,4 +1,3 @@
-
 (function() {
     const scriptTag = document.currentScript;
     const userId = scriptTag.getAttribute('data-user-id');
@@ -9,7 +8,8 @@
         return;
     }
 
-    const iframeSrc = `${window.location.origin}/widget/${userId}/${agentId}`;
+    // FIX: URL absoluta a tu dominio
+    const iframeSrc = `https://tryrobbin.com/widget/${userId}/${agentId}`;
     let isWidgetOpen = false;
 
     // Create a container for the widget elements
@@ -62,7 +62,9 @@
     iframe.style.transform = 'translateY(20px)';
     iframe.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
     iframe.style.zIndex = '9999';
-    iframe.allow = "microphone *; autoplay *"; // CRITICAL FIX
+    
+    // FIX: Permisos necesarios para micrófono y autoplay
+    iframe.allow = "microphone *; autoplay *";
     
     widgetContainer.appendChild(iframe);
 
@@ -90,8 +92,8 @@
 
     // --- Communication with Iframe ---
     window.addEventListener('message', (event) => {
-        // Optional: Add origin check for security
-        // if (event.origin !== window.location.origin) return;
+        // FIX: Verificar que el mensaje viene de tu dominio para seguridad
+        if (event.origin !== 'https://tryrobbin.com') return;
         
         if (event.data?.type === 'AV_WIDGET_CLOSE') {
             if (isWidgetOpen) {
@@ -105,4 +107,3 @@
     });
 
 })();
-
