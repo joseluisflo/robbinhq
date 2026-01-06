@@ -29,6 +29,13 @@ interface InCallDesignSettingsProps {
     handleOrbColorChange: (colorKey: keyof OrbColors, value: string) => void;
 }
 
+const availableVoices = [
+  "Echo", "Calamity", "Zephyr", "Puck", "Kore", "Fenrir", "Nyx",
+  "Charon", "Calypso", "Jinx", "Oberon", "Rhea", "Alphekka", "Elnath",
+  "Deneb", "Algenib", "Enif", "Capella", "Sirius", "Canopus", "Rigel",
+  "Vega", "Arcturus", "Achernar", "Hadar", "Spica", "Antares"
+];
+
 export function InCallDesignSettings({
     agentVoice,
     setAgentVoice,
@@ -56,11 +63,9 @@ export function InCallDesignSettings({
                                 <SelectValue placeholder="Select a voice" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Zephyr">Zephyr</SelectItem>
-                                <SelectItem value="Puck">Puck</SelectItem>
-                                <SelectItem value="Charon">Charon</SelectItem>
-                                <SelectItem value="Kore">Kore</SelectItem>
-                                <SelectItem value="Fenrir">Fenrir</SelectItem>
+                                {availableVoices.map(voice => (
+                                    <SelectItem key={voice} value={voice}>{voice}</SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
