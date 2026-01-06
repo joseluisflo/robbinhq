@@ -1,6 +1,6 @@
 'use client';
 
-import type { Agent, AgentFile, TextSource } from '@/lib/types';
+import type { Agent, AgentFile, TextSource, ConnectionState } from '@/lib/types';
 import { useLiveAgent } from '@/hooks/use-live-agent';
 import { useChatManager } from '@/hooks/use-chat-manager';
 
@@ -25,6 +25,7 @@ export function ChatWidgetPreview({
   mode: initialMode = 'chat',
 }: ChatWidgetPreviewProps) {
   const [currentMode, setCurrentMode] = useState<'chat' | 'in-call'>(initialMode);
+  const [mockConnectionState, setMockConnectionState] = useState<ConnectionState>('connected');
   
   const { 
     messages, 
@@ -40,9 +41,6 @@ export function ChatWidgetPreview({
   } = useChatManager({ agent });
   
   const { 
-    connectionState, 
-    toggleCall, 
-    liveTranscripts, 
     isThinking, 
     currentInput, 
     currentOutput 
@@ -53,17 +51,6 @@ export function ChatWidgetPreview({
       setCurrentMode(initialMode);
     }
   }, [initialMode]);
-
-  const isCallActive = connectionState !== 'idle' && connectionState !== 'error';
-
-  useEffect(() => {
-    if (isCallActive) {
-      setCurrentMode('in-call');
-    } else {
-      // When the call ends (goes back to 'idle' or 'error'), switch back to chat mode
-      setCurrentMode('chat');
-    }
-  }, [isCallActive]);
 
 
   if (!agent) {
@@ -83,8 +70,13 @@ export function ChatWidgetPreview({
   const orbColors = agent.orbColors;
 
   const handleToggleCall = () => {
-    if (agent) {
-      toggleCall(agent as Agent);
+    // In preview mode, just toggle the UI without making a real call
+    if (currentMode === 'chat') {
+        setCurrentMode('in-call');
+        setMockConnectionState('connected');
+    } else {
+        setCurrentMode('chat');
+        setMockConnectionState('idle');
     }
   };
 
@@ -104,16 +96,16 @@ export function ChatWidgetPreview({
           logoUrl={logoUrl}
         />
 
-        {currentMode === 'chat' && (
+        {currentMode === 'chat' ? (
           <div className="flex-1 flex flex-col bg-background overflow-hidden">
             <ChatMessages 
                 messages={messages}
-                liveTranscripts={liveTranscripts}
+                liveTranscripts={[]}
                 isResponding={isResponding}
                 isThinking={isThinking}
                 currentInput={currentInput}
                 currentOutput={currentOutput}
-                isCallActive={isCallActive}
+                isCallActive={false}
                 agentName={agentName}
                 isFeedbackEnabled={isFeedbackEnabled}
                 themeColor={themeColor}
@@ -127,7 +119,7 @@ export function ChatWidgetPreview({
                 setPrompt={setPrompt}
                 handleSendMessage={handleSendMessage}
                 isResponding={isResponding}
-                isCallActive={isCallActive}
+                isCallActive={false}
                 placeholder={chatInputPlaceholder}
                 themeColor={themeColor}
                 conversationStarters={conversationStarters}
@@ -135,11 +127,9 @@ export function ChatWidgetPreview({
                 isBrandingEnabled={isBrandingEnabled}
             />
           </div>
-        )}
-
-        {currentMode === 'in-call' && (
+        ) : (
           <InCallView
-            connectionState={connectionState}
+            connectionState={mockConnectionState}
             toggleCall={handleToggleCall}
             orbColors={orbColors}
           />
