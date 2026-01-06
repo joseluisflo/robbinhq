@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Agent, AgentFile, TextSource } from '@/lib/types';
@@ -11,6 +10,7 @@ import { ChatInput } from './chat/ChatInput';
 import { InCallView } from './chat/InCallView';
 import { Button } from './ui/button';
 import { Chat02Icon } from './lo-icons';
+import { useEffect, useState } from 'react';
 
 interface ChatWidgetPreviewProps {
   agent: (Partial<Agent> & {
@@ -22,8 +22,10 @@ interface ChatWidgetPreviewProps {
 
 export function ChatWidgetPreview({
   agent,
-  mode = 'chat',
+  mode: initialMode = 'chat',
 }: ChatWidgetPreviewProps) {
+  const [currentMode, setCurrentMode] = useState<'chat' | 'in-call'>(initialMode);
+  
   const { 
     messages, 
     setMessages,
@@ -46,6 +48,24 @@ export function ChatWidgetPreview({
     currentOutput 
   } = useLiveAgent(setMessages);
   
+  useEffect(() => {
+    if (initialMode) {
+      setCurrentMode(initialMode);
+    }
+  }, [initialMode]);
+
+  const isCallActive = connectionState !== 'idle' && connectionState !== 'error';
+
+  useEffect(() => {
+    if (isCallActive) {
+      setCurrentMode('in-call');
+    } else {
+      // When the call ends (goes back to 'idle' or 'error'), switch back to chat mode
+      setCurrentMode('chat');
+    }
+  }, [isCallActive]);
+
+
   if (!agent) {
     return null; // Or a loading skeleton
   }
@@ -62,8 +82,6 @@ export function ChatWidgetPreview({
   const isBrandingEnabled = agent.isBrandingEnabled ?? true;
   const orbColors = agent.orbColors;
 
-  const isCallActive = connectionState !== 'idle' && connectionState !== 'error';
-  
   const handleToggleCall = () => {
     if (agent) {
       toggleCall(agent as Agent);
@@ -86,7 +104,7 @@ export function ChatWidgetPreview({
           logoUrl={logoUrl}
         />
 
-        {mode === 'chat' && (
+        {currentMode === 'chat' && (
           <div className="flex-1 flex flex-col bg-background overflow-hidden">
             <ChatMessages 
                 messages={messages}
@@ -119,7 +137,7 @@ export function ChatWidgetPreview({
           </div>
         )}
 
-        {mode === 'in-call' && (
+        {currentMode === 'in-call' && (
           <InCallView
             connectionState={connectionState}
             toggleCall={handleToggleCall}
