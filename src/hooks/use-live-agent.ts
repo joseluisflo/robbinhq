@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -28,15 +27,6 @@ class AudioRecorderProcessor extends AudioWorkletProcessor {
 }
 registerProcessor('audio-recorder-processor', AudioRecorderProcessor);
 `;
-
-async function getAuthToken() {
-    const response = await fetch('/api/genai-token');
-    if (!response.ok) {
-        throw new Error('Failed to fetch authentication token.');
-    }
-    const data = await response.json();
-    return data.token;
-}
 
 
 export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Message[]>>) {
@@ -111,10 +101,21 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
     setIsThinking(false);
     currentInputRef.current = '';
     currentOutputRef.current = '';
+    
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      toast({
+        title: 'Configuration Error',
+        description: 'Gemini API key is not configured for voice calls.',
+        variant: 'destructive',
+      });
+      setConnectionState('error');
+      return;
+    }
+
 
     try {
-      const authToken = await getAuthToken();
-      const ai = new GoogleGenAI({ getAuthToken: async () => authToken });
+      const ai = new GoogleGenAI({ apiKey });
 
       if (!outputAudioContextRef.current || outputAudioContextRef.current.state === 'closed') {
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -161,7 +162,10 @@ ${knowledge}
             setLiveTranscripts(prev => [...prev, { id: Date.now().toString(), sender: 'system', text: 'Connection established.', timestamp: new Date().toISOString() }]);
 
             const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-            inputAudioContextRef.current = new AudioContext({ sampleRate: 16000, latencyHint: 'interactive' });
+            
+            if (!inputAudioContextRef.current || inputAudioContextRef.current.state === 'closed') {
+              inputAudioContextRef.current = new AudioContext({ sampleRate: 16000, latencyHint: 'interactive' });
+            }
             
             await inputAudioContextRef.current.resume();
 
@@ -300,3 +304,5 @@ ${knowledge}
 
   return { connectionState, toggleCall, liveTranscripts, isThinking, currentInput, currentOutput };
 }
+
+    
