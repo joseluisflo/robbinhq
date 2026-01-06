@@ -1,109 +1,107 @@
-(function() {
-    const scriptTag = document.currentScript;
-    const userId = scriptTag.getAttribute('data-user-id');
-    const agentId = scriptTag.getAttribute('data-agent-id');
 
-    if (!userId || !agentId) {
-        console.error("AgentVerse Widget: data-user-id and data-agent-id attributes are required.");
-        return;
-    }
+(function () {
+  const SCRIPT_TAG = document.currentScript;
+  const USER_ID = SCRIPT_TAG.getAttribute('data-user-id');
+  const AGENT_ID = SCRIPT_TAG.getAttribute('data-agent-id');
+  const APP_URL = SCRIPT_TAG.src.replace('/widget.js', '');
 
-    // FIX: URL absoluta a tu dominio
-    const iframeSrc = `https://tryrobbin.com/widget/${userId}/${agentId}`;
-    let isWidgetOpen = false;
-
-    // Create a container for the widget elements
-    const widgetContainer = document.createElement('div');
-    widgetContainer.id = 'agentverse-widget-container';
-    document.body.appendChild(widgetContainer);
-
-    // --- Create Bubble ---
-    const bubble = document.createElement('button');
-    bubble.id = 'agentverse-bubble';
-    bubble.style.position = 'fixed';
-    bubble.style.bottom = '20px';
-    bubble.style.right = '20px';
-    bubble.style.width = '60px';
-    bubble.style.height = '60px';
-    bubble.style.borderRadius = '50%';
-    bubble.style.backgroundColor = '#16a34a'; // Default color, will be fetched from agent config
-    bubble.style.border = 'none';
-    bubble.style.cursor = 'pointer';
-    bubble.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)';
-    bubble.style.display = 'flex';
-    bubble.style.alignItems = 'center';
-    bubble.style.justifyContent = 'center';
-    bubble.style.transition = 'transform 0.2s ease-out, opacity 0.3s';
-    bubble.style.zIndex = '9998';
-
-    // SVG Icon for the bubble
-    const bubbleIconSVG = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
-    `;
-    bubble.innerHTML = bubbleIconSVG;
-    widgetContainer.appendChild(bubble);
-
-    // --- Create Iframe ---
-    const iframe = document.createElement('iframe');
-    iframe.id = 'agentverse-widget-iframe';
-    iframe.src = iframeSrc;
-    iframe.style.position = 'fixed';
-    iframe.style.bottom = '100px';
-    iframe.style.right = '20px';
-    iframe.style.width = '400px';
-    iframe.style.height = '650px';
-    iframe.style.border = 'none';
-    iframe.style.borderRadius = '16px';
-    iframe.style.boxShadow = '0 8px 32px rgba(0,0,0,0.2)';
-    iframe.style.display = 'none';
-    iframe.style.opacity = '0';
-    iframe.style.transform = 'translateY(20px)';
-    iframe.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
-    iframe.style.zIndex = '9999';
-    
-    // FIX: Permisos necesarios para micrófono y autoplay
-    iframe.allow = "microphone; camera; autoplay";
-    
-    widgetContainer.appendChild(iframe);
-
-    // --- Toggle Functionality ---
-    function toggleWidget() {
-        isWidgetOpen = !isWidgetOpen;
-        if (isWidgetOpen) {
-            iframe.style.display = 'block';
-            setTimeout(() => {
-                iframe.style.opacity = '1';
-                iframe.style.transform = 'translateY(0)';
-            }, 10); // Short delay to allow display property to apply for transition
-            bubble.style.transform = 'scale(0.9)';
-        } else {
-            iframe.style.opacity = '0';
-            iframe.style.transform = 'translateY(20px)';
-            setTimeout(() => {
-                iframe.style.display = 'none';
-            }, 300); // Wait for transition to finish
-            bubble.style.transform = 'scale(1)';
-        }
-    }
-
-    bubble.addEventListener('click', toggleWidget);
-
-    // --- Communication with Iframe ---
-    window.addEventListener('message', (event) => {
-        // FIX: Verificar que el mensaje viene de tu dominio para seguridad
-        if (event.origin !== 'https://tryrobbin.com') return;
-        
-        if (event.data?.type === 'AV_WIDGET_CLOSE') {
-            if (isWidgetOpen) {
-                toggleWidget();
-            }
-        }
-        
-        if (event.data?.type === 'AV_WIDGET_READY') {
-             // You could fetch agent-specific styles here if needed
-        }
+  if (!USER_ID || !AGENT_ID) {
+    console.error('AgentVerse Widget: User ID or Agent ID is missing.');
+    return;
+  }
+  
+  let sessionId = sessionStorage.getItem('robbin_chat_session_id');
+  if (!sessionId) {
+    sessionId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
     });
+    sessionStorage.setItem('robbin_chat_session_id', sessionId);
+  }
+
+  const IFRAME_SRC = `${APP_URL}/widget/${USER_ID}/${AGENT_ID}?sessionId=${sessionId}`;
+
+  const styles = `
+    .chat-bubble {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background-color: #16a34a;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transition: transform 0.2s ease-in-out;
+        z-index: 9998;
+    }
+    .chat-bubble:hover {
+        transform: scale(1.1);
+    }
+    .chat-bubble-icon {
+        width: 32px;
+        height: 32px;
+        color: white;
+    }
+    .chat-widget-container {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 400px;
+        height: 600px;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        overflow: hidden;
+        display: none;
+        z-index: 9999;
+        transform-origin: bottom right;
+        transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    .chat-widget-container.open {
+        display: block;
+        transform: scale(1);
+        opacity: 1;
+    }
+  `;
+
+  const styleSheet = document.createElement("style");
+  styleSheet.type = "text/css";
+  styleSheet.innerText = styles;
+  document.head.appendChild(styleSheet);
+
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble';
+  bubble.innerHTML = `
+    <svg class="chat-bubble-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" role="img">
+        <path d="M7.5 8.5H16.5M7.5 12.5H13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="M2 10.5C2 9.72921 2.01346 8.97679 2.03909 8.2503C2.12282 5.87683 2.16469 4.69009 3.13007 3.71745C4.09545 2.74481 5.3157 2.6926 7.7562 2.58819C9.09517 2.5309 10.5209 2.5 12 2.5C13.4791 2.5 14.9048 2.5309 16.2438 2.58819C18.6843 2.6926 19.9046 2.74481 20.8699 3.71745C21.8353 4.69009 21.8772 5.87683 21.9609 8.2503C21.9865 8.97679 22 9.72921 22 10.5C22 11.2708 21.9865 12.0232 21.9609 12.7497C21.8772 15.1232 21.8353 16.3099 20.8699 17.2826C19.9046 18.2552 18.6843 18.3074 16.2437 18.4118C15.5098 18.4432 14.7498 18.4667 13.9693 18.4815C13.2282 18.4955 12.8576 18.5026 12.532 18.6266C12.2064 18.7506 11.9325 18.9855 11.3845 19.4553L9.20503 21.3242C9.07273 21.4376 8.90419 21.5 8.72991 21.5C8.32679 21.5 8 21.1732 8 20.7701V18.4219C7.91842 18.4186 7.83715 18.4153 7.75619 18.4118C5.31569 18.3074 4.09545 18.2552 3.13007 17.2825C2.16469 16.3099 2.12282 15.1232 2.03909 12.7497C2.01346 12.0232 2 11.2708 2 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+  `;
+  document.body.appendChild(bubble);
+
+  const iframe = document.createElement('iframe');
+  iframe.src = IFRAME_SRC;
+  iframe.className = 'chat-widget-container';
+  iframe.allow = "microphone *; autoplay *";
+  document.body.appendChild(iframe);
+
+  bubble.addEventListener('click', () => {
+    iframe.classList.toggle('open');
+    if (iframe.classList.contains('open')) {
+        iframe.contentWindow.postMessage({ type: 'AV_WIDGET_OPEN' }, '*');
+    }
+  });
+  
+  window.addEventListener('message', (event) => {
+    if (event.data?.type === 'AV_WIDGET_CLOSE') {
+      iframe.classList.remove('open');
+    }
+  });
 
 })();
