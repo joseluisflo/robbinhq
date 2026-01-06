@@ -32,7 +32,7 @@ export function useDeployChat() {
       setSnippet(script);
     } else {
       const iframeSrc = `${baseUrl}/widget/${user.uid}/${activeAgent.id}`;
-      const iframeTag = `<iframe\n  src="${iframeSrc}"\n  width="400"\n  height="600"\n  style="border:none; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);"\n></iframe>`;
+      const iframeTag = `<iframe\n  src="${iframeSrc}"\n  width="400"\n  height="600"\n  allow="microphone"\n  style="border:none; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);"\n></iframe>`;
       setSnippet(iframeTag);
     }
   }, [baseUrl, activeAgent, user, embedType]);
