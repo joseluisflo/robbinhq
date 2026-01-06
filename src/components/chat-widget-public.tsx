@@ -7,6 +7,7 @@ import { useLiveAgent } from '@/hooks/use-live-agent';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { ChatMessages } from '@/components/chat/ChatMessages';
 import { ChatInput } from '@/components/chat/ChatInput';
+import { InCallView } from '@/components/chat/InCallView';
 import { cn } from '@/lib/utils';
 import { v4 as uuidv4 } from 'uuid';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
@@ -20,6 +21,7 @@ export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
   // If we are in an iframe, we are open by default.
   // The parent window (widget.js) will be responsible for hiding/showing the iframe itself.
   const [isWidgetOpen, setIsWidgetOpen] = useState(typeof window !== 'undefined' && window.self !== window.top);
+  const [currentMode, setCurrentMode] = useState<'chat' | 'in-call'>('chat');
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -74,6 +76,17 @@ export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
     currentInput, 
     currentOutput 
   } = useLiveAgent(setMessages);
+  
+  const isCallActive = connectionState !== 'idle' && connectionState !== 'error';
+
+  useEffect(() => {
+    if (isCallActive) {
+      setCurrentMode('in-call');
+    } else {
+      setCurrentMode('chat');
+    }
+  }, [isCallActive]);
+
 
   if (!isWidgetOpen) {
     return null;
@@ -87,8 +100,8 @@ export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
   const chatInputPlaceholder = agent.chatInputPlaceholder || 'Ask anything';
   const isFeedbackEnabled = agent.isFeedbackEnabled ?? true;
   const isBrandingEnabled = agent.isBrandingEnabled ?? true;
-  const isCallActive = connectionState !== 'idle' && connectionState !== 'error';
-  
+  const orbColors = agent.orbColors;
+
   const handleToggleCall = () => {
     if (agent) {
       toggleCall(agent as Agent);
@@ -105,36 +118,47 @@ export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
         isDisplayNameEnabled={isDisplayNameEnabled}
         logoUrl={logoUrl}
       />
-      <div className="flex-1 flex flex-col bg-background overflow-hidden min-h-0">
-        <ChatMessages 
-          messages={messages}
-          liveTranscripts={liveTranscripts}
-          isResponding={isResponding}
-          isThinking={isThinking}
-          currentInput={currentInput}
-          currentOutput={currentOutput}
-          isCallActive={isCallActive}
-          agentName={agentName}
-          isFeedbackEnabled={isFeedbackEnabled}
-          themeColor={themeColor}
-          onOptionClick={handleOptionClick}
-          userId={userId || 'public-user'}
-          agentId={agentId || 'public-agent'}
-          sessionId={sessionId || 'public-session'}
+
+      {currentMode === 'chat' && (
+        <div className="flex-1 flex flex-col bg-background overflow-hidden min-h-0">
+          <ChatMessages 
+            messages={messages}
+            liveTranscripts={liveTranscripts}
+            isResponding={isResponding}
+            isThinking={isThinking}
+            currentInput={currentInput}
+            currentOutput={currentOutput}
+            isCallActive={isCallActive}
+            agentName={agentName}
+            isFeedbackEnabled={isFeedbackEnabled}
+            themeColor={themeColor}
+            onOptionClick={handleOptionClick}
+            userId={userId || 'public-user'}
+            agentId={agentId || 'public-agent'}
+            sessionId={sessionId || 'public-session'}
+          />
+          <ChatInput 
+            prompt={prompt}
+            setPrompt={setPrompt}
+            handleSendMessage={handleSendMessage}
+            isResponding={isResponding}
+            isCallActive={isCallActive}
+            placeholder={chatInputPlaceholder}
+            themeColor={themeColor}
+            conversationStarters={conversationStarters}
+            onToggleCall={handleToggleCall}
+            isBrandingEnabled={isBrandingEnabled}
+          />
+        </div>
+      )}
+
+      {currentMode === 'in-call' && (
+        <InCallView
+            connectionState={connectionState}
+            toggleCall={handleToggleCall}
+            orbColors={orbColors}
         />
-        <ChatInput 
-          prompt={prompt}
-          setPrompt={setPrompt}
-          handleSendMessage={handleSendMessage}
-          isResponding={isResponding}
-          isCallActive={isCallActive}
-          placeholder={chatInputPlaceholder}
-          themeColor={themeColor}
-          conversationStarters={conversationStarters}
-          onToggleCall={handleToggleCall}
-          isBrandingEnabled={isBrandingEnabled}
-        />
-      </div>
+      )}
     </div>
   );
 }
