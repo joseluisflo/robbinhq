@@ -29,6 +29,16 @@ class AudioRecorderProcessor extends AudioWorkletProcessor {
 registerProcessor('audio-recorder-processor', AudioRecorderProcessor);
 `;
 
+async function getAuthToken() {
+    const response = await fetch('/api/genai-token');
+    if (!response.ok) {
+        throw new Error('Failed to fetch authentication token.');
+    }
+    const data = await response.json();
+    return data.token;
+}
+
+
 export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Message[]>>) {
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [liveTranscripts, setLiveTranscripts] = useState<Message[]>([]);
@@ -103,10 +113,8 @@ export function useLiveAgent(setMessages: React.Dispatch<React.SetStateAction<Me
     currentOutputRef.current = '';
 
     try {
-      if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-        throw new Error("NEXT_PUBLIC_GEMINI_API_KEY is not set.");
-      }
-      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY as string });
+      const authToken = await getAuthToken();
+      const ai = new GoogleGenAI({ getAuthToken: async () => authToken });
 
       if (!outputAudioContextRef.current || outputAudioContextRef.current.state === 'closed') {
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -157,7 +165,7 @@ ${knowledge}
             
             await inputAudioContextRef.current.resume();
 
-            if (!inputAudioContextRef.current) {
+            if (!inputAudioContextRef.current || inputAudioContextRef.current.state === 'closed') {
                 console.error("AudioContext could not be created or resumed.");
                 toast({ title: 'Audio Error', description: 'Could not initialize audio context.', variant: 'destructive' });
                 cleanup();
