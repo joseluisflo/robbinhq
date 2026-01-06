@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Label } from '@/components/ui/label';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ColorPicker } from '@/components/custom/color-picker';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { VoiceSelector } from './VoiceSelector';
 
 interface OrbColors {
     bg: string;
@@ -28,13 +27,6 @@ interface InCallDesignSettingsProps {
     orbColors: OrbColors;
     handleOrbColorChange: (colorKey: keyof OrbColors, value: string) => void;
 }
-
-const availableVoices = [
-  "Echo", "Calamity", "Zephyr", "Puck", "Kore", "Fenrir", "Nyx",
-  "Charon", "Calypso", "Jinx", "Oberon", "Rhea", "Alphekka", "Elnath",
-  "Deneb", "Algenib", "Enif", "Capella", "Sirius", "Canopus", "Rigel",
-  "Vega", "Arcturus", "Achernar", "Hadar", "Spica", "Antares"
-];
 
 export function InCallDesignSettings({
     agentVoice,
@@ -58,16 +50,10 @@ export function InCallDesignSettings({
                 <div className="space-y-6 pl-2">
                     <div className="space-y-2">
                         <Label htmlFor="agent-voice">Agent Voice</Label>
-                        <Select value={agentVoice} onValueChange={(value) => setAgentVoice(value)}>
-                            <SelectTrigger id="agent-voice">
-                                <SelectValue placeholder="Select a voice" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {availableVoices.map(voice => (
-                                    <SelectItem key={voice} value={voice}>{voice}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <VoiceSelector
+                          selectedValue={agentVoice}
+                          onValueChange={setAgentVoice}
+                        />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="welcome-message-in-call">Welcome Message</Label>
