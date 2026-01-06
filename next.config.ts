@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'microphone=(self *), camera=(self *), autoplay=(self *)',
+            value: 'microphone=*, camera=*, autoplay=*',
           },
           {
             key: 'Access-Control-Allow-Origin',
