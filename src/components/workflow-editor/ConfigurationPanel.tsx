@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle, X } from 'lucide-react';
+import { Loader2, PlusCircle, X, ChevronsUpDown } from 'lucide-react';
 import type { WorkflowBlock } from '@/lib/types';
 import { AddBlockPopover } from '@/components/add-block-popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { Tag, TagInput, type Suggestion } from '../ui/tag-input';
 
@@ -373,28 +374,37 @@ export function ConfigurationPanel({
                                 <Label htmlFor={`variable-value-${selectedBlock.id}-${index}`}>
                                 Value
                                 </Label>
-                                <Select
-                                value={variable.value || ''}
-                                onValueChange={(value) => handleVariableChange(index, 'value', value)}
-                                >
-                                <SelectTrigger className="shadow-sm">
-                                    <SelectValue placeholder="Select a value..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="{{userInput}}">
-                                    Initial User Input
-                                    </SelectItem>
-                                    {availableVariables.map(block => {
-                                        const resultKey = getResultKeyForBlock(block.type);
-                                        const variable = resultKey ? `{{${block.id}.${resultKey}}}` : `{{${block.id}}}`;
-                                        return (
-                                            <SelectItem key={block.id} value={variable}>
-                                                Result of &quot;{block.type}&quot; ({block.id})
-                                            </SelectItem>
-                                        )
-                                    })}
-                                </SelectContent>
-                                </Select>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className="w-full justify-between shadow-sm"
+                                        >
+                                            <span className="truncate">{suggestions.find(s => s.value === variable.value)?.label || variable.value || "Select a value..."}</span>
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search value..." />
+                                            <CommandEmpty>No value found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {suggestions.map((suggestion) => (
+                                                <CommandItem
+                                                    key={suggestion.value}
+                                                    value={suggestion.value}
+                                                    onSelect={(currentValue) => {
+                                                        handleVariableChange(index, 'value', currentValue);
+                                                    }}
+                                                >
+                                                    {suggestion.label}
+                                                </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                             {(selectedBlock.params.variables.length > 1) && (
                                 <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleRemoveVariable(index)}>
