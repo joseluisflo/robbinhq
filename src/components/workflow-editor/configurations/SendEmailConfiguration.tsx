@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import type { WorkflowBlock } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { Tag, TagInput, type Suggestion } from '@/components/ui/tag-input';
-import { MentionsInput, Mention } from 'react-mentions';
+import { MentionInput, MentionTextarea } from './MentionInputs';
+
 
 interface SendEmailConfigurationProps {
     selectedBlock: WorkflowBlock;
@@ -26,15 +27,6 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
             setEmailTags([]);
         }
     }, [selectedBlock.params.to]);
-
-    const handleSubjectChange = (event: any, newValue: string) => {
-        handleBlockParamChange(selectedBlock.id, 'subject', newValue);
-    };
-
-    const mentionSuggestions = suggestions.map(s => ({
-        id: s.value,
-        display: s.value,
-    }));
 
     return (
         <div className="space-y-4">
@@ -64,57 +56,25 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
                     <Label htmlFor={`email-subject-${selectedBlock.id}`}>
                     Subject
                     </Label>
-                    <div className="mentions">
-                       <MentionsInput
-                            id={`email-subject-${selectedBlock.id}`}
-                            value={selectedBlock.params.subject || ''}
-                            onChange={handleSubjectChange}
-                            placeholder="Type your subject type @ for variables"
-                            className="mentions"
-                        >
-                            <Mention
-                                trigger="@"
-                                data={mentionSuggestions}
-                                markup="{{__display__}}"
-                                className="mentions__mention"
-                                appendSpaceOnAdd
-                            />
-                             <Mention
-                                trigger="/"
-                                data={mentionSuggestions}
-                                markup="{{__display__}}"
-                                className="mentions__mention"
-                                appendSpaceOnAdd
-                            />
-                        </MentionsInput>
-                    </div>
+                     <MentionInput
+                        id={`email-subject-${selectedBlock.id}`}
+                        value={selectedBlock.params.subject || ''}
+                        onChange={(e, val) => handleBlockParamChange(selectedBlock.id, 'subject', val)}
+                        placeholder="Type your subject or type @ for variables"
+                        suggestions={suggestions}
+                    />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor={`email-body-${selectedBlock.id}`}>
                     Body
                     </Label>
-                    <MentionsInput
+                    <MentionTextarea
                         id={`email-body-${selectedBlock.id}`}
                         value={selectedBlock.params.body || ''}
                         onChange={(e, val) => handleBlockParamChange(selectedBlock.id, 'body', val)}
                         placeholder="Write your email content here."
-                        className="mentions"
-                    >
-                        <Mention
-                                trigger="@"
-                                data={mentionSuggestions}
-                                markup="{{__display__}}"
-                                className="mentions__mention"
-                                appendSpaceOnAdd
-                        />
-                         <Mention
-                                trigger="/"
-                                data={mentionSuggestions}
-                                markup="{{__display__}}"
-                                className="mentions__mention"
-                                appendSpaceOnAdd
-                        />
-                    </MentionsInput>
+                        suggestions={suggestions}
+                    />
                 </div>
             </div>
       </div>
