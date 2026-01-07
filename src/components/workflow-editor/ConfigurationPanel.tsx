@@ -55,6 +55,7 @@ export function ConfigurationPanel({
   const [newOption, setNewOption] = useState('');
   const [emailTags, setEmailTags] = useState<Tag[]>([]);
   const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
+  const [subjectPopoverOpen, setSubjectPopoverOpen] = useState(false);
 
   useEffect(() => {
     if (selectedBlock?.type === 'Send Email') {
@@ -171,6 +172,24 @@ export function ConfigurationPanel({
   });
   
   suggestions.unshift({ value: '{{userInput}}', label: 'Initial User Input' });
+
+  const handleSubjectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    handleBlockParamChange(selectedBlock!.id, 'subject', value);
+    if (value.includes('@') || value.includes('/')) {
+        setSubjectPopoverOpen(true);
+    } else {
+        setSubjectPopoverOpen(false);
+    }
+  };
+
+  const insertVariableInSubject = (variable: string) => {
+    const subject = selectedBlock?.params.subject || '';
+    const atIndex = Math.max(subject.lastIndexOf('@'), subject.lastIndexOf('/'));
+    const newSubject = subject.substring(0, atIndex) + variable + ' ';
+    handleBlockParamChange(selectedBlock!.id, 'subject', newSubject);
+    setSubjectPopoverOpen(false);
+  };
 
 
   return (
@@ -444,18 +463,47 @@ export function ConfigurationPanel({
                         <Label htmlFor={`email-subject-${selectedBlock.id}`}>
                         Subject
                         </Label>
-                        <Input
-                        id={`email-subject-${selectedBlock.id}`}
-                        placeholder="Your email subject"
-                        value={selectedBlock.params.subject || ''}
-                        onChange={(e) =>
-                            handleBlockParamChange(
-                            selectedBlock.id,
-                            'subject',
-                            e.target.value
-                            )
-                        }
-                        />
+                         <Popover open={subjectPopoverOpen} onOpenChange={setSubjectPopoverOpen}>
+                            <PopoverTrigger asChild>
+                                <Input
+                                    id={`email-subject-${selectedBlock.id}`}
+                                    placeholder="Your email subject or type @ for variables..."
+                                    value={selectedBlock.params.subject || ''}
+                                    onChange={handleSubjectChange}
+                                />
+                            </PopoverTrigger>
+                            <PopoverContent 
+                                className="w-[--radix-popover-trigger-width] p-0"
+                                align="start"
+                                onOpenAutoFocus={(e) => e.preventDefault()}
+                            >
+                                <Command>
+                                  <CommandInput 
+                                    placeholder="Search variables..."
+                                    value={(selectedBlock.params.subject || '').substring((selectedBlock.params.subject || '').lastIndexOf('@') + 1)}
+                                    onValueChange={(search) => {
+                                        const atIndex = (selectedBlock.params.subject || '').lastIndexOf('@');
+                                        const newValue = (selectedBlock.params.subject || '').substring(0, atIndex + 1) + search;
+                                        handleBlockParamChange(selectedBlock.id, 'subject', newValue);
+                                    }}
+                                  />
+                                  <CommandList>
+                                    <CommandEmpty>No results found.</CommandEmpty>
+                                    <CommandGroup>
+                                      {suggestions.map((suggestion) => (
+                                        <CommandItem
+                                          key={suggestion.value}
+                                          value={suggestion.value}
+                                          onSelect={() => insertVariableInSubject(suggestion.value)}
+                                        >
+                                          {suggestion.label}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor={`email-body-${selectedBlock.id}`}>
