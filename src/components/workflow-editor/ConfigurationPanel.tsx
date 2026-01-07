@@ -9,6 +9,7 @@ import { Loader2, PlusCircle, X } from 'lucide-react';
 import type { WorkflowBlock } from '@/lib/types';
 import { AddBlockPopover } from '@/components/add-block-popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 const blockGroups: Record<string, string> = {
   Trigger: 'Core',
@@ -53,7 +54,7 @@ export function ConfigurationPanel({
 
   // Effect to initialize variables for 'Set variable' block if they don't exist
   useEffect(() => {
-    if (selectedBlock?.type === 'Set variable' && !selectedBlock.params.variables) {
+    if (selectedBlock?.type === 'Set variable' && (!selectedBlock.params.variables || selectedBlock.params.variables.length === 0)) {
       handleBlockParamChange(selectedBlock.id, 'variables', [{ name: '', value: '' }]);
     }
   }, [selectedBlock, handleBlockParamChange]);
@@ -85,8 +86,14 @@ export function ConfigurationPanel({
     const handleVariableChange = (index: number, field: 'name' | 'value', fieldValue: string) => {
         if (selectedBlock) {
             const currentVariables = selectedBlock.params.variables || [];
+            
+            let finalValue = fieldValue;
+            if (field === 'name') {
+                finalValue = fieldValue.replace(/\s+/g, '_');
+            }
+
             const updatedVariables = currentVariables.map((v: any, i: number) => 
-                i === index ? { ...v, [field]: fieldValue } : v
+                i === index ? { ...v, [field]: finalValue } : v
             );
             handleBlockParamChange(selectedBlock.id, 'variables', updatedVariables);
         }
