@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, PlusCircle, X } from 'lucide-react';
 import type { WorkflowBlock } from '@/lib/types';
 import { AddBlockPopover } from '@/components/add-block-popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const blockGroups: Record<string, string> = {
   Trigger: 'Core',
@@ -25,6 +26,7 @@ const blockGroups: Record<string, string> = {
 
 interface ConfigurationPanelProps {
   selectedBlock: WorkflowBlock | undefined;
+  allBlocks: WorkflowBlock[]; // We need all blocks to populate the selector
   handleBlockParamChange: (
     blockId: string,
     paramName: string,
@@ -39,6 +41,7 @@ interface ConfigurationPanelProps {
 
 export function ConfigurationPanel({
   selectedBlock,
+  allBlocks,
   handleBlockParamChange,
   onAddBlock,
   isSaving,
@@ -63,6 +66,32 @@ export function ConfigurationPanel({
       handleBlockParamChange(selectedBlock.id, 'options', updatedOptions);
     }
   };
+
+  const getResultKeyForBlock = (blockType: string) => {
+    switch (blockType) {
+      case 'Ask a question':
+      case 'Wait for User Reply':
+      case 'Show Multiple Choice':
+        return 'answer';
+      case 'Search web':
+        return 'summary';
+      case 'Send Email':
+      case 'Send SMS':
+        return 'status';
+      case 'Create PDF':
+        return 'pdfBase64';
+      case 'Set variable':
+        return ''; // Direct value
+      default:
+        return 'result'; // Fallback
+    }
+  };
+  
+  const availableVariables = selectedBlock 
+    ? allBlocks.slice(0, allBlocks.findIndex(b => b.id === selectedBlock.id))
+               .filter(b => b.type !== 'Trigger' && b.type !== 'Wait for User Reply')
+    : [];
+
 
   return (
     <div className="flex h-full flex-col">
@@ -264,18 +293,28 @@ export function ConfigurationPanel({
                     <Label htmlFor={`variable-value-${selectedBlock.id}`}>
                       Value
                     </Label>
-                    <Input
-                      id={`variable-value-${selectedBlock.id}`}
-                      placeholder="e.g. '{{answer_from_previous_step}}' "
+                    <Select
                       value={selectedBlock.params.value || ''}
-                      onChange={(e) =>
-                        handleBlockParamChange(
-                          selectedBlock.id,
-                          'value',
-                          e.target.value
-                        )
-                      }
-                    />
+                      onValueChange={(value) => handleBlockParamChange(selectedBlock.id, 'value', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a value..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="{{userInput}}">
+                          Initial User Input
+                        </SelectItem>
+                        {availableVariables.map(block => {
+                            const resultKey = getResultKeyForBlock(block.type);
+                            const variable = resultKey ? `{{${block.id}.${resultKey}}}` : `{{${block.id}}}`;
+                            return (
+                                <SelectItem key={block.id} value={variable}>
+                                    Result of &quot;{block.type}&quot; ({block.id})
+                                </SelectItem>
+                            )
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>

@@ -62,6 +62,7 @@ export function FlowEditor() {
         <ResizablePanel defaultSize={35} minSize={25}>
           <ConfigurationPanel
             selectedBlock={selectedBlock}
+            allBlocks={blocks}
             handleBlockParamChange={handleBlockParamChange}
             onAddBlock={handleAddBlock}
             isSaving={isSaving}
