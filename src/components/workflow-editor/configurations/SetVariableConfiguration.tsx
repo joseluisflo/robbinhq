@@ -79,7 +79,7 @@ export function SetVariableConfiguration({ selectedBlock, handleBlockParamChange
                                 <Button
                                     variant="outline"
                                     role="combobox"
-                                    className="w-full justify-between shadow-sm"
+                                    className="w-full justify-between shadow-sm rounded-lg"
                                 >
                                     <span className="truncate">{suggestions.find(s => s.value === variable.value)?.label || variable.value || "Select a value..."}</span>
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
