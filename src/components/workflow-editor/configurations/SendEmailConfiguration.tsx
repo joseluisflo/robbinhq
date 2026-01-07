@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import type { WorkflowBlock } from '@/lib/types';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Tag, TagInput, type Suggestion } from '@/components/ui/tag-input';
 import { MentionsInput, Mention } from 'react-mentions';
 
@@ -72,17 +71,9 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
                             onChange={handleSubjectChange}
                             placeholder="Type your subject and use '{{' to add variables..."
                             className="mentions"
-                            classNames={{
-                                control: 'mentions__control',
-                                input: 'mentions__input',
-                                suggestions: 'mentions__suggestions',
-                                list: 'mentions__suggestions__list',
-                                item: 'mentions__suggestions__item',
-                                'item--focused': 'mentions__suggestions__item--focused',
-                            }}
                         >
                             <Mention
-                                trigger="{{}}"
+                                trigger="[["
                                 data={mentionSuggestions}
                                 markup="{{__display__}}"
                                 className="mentions__mention"
@@ -95,19 +86,21 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
                     <Label htmlFor={`email-body-${selectedBlock.id}`}>
                     Body
                     </Label>
-                    <Textarea
-                    id={`email-body-${selectedBlock.id}`}
-                    placeholder="Write your email content here."
-                    className="min-h-[120px]"
-                    value={selectedBlock.params.body || ''}
-                    onChange={(e) =>
-                        handleBlockParamChange(
-                        selectedBlock.id,
-                        'body',
-                        e.target.value
-                        )
-                    }
-                    />
+                    <MentionsInput
+                        id={`email-body-${selectedBlock.id}`}
+                        value={selectedBlock.params.body || ''}
+                        onChange={(e, val) => handleBlockParamChange(selectedBlock.id, 'body', val)}
+                        placeholder="Write your email content here."
+                        className="mentions"
+                    >
+                        <Mention
+                                trigger="[["
+                                data={mentionSuggestions}
+                                markup="{{__display__}}"
+                                className="mentions__mention"
+                                appendSpaceOnAdd
+                        />
+                    </MentionsInput>
                 </div>
             </div>
       </div>
