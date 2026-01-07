@@ -10,6 +10,7 @@ import type { WorkflowBlock } from '@/lib/types';
 import { AddBlockPopover } from '@/components/add-block-popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { Tag, TagInput } from '../ui/tag-input';
 
 const blockGroups: Record<string, string> = {
   Trigger: 'Core',
@@ -51,11 +52,29 @@ export function ConfigurationPanel({
   handleDiscardChanges,
 }: ConfigurationPanelProps) {
   const [newOption, setNewOption] = useState('');
+  const [emailTags, setEmailTags] = useState<Tag[]>([]);
+  const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
 
-  // Effect to initialize variables for 'Set variable' block if they don't exist
   useEffect(() => {
-    if (selectedBlock?.type === 'Set variable' && (!selectedBlock.params.variables || selectedBlock.params.variables.length === 0)) {
-      handleBlockParamChange(selectedBlock.id, 'variables', [{ name: '', value: '' }]);
+    if (selectedBlock?.type === 'Send Email') {
+        const toValue = selectedBlock.params.to;
+        if (typeof toValue === 'string' && toValue) {
+            setEmailTags(toValue.split(',').map((email, i) => ({ id: `${i}`, text: email.trim() })));
+        } else if (Array.isArray(toValue)) {
+            setEmailTags(toValue.map((email, i) => ({ id: `${i}`, text: email.trim() })));
+        } 
+        else {
+            setEmailTags([]);
+        }
+    }
+  }, [selectedBlock]);
+
+  useEffect(() => {
+    if (selectedBlock?.type === 'Set variable') {
+      const currentVariables = selectedBlock.params.variables;
+      if (!currentVariables || !Array.isArray(currentVariables) || currentVariables.length === 0) {
+        handleBlockParamChange(selectedBlock.id, 'variables', [{ name: '', value: '' }]);
+      }
     }
   }, [selectedBlock, handleBlockParamChange]);
 
@@ -102,7 +121,7 @@ export function ConfigurationPanel({
     const handleRemoveVariable = (indexToRemove: number) => {
         if (selectedBlock) {
             const currentVariables = selectedBlock.params.variables || [];
-            if (currentVariables.length <= 1) return; // Prevent removing the last one
+            if (currentVariables.length <= 1) return;
             const updatedVariables = currentVariables.filter((_: any, index: number) => index !== indexToRemove);
             handleBlockParamChange(selectedBlock.id, 'variables', updatedVariables);
         }
@@ -380,17 +399,16 @@ export function ConfigurationPanel({
                 <div className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor={`email-to-${selectedBlock.id}`}>To</Label>
-                        <Input
-                        id={`email-to-${selectedBlock.id}`}
-                        placeholder="recipient@example.com or {{variableName}}"
-                        value={selectedBlock.params.to || ''}
-                        onChange={(e) =>
-                            handleBlockParamChange(
-                            selectedBlock.id,
-                            'to',
-                            e.target.value
-                            )
-                        }
+                        <TagInput
+                            id={`email-to-${selectedBlock.id}`}
+                            placeholder="Add recipient..."
+                            tags={emailTags}
+                            setTags={(newTags) => {
+                                const newEmails = newTags.map(tag => tag.text).join(', ');
+                                handleBlockParamChange(selectedBlock.id, 'to', newEmails);
+                            }}
+                            activeTagIndex={activeTagIndex}
+                            setActiveTagIndex={setActiveTagIndex}
                         />
                     </div>
                     <div className="space-y-2">
