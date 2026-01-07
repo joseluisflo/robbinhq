@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -23,6 +24,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { Workflow, WorkflowBlock } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
+
+// Function to generate a short, 4-character alphanumeric ID
+const generateShortId = () => {
+  return Math.random().toString(36).substring(2, 6);
+};
 
 
 export function CreateWorkflowDialog({ children }: { children: React.ReactNode }) {
@@ -50,7 +56,7 @@ export function CreateWorkflowDialog({ children }: { children: React.ReactNode }
         const workflowsCollection = collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'workflows');
         
         const triggerBlock: WorkflowBlock = {
-          id: uuidv4(),
+          id: generateShortId(),
           type: 'Trigger',
           params: { description: '' },
         };

@@ -16,6 +16,12 @@ import {
     type Connection,
 } from 'reactflow';
 
+// Function to generate a short, 4-character alphanumeric ID
+const generateShortId = () => {
+  return Math.random().toString(36).substring(2, 6);
+};
+
+
 export function useWorkflowEditor(workflowId: string) {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -41,7 +47,7 @@ export function useWorkflowEditor(workflowId: string) {
   
   const handleAddBlock = useCallback((blockType: string) => {
     const newBlock: WorkflowBlock = {
-        id: uuidv4(),
+        id: generateShortId(),
         type: blockType,
         params: {},
     };
@@ -123,7 +129,7 @@ export function useWorkflowEditor(workflowId: string) {
             }));
         } else {
              // Handle brand new workflow with no saved blocks
-             const triggerBlock = { id: uuidv4(), type: 'Trigger', params: {} };
+             const triggerBlock = { id: generateShortId(), type: 'Trigger', params: {} };
              setBlocks([triggerBlock]); // Ensure blocks state is updated
              initialNodes = [{
                  id: triggerBlock.id,
@@ -241,7 +247,7 @@ export function useWorkflowEditor(workflowId: string) {
                 data: { label: block.type, type: block.type },
             }));
         } else {
-           const triggerBlock = { id: uuidv4(), type: 'Trigger', params: {} };
+           const triggerBlock = { id: generateShortId(), type: 'Trigger', params: {} };
            setBlocks([triggerBlock]); // Ensure blocks state is updated
            initialNodes = [{
                id: triggerBlock.id,
