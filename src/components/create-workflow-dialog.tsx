@@ -21,7 +21,9 @@ import { useActiveAgent } from '@/app/(main)/layout';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import type { Workflow } from '@/lib/types';
+import type { Workflow, WorkflowBlock } from '@/lib/types';
+import { v4 as uuidv4 } from 'uuid';
+
 
 export function CreateWorkflowDialog({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,12 +48,19 @@ export function CreateWorkflowDialog({ children }: { children: React.ReactNode }
     startCreation(async () => {
       try {
         const workflowsCollection = collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'workflows');
+        
+        const triggerBlock: WorkflowBlock = {
+          id: uuidv4(),
+          type: 'Trigger',
+          params: { description: '' },
+        };
+
         const newWorkflow: Omit<Workflow, 'id'> = {
           name,
           status: 'disabled',
           createdAt: serverTimestamp(),
           lastModified: serverTimestamp(),
-          blocks: [],
+          blocks: [triggerBlock],
         };
         const docRef = await addDoc(workflowsCollection, newWorkflow);
         

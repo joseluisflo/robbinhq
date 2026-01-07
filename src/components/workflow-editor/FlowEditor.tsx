@@ -36,7 +36,7 @@ export function FlowEditor() {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
   
-  if (!workflow && !loading && blocks.length === 0) {
+  if (!workflow && !loading) {
       return (
          <div className="flex h-full items-center justify-center bg-muted/30">
             <div className="text-center">
