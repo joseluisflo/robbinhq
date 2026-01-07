@@ -86,9 +86,15 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
     }, 0);
   };
 
-  const filteredSuggestions = suggestions.filter(s => 
-    typeof s.label === 'string' ? s.label.toLowerCase().includes(query.toLowerCase()) : true
-  );
+  const filteredSuggestions = suggestions.filter(s => {
+    const labelString = React.isValidElement(s.label) ? 
+        React.Children.toArray((s.label as React.ReactElement).props.children).join('') : 
+        String(s.label);
+    
+    return labelString.toLowerCase().includes(query.toLowerCase()) || 
+           s.value.toLowerCase().includes(query.toLowerCase());
+  });
+
 
   const Component = componentType === 'input' ? Input : Textarea;
 
@@ -109,7 +115,11 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
             }}
         />
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+      <PopoverContent 
+        className="w-[--radix-popover-trigger-width] p-0" 
+        align="start"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <Command>
           <CommandInput 
             placeholder="Search variables..."
