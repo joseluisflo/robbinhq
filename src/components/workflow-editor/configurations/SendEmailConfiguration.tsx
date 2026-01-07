@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import type { WorkflowBlock } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { Tag, TagInput, type Suggestion } from '@/components/ui/tag-input';
-import { MentionInput, MentionTextarea } from './MentionInputs';
+import { MentionsTextarea } from './MentionInputs';
+import { Input } from '@/components/ui/input';
 
 
 interface SendEmailConfigurationProps {
@@ -56,23 +57,24 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
                     <Label htmlFor={`email-subject-${selectedBlock.id}`}>
                     Subject
                     </Label>
-                     <MentionInput
+                     <MentionsTextarea
                         id={`email-subject-${selectedBlock.id}`}
                         value={selectedBlock.params.subject || ''}
-                        onChange={(e, val) => handleBlockParamChange(selectedBlock.id, 'subject', val)}
-                        placeholder="Type your subject or type @ for variables"
+                        onValueChange={(val) => handleBlockParamChange(selectedBlock.id, 'subject', val)}
+                        placeholder="Type subject or use @ for variables"
                         suggestions={suggestions}
+                        singleLine={true}
                     />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor={`email-body-${selectedBlock.id}`}>
                     Body
                     </Label>
-                    <MentionTextarea
+                    <MentionsTextarea
                         id={`email-body-${selectedBlock.id}`}
                         value={selectedBlock.params.body || ''}
-                        onChange={(e, val) => handleBlockParamChange(selectedBlock.id, 'body', val)}
-                        placeholder="Write your email content here."
+                        onValueChange={(val) => handleBlockParamChange(selectedBlock.id, 'body', val)}
+                        placeholder="Write your email content here. Use @ for variables."
                         suggestions={suggestions}
                     />
                 </div>
