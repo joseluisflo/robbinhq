@@ -95,7 +95,6 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
            s.value.toLowerCase().includes(query.toLowerCase());
   });
 
-
   const Component = componentType === 'input' ? Input : Textarea;
 
   return (
@@ -116,6 +115,7 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
             autoComplete="off"
         />
       </PopoverAnchor>
+
       <PopoverContent 
         className="w-[--radix-popover-trigger-width] p-0" 
         align="start"
@@ -126,7 +126,6 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
             placeholder="Search variables..."
             value={query}
             onValueChange={setQuery}
-            className="hidden"
           />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
