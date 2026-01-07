@@ -18,9 +18,12 @@ interface SendEmailConfigurationProps {
 export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, suggestions }: SendEmailConfigurationProps) {
     const [emailTags, setEmailTags] = useState<Tag[]>([]);
     const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
+    
+    // State for the Subject field popover
     const [subjectPopoverOpen, setSubjectPopoverOpen] = useState(false);
     const [subjectSearch, setSubjectSearch] = useState('');
     const subjectInputRef = useRef<HTMLInputElement>(null);
+    const lastTriggerIndexRef = useRef(-1);
 
 
     useEffect(() => {
@@ -38,52 +41,50 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
         const value = e.target.value;
         handleBlockParamChange(selectedBlock.id, 'subject', value);
 
-        const atIndex = value.lastIndexOf('@');
-        const slashIndex = value.lastIndexOf('/');
+        const cursorPosition = e.target.selectionStart || 0;
+        const textBeforeCursor = value.substring(0, cursorPosition);
+        const atIndex = textBeforeCursor.lastIndexOf('@');
+        const slashIndex = textBeforeCursor.lastIndexOf('/');
 
         const triggerIndex = Math.max(atIndex, slashIndex);
 
-        if (triggerIndex !== -1) {
-            const cursorPosition = e.target.selectionStart;
-            if (cursorPosition && cursorPosition > triggerIndex) {
-                 setSubjectSearch(value.substring(triggerIndex + 1, cursorPosition));
-                 setSubjectPopoverOpen(true);
-            } else {
-                 setSubjectPopoverOpen(false);
-            }
+        if (triggerIndex !== -1 && !value.substring(triggerIndex + 1, cursorPosition).includes(' ')) {
+            lastTriggerIndexRef.current = triggerIndex;
+            setSubjectSearch(value.substring(triggerIndex + 1, cursorPosition));
+            setSubjectPopoverOpen(true);
         } else {
             setSubjectPopoverOpen(false);
         }
     };
-
+    
     const insertVariableInSubject = (variable: string) => {
         const subject = selectedBlock.params.subject || '';
         const input = subjectInputRef.current;
         if (!input) return;
 
-        const cursorPosition = input.selectionStart;
-        if (cursorPosition === null) return;
-        
-        const atIndex = subject.substring(0, cursorPosition).lastIndexOf('@');
-        const slashIndex = subject.substring(0, cursorPosition).lastIndexOf('/');
-        const triggerIndex = Math.max(atIndex, slashIndex);
+        const triggerIndex = lastTriggerIndexRef.current;
         
         if (triggerIndex !== -1) {
             const textBefore = subject.substring(0, triggerIndex);
-            const textAfter = subject.substring(cursorPosition);
-            const newSubject = `${textBefore}${variable} ${textAfter}`;
+            
+            // Find where the search term ends
+            const currentSearchTerm = subjectSearch;
+            const textAfter = subject.substring(triggerIndex + 1 + currentSearchTerm.length);
+
+            const newSubject = `${textBefore}${variable}${textAfter}`;
 
             handleBlockParamChange(selectedBlock.id, 'subject', newSubject);
             
             // Move cursor after the inserted variable
             setTimeout(() => {
                 input.focus();
-                const newCursorPosition = (textBefore + variable).length + 1;
+                const newCursorPosition = (textBefore + variable).length;
                 input.setSelectionRange(newCursorPosition, newCursorPosition);
             }, 0);
         }
 
         setSubjectPopoverOpen(false);
+        setSubjectSearch('');
     };
 
     return (
