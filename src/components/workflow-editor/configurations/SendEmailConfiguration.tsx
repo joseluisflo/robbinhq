@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import type { WorkflowBlock } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { Tag, TagInput, type Suggestion } from '@/components/ui/tag-input';
-import { MentionsTextarea } from './MentionInputs';
+import { MentionInput, MentionTextarea } from './MentionInputs';
 import { Input } from '@/components/ui/input';
 
 
@@ -57,20 +57,19 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
                     <Label htmlFor={`email-subject-${selectedBlock.id}`}>
                     Subject
                     </Label>
-                     <MentionsTextarea
+                     <MentionInput
                         id={`email-subject-${selectedBlock.id}`}
                         value={selectedBlock.params.subject || ''}
                         onValueChange={(val) => handleBlockParamChange(selectedBlock.id, 'subject', val)}
                         placeholder="Type subject or use @ for variables"
                         suggestions={suggestions}
-                        singleLine={true}
                     />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor={`email-body-${selectedBlock.id}`}>
                     Body
                     </Label>
-                    <MentionsTextarea
+                    <MentionTextarea
                         id={`email-body-${selectedBlock.id}`}
                         value={selectedBlock.params.body || ''}
                         onValueChange={(val) => handleBlockParamChange(selectedBlock.id, 'body', val)}

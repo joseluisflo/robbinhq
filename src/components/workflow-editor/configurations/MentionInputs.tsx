@@ -13,16 +13,15 @@ interface MentionsInputProps {
   onValueChange: (value: string) => void;
   suggestions: Suggestion[];
   placeholder?: string;
-  singleLine?: boolean;
 }
 
-export const MentionsTextarea: React.FC<MentionsInputProps> = ({
+const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'textarea' }> = ({
   id,
   value: externalValue,
   onValueChange,
   suggestions,
   placeholder,
-  singleLine = false,
+  as: Component,
 }) => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [trigger, setTrigger] = useState<'@' | '/' | null>(null);
@@ -30,7 +29,7 @@ export const MentionsTextarea: React.FC<MentionsInputProps> = ({
   const [cursorIndex, setCursorIndex] = useState(0);
   const [internalValue, setInternalValue] = useState(externalValue);
   
-  const inputRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement & HTMLInputElement>(null);
 
   useEffect(() => {
     setInternalValue(externalValue);
@@ -40,6 +39,9 @@ export const MentionsTextarea: React.FC<MentionsInputProps> = ({
     const newValue = e.target.value;
     const cursor = e.target.selectionStart || 0;
     
+    setInternalValue(newValue);
+    onValueChange(newValue);
+
     const lastTypedChar = newValue[cursor - 1];
     if (lastTypedChar === '@' || lastTypedChar === '/') {
         setTrigger(lastTypedChar);
@@ -57,9 +59,6 @@ export const MentionsTextarea: React.FC<MentionsInputProps> = ({
             setQuery(textSinceTrigger);
         }
     }
-    
-    setInternalValue(newValue);
-    onValueChange(newValue);
   };
   
   const handleSuggestionSelect = (suggestionValue: string) => {
@@ -75,28 +74,28 @@ export const MentionsTextarea: React.FC<MentionsInputProps> = ({
     setQuery('');
 
     setTimeout(() => {
-        inputRef.current?.focus();
-        const newCursorPos = (textBefore + suggestionValue).length + 1;
-        inputRef.current?.setSelectionRange(newCursorPos, newCursorPos);
+        if (inputRef.current) {
+            inputRef.current.focus();
+            const newCursorPos = (textBefore + suggestionValue).length + 1;
+            inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
     }, 0);
   };
 
   const filteredSuggestions = suggestions.filter(s => 
     s.value.toLowerCase().includes(query.toLowerCase())
   );
-  
-  const InputComponent = singleLine ? Input : Textarea;
 
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>
-        <InputComponent
-            ref={inputRef as any}
+        <Component
+            ref={inputRef}
             id={id}
             value={internalValue}
             onChange={handleValueChange}
             placeholder={placeholder}
-            className={singleLine ? "" : "min-h-[120px]"}
+            className={Component === 'input' ? "" : "min-h-[120px]"}
             onKeyDown={(e) => {
                 if (popoverOpen && (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Enter")) {
                     e.preventDefault();
@@ -130,3 +129,12 @@ export const MentionsTextarea: React.FC<MentionsInputProps> = ({
     </Popover>
   );
 };
+
+
+export const MentionInput: React.FC<MentionsInputProps> = (props) => (
+    <SharedMentionsComponent {...props} as={Input as any} />
+);
+
+export const MentionTextarea: React.FC<MentionsInputProps> = (props) => (
+    <SharedMentionsComponent {...props} as={Textarea as any} />
+);
