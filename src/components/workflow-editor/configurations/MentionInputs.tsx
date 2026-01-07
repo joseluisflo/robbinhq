@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { Suggestion } from '@/components/ui/tag-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 
-interface MentionsTextareaProps {
+interface MentionsInputProps {
   id: string;
   value: string;
   onValueChange: (value: string) => void;
@@ -16,9 +16,9 @@ interface MentionsTextareaProps {
   singleLine?: boolean;
 }
 
-export const MentionsTextarea: React.FC<MentionsTextareaProps> = ({
+export const MentionsTextarea: React.FC<MentionsInputProps> = ({
   id,
-  value,
+  value: externalValue,
   onValueChange,
   suggestions,
   placeholder,
@@ -28,14 +28,18 @@ export const MentionsTextarea: React.FC<MentionsTextareaProps> = ({
   const [trigger, setTrigger] = useState<'@' | '/' | null>(null);
   const [query, setQuery] = useState('');
   const [cursorIndex, setCursorIndex] = useState(0);
-
+  const [internalValue, setInternalValue] = useState(externalValue);
+  
   const inputRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
+
+  useEffect(() => {
+    setInternalValue(externalValue);
+  }, [externalValue]);
 
   const handleValueChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     const newValue = e.target.value;
     const cursor = e.target.selectionStart || 0;
     
-    // Check if we just typed a trigger character
     const lastTypedChar = newValue[cursor - 1];
     if (lastTypedChar === '@' || lastTypedChar === '/') {
         setTrigger(lastTypedChar);
@@ -43,12 +47,10 @@ export const MentionsTextarea: React.FC<MentionsTextareaProps> = ({
         setPopoverOpen(true);
         setCursorIndex(cursor);
     } else if (trigger) {
-        // We are inside a trigger context
         const textSinceTrigger = newValue.substring(cursorIndex, cursor);
         const spaceIndex = textSinceTrigger.indexOf(' ');
         
-        if (spaceIndex > -1) {
-            // User typed a space, close popover
+        if (spaceIndex > -1 || textSinceTrigger.includes('\n')) {
             setPopoverOpen(false);
             setTrigger(null);
         } else {
@@ -56,21 +58,22 @@ export const MentionsTextarea: React.FC<MentionsTextareaProps> = ({
         }
     }
     
+    setInternalValue(newValue);
     onValueChange(newValue);
   };
   
   const handleSuggestionSelect = (suggestionValue: string) => {
-    const textBefore = value.substring(0, cursorIndex -1); // remove the trigger char
-    const textAfter = value.substring(cursorIndex + query.length);
+    const textBefore = internalValue.substring(0, cursorIndex -1); 
+    const textAfter = internalValue.substring(cursorIndex + query.length);
     
     const newValue = `${textBefore}${suggestionValue} ${textAfter}`;
+    setInternalValue(newValue);
     onValueChange(newValue);
     
     setPopoverOpen(false);
     setTrigger(null);
     setQuery('');
 
-    // Focus and move cursor after the inserted text
     setTimeout(() => {
         inputRef.current?.focus();
         const newCursorPos = (textBefore + suggestionValue).length + 1;
@@ -90,13 +93,12 @@ export const MentionsTextarea: React.FC<MentionsTextareaProps> = ({
         <InputComponent
             ref={inputRef as any}
             id={id}
-            value={value}
+            value={internalValue}
             onChange={handleValueChange}
             placeholder={placeholder}
             className={singleLine ? "" : "min-h-[120px]"}
             onKeyDown={(e) => {
                 if (popoverOpen && (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Enter")) {
-                    // Prevent textarea from handling these keys when popover is open
                     e.preventDefault();
                 }
             }}
@@ -116,7 +118,7 @@ export const MentionsTextarea: React.FC<MentionsTextareaProps> = ({
                 <CommandItem
                   key={suggestion.value}
                   value={suggestion.value}
-                  onSelect={handleSuggestionSelect}
+                  onSelect={() => handleSuggestionSelect(suggestion.value)}
                 >
                   {suggestion.label}
                 </CommandItem>
