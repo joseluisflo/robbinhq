@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { WorkflowBlock } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,9 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
     const [emailTags, setEmailTags] = useState<Tag[]>([]);
     const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
     const [subjectPopoverOpen, setSubjectPopoverOpen] = useState(false);
+    const [subjectSearch, setSubjectSearch] = useState('');
+    const subjectInputRef = useRef<HTMLInputElement>(null);
+
 
     useEffect(() => {
         const toValue = selectedBlock.params.to;
@@ -34,8 +37,20 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
     const handleSubjectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         handleBlockParamChange(selectedBlock.id, 'subject', value);
-        if (value.includes('@') || value.includes('/')) {
-            setSubjectPopoverOpen(true);
+
+        const atIndex = value.lastIndexOf('@');
+        const slashIndex = value.lastIndexOf('/');
+
+        const triggerIndex = Math.max(atIndex, slashIndex);
+
+        if (triggerIndex !== -1) {
+            const cursorPosition = e.target.selectionStart;
+            if (cursorPosition && cursorPosition > triggerIndex) {
+                 setSubjectSearch(value.substring(triggerIndex + 1, cursorPosition));
+                 setSubjectPopoverOpen(true);
+            } else {
+                 setSubjectPopoverOpen(false);
+            }
         } else {
             setSubjectPopoverOpen(false);
         }
@@ -43,9 +58,31 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
 
     const insertVariableInSubject = (variable: string) => {
         const subject = selectedBlock.params.subject || '';
-        const atIndex = Math.max(subject.lastIndexOf('@'), subject.lastIndexOf('/'));
-        const newSubject = subject.substring(0, atIndex) + variable + ' ';
-        handleBlockParamChange(selectedBlock.id, 'subject', newSubject);
+        const input = subjectInputRef.current;
+        if (!input) return;
+
+        const cursorPosition = input.selectionStart;
+        if (cursorPosition === null) return;
+        
+        const atIndex = subject.substring(0, cursorPosition).lastIndexOf('@');
+        const slashIndex = subject.substring(0, cursorPosition).lastIndexOf('/');
+        const triggerIndex = Math.max(atIndex, slashIndex);
+        
+        if (triggerIndex !== -1) {
+            const textBefore = subject.substring(0, triggerIndex);
+            const textAfter = subject.substring(cursorPosition);
+            const newSubject = `${textBefore}${variable} ${textAfter}`;
+
+            handleBlockParamChange(selectedBlock.id, 'subject', newSubject);
+            
+            // Move cursor after the inserted variable
+            setTimeout(() => {
+                input.focus();
+                const newCursorPosition = (textBefore + variable).length + 1;
+                input.setSelectionRange(newCursorPosition, newCursorPosition);
+            }, 0);
+        }
+
         setSubjectPopoverOpen(false);
     };
 
@@ -80,10 +117,12 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
                  <Popover open={subjectPopoverOpen} onOpenChange={setSubjectPopoverOpen}>
                     <PopoverTrigger asChild>
                         <Input
+                            ref={subjectInputRef}
                             id={`email-subject-${selectedBlock.id}`}
                             placeholder="Type your subject or type @ for variables..."
                             value={selectedBlock.params.subject || ''}
                             onChange={handleSubjectChange}
+                            autoComplete="off"
                         />
                     </PopoverTrigger>
                     <PopoverContent 
@@ -94,17 +133,13 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
                         <Command>
                           <CommandInput 
                             placeholder="Search variables..."
-                            value={(selectedBlock.params.subject || '').substring((selectedBlock.params.subject || '').lastIndexOf('@') + 1)}
-                            onValueChange={(search) => {
-                                const atIndex = (selectedBlock.params.subject || '').lastIndexOf('@');
-                                const newValue = (selectedBlock.params.subject || '').substring(0, atIndex + 1) + search;
-                                handleBlockParamChange(selectedBlock.id, 'subject', newValue);
-                            }}
+                            value={subjectSearch}
+                            onValueChange={setSubjectSearch}
                           />
                           <CommandList>
                             <CommandEmpty>No results found.</CommandEmpty>
                             <CommandGroup>
-                              {suggestions.map((suggestion) => (
+                              {suggestions.filter(s => s.value.toLowerCase().includes(subjectSearch.toLowerCase())).map((suggestion) => (
                                 <CommandItem
                                   key={suggestion.value}
                                   value={suggestion.value}
