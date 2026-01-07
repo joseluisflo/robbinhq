@@ -113,8 +113,8 @@ export function CreateAgentDialog({
             />
           </div>
         )}
-        <div className="space-y-6 px-6 pt-3 pb-6">
-          <div className="min-h-[140px]">
+        <div className="space-y-6 px-6 pb-6">
+          <div className="min-h-[140px] pt-3">
             {step === 1 && (
               <DialogHeader>
                 <DialogTitle>Give your agent a name</DialogTitle>
