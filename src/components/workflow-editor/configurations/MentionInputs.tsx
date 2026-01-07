@@ -33,7 +33,7 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
   const [cursorIndex, setCursorIndex] = useState(0);
   const [internalValue, setInternalValue] = useState(externalValue);
   
-  const inputRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
+  const valueInputRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
 
   useEffect(() => {
     setInternalValue(externalValue);
@@ -78,16 +78,16 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
     setQuery('');
 
     setTimeout(() => {
-        if (inputRef.current) {
-            inputRef.current.focus();
+        if (valueInputRef.current) {
+            valueInputRef.current.focus();
             const newCursorPos = (textBefore + suggestionValue).length + 1;
-            inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+            valueInputRef.current.setSelectionRange(newCursorPos, newCursorPos);
         }
     }, 0);
   };
 
   const filteredSuggestions = suggestions.filter(s => 
-    typeof s.label === 'string' && s.label.toLowerCase().includes(query.toLowerCase())
+    typeof s.label === 'string' ? s.label.toLowerCase().includes(query.toLowerCase()) : true
   );
 
   const Component = componentType === 'input' ? Input : Textarea;
@@ -96,7 +96,7 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>
         <Component
-            ref={inputRef as any}
+            ref={valueInputRef}
             id={id}
             value={internalValue}
             onChange={handleValueChange}
