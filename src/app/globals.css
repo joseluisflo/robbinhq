@@ -67,3 +67,36 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* React Mentions Styles */
+.mentions {
+  @apply w-full;
+}
+
+.mentions__control {
+  @apply text-sm;
+}
+
+.mentions__input {
+  @apply flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+}
+
+.mentions__suggestions {
+  @apply mt-2 w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md;
+}
+
+.mentions__suggestions__list {
+  @apply max-h-60 overflow-y-auto p-1;
+}
+
+.mentions__suggestions__item {
+  @apply relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none;
+}
+
+.mentions__suggestions__item--focused {
+  @apply bg-accent text-accent-foreground;
+}
+
+.mentions__mention {
+  @apply bg-secondary text-secondary-foreground rounded-md px-1;
+}

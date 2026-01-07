@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -63,7 +64,7 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
       setInputValue(newValue);
-      if ((newValue.includes('@') || newValue.includes('/')) && suggestions.length > 0) {
+      if (newValue.includes('@') && suggestions.length > 0) {
         setPopoverOpen(true);
       } else {
         setPopoverOpen(false);
@@ -80,8 +81,8 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                 setPopoverOpen(false);
             } else {
                 toast({
-                    title: "Invalid Email",
-                    description: "Please enter a valid email address or select a variable.",
+                    title: "Invalid Format",
+                    description: "Please enter a valid email address or select a variable like {{variable}}.",
                     variant: "destructive",
                 });
             }

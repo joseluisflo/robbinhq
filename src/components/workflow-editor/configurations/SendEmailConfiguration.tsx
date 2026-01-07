@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import type { WorkflowBlock } from '@/lib/types';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tag, TagInput, type Suggestion } from '@/components/ui/tag-input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { MentionsInput, Mention } from 'react-mentions';
 
 interface SendEmailConfigurationProps {
     selectedBlock: WorkflowBlock;
@@ -18,13 +16,6 @@ interface SendEmailConfigurationProps {
 export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, suggestions }: SendEmailConfigurationProps) {
     const [emailTags, setEmailTags] = useState<Tag[]>([]);
     const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
-    
-    // State for the Subject field popover
-    const [subjectPopoverOpen, setSubjectPopoverOpen] = useState(false);
-    const [subjectSearch, setSubjectSearch] = useState('');
-    const subjectInputRef = useRef<HTMLInputElement>(null);
-    const lastTriggerIndexRef = useRef(-1);
-
 
     useEffect(() => {
         const toValue = selectedBlock.params.to;
@@ -37,143 +28,88 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
         }
     }, [selectedBlock.params.to]);
 
-    const handleSubjectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        handleBlockParamChange(selectedBlock.id, 'subject', value);
-
-        const cursorPosition = e.target.selectionStart || 0;
-        const textBeforeCursor = value.substring(0, cursorPosition);
-        const atIndex = textBeforeCursor.lastIndexOf('@');
-        const slashIndex = textBeforeCursor.lastIndexOf('/');
-
-        const triggerIndex = Math.max(atIndex, slashIndex);
-
-        if (triggerIndex !== -1 && !value.substring(triggerIndex + 1, cursorPosition).includes(' ')) {
-            lastTriggerIndexRef.current = triggerIndex;
-            setSubjectSearch(value.substring(triggerIndex + 1, cursorPosition));
-            setSubjectPopoverOpen(true);
-        } else {
-            setSubjectPopoverOpen(false);
-        }
+    const handleSubjectChange = (event: any, newValue: string) => {
+        handleBlockParamChange(selectedBlock.id, 'subject', newValue);
     };
-    
-    const insertVariableInSubject = (variable: string) => {
-        const subject = selectedBlock.params.subject || '';
-        const input = subjectInputRef.current;
-        if (!input) return;
 
-        const triggerIndex = lastTriggerIndexRef.current;
-        
-        if (triggerIndex !== -1) {
-            const textBefore = subject.substring(0, triggerIndex);
-            
-            // Find where the search term ends
-            const currentSearchTerm = subjectSearch;
-            const textAfter = subject.substring(triggerIndex + 1 + currentSearchTerm.length);
-
-            const newSubject = `${textBefore}${variable}${textAfter}`;
-
-            handleBlockParamChange(selectedBlock.id, 'subject', newSubject);
-            
-            // Move cursor after the inserted variable
-            setTimeout(() => {
-                input.focus();
-                const newCursorPosition = (textBefore + variable).length;
-                input.setSelectionRange(newCursorPosition, newCursorPosition);
-            }, 0);
-        }
-
-        setSubjectPopoverOpen(false);
-        setSubjectSearch('');
-    };
+    const mentionSuggestions = suggestions.map(s => ({
+        id: s.value,
+        display: s.value,
+    }));
 
     return (
         <div className="space-y-4">
-        <div>
-            <h4 className="font-semibold">Send Email</h4>
-            <p className="text-sm text-muted-foreground">
-                Send an email to a specified recipient.
-            </p>
-        </div>
-        <div className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor={`email-to-${selectedBlock.id}`}>To</Label>
-                <TagInput
-                    id={`email-to-${selectedBlock.id}`}
-                    placeholder="Add recipient or type @ for variables..."
-                    tags={emailTags}
-                    setTags={(newTags) => {
-                        const newEmails = newTags.map(tag => tag.text).join(', ');
-                        handleBlockParamChange(selectedBlock.id, 'to', newEmails);
-                    }}
-                    activeTagIndex={activeTagIndex}
-                    setActiveTagIndex={setActiveTagIndex}
-                    suggestions={suggestions}
-                />
+            <div>
+                <h4 className="font-semibold">Send Email</h4>
+                <p className="text-sm text-muted-foreground">
+                    Send an email to a specified recipient.
+                </p>
             </div>
-            <div className="space-y-2">
-                <Label htmlFor={`email-subject-${selectedBlock.id}`}>
-                Subject
-                </Label>
-                 <Popover open={subjectPopoverOpen} onOpenChange={setSubjectPopoverOpen}>
-                    <PopoverTrigger asChild>
-                        <Input
-                            ref={subjectInputRef}
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor={`email-to-${selectedBlock.id}`}>To</Label>
+                    <TagInput
+                        id={`email-to-${selectedBlock.id}`}
+                        placeholder="Add recipient or type @ for variables..."
+                        tags={emailTags}
+                        setTags={(newTags) => {
+                            const newEmails = newTags.map(tag => tag.text).join(', ');
+                            handleBlockParamChange(selectedBlock.id, 'to', newEmails);
+                        }}
+                        activeTagIndex={activeTagIndex}
+                        setActiveTagIndex={setActiveTagIndex}
+                        suggestions={suggestions}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor={`email-subject-${selectedBlock.id}`}>
+                    Subject
+                    </Label>
+                    <div className="mentions">
+                       <MentionsInput
                             id={`email-subject-${selectedBlock.id}`}
-                            placeholder="Type your subject or type @ for variables..."
                             value={selectedBlock.params.subject || ''}
                             onChange={handleSubjectChange}
-                            autoComplete="off"
-                        />
-                    </PopoverTrigger>
-                    <PopoverContent 
-                        className="w-[--radix-popover-trigger-width] p-0"
-                        align="start"
-                        onOpenAutoFocus={(e) => e.preventDefault()}
-                    >
-                        <Command>
-                          <CommandInput 
-                            placeholder="Search variables..."
-                            value={subjectSearch}
-                            onValueChange={setSubjectSearch}
-                          />
-                          <CommandList>
-                            <CommandEmpty>No results found.</CommandEmpty>
-                            <CommandGroup>
-                              {suggestions.filter(s => s.value.toLowerCase().includes(subjectSearch.toLowerCase())).map((suggestion) => (
-                                <CommandItem
-                                  key={suggestion.value}
-                                  value={suggestion.value}
-                                  onSelect={() => insertVariableInSubject(suggestion.value)}
-                                >
-                                  {suggestion.label}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                    </PopoverContent>
-                </Popover>
+                            placeholder="Type your subject and use '{{' to add variables..."
+                            className="mentions"
+                            classNames={{
+                                control: 'mentions__control',
+                                input: 'mentions__input',
+                                suggestions: 'mentions__suggestions',
+                                list: 'mentions__suggestions__list',
+                                item: 'mentions__suggestions__item',
+                                'item--focused': 'mentions__suggestions__item--focused',
+                            }}
+                        >
+                            <Mention
+                                trigger="{{}}"
+                                data={mentionSuggestions}
+                                markup="{{__display__}}"
+                                className="mentions__mention"
+                                appendSpaceOnAdd
+                            />
+                        </MentionsInput>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor={`email-body-${selectedBlock.id}`}>
+                    Body
+                    </Label>
+                    <Textarea
+                    id={`email-body-${selectedBlock.id}`}
+                    placeholder="Write your email content here."
+                    className="min-h-[120px]"
+                    value={selectedBlock.params.body || ''}
+                    onChange={(e) =>
+                        handleBlockParamChange(
+                        selectedBlock.id,
+                        'body',
+                        e.target.value
+                        )
+                    }
+                    />
+                </div>
             </div>
-            <div className="space-y-2">
-                <Label htmlFor={`email-body-${selectedBlock.id}`}>
-                Body
-                </Label>
-                <Textarea
-                id={`email-body-${selectedBlock.id}`}
-                placeholder="Write your email content here."
-                className="min-h-[120px]"
-                value={selectedBlock.params.body || ''}
-                onChange={(e) =>
-                    handleBlockParamChange(
-                    selectedBlock.id,
-                    'body',
-                    e.target.value
-                    )
-                }
-                />
-            </div>
-        </div>
       </div>
     )
 }
