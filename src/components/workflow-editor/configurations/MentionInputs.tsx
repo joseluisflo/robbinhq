@@ -13,33 +13,29 @@ interface MentionsInputProps {
   onValueChange: (value: string) => void;
   suggestions: Suggestion[];
   placeholder?: string;
+  className?: string;
 }
 
-const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'textarea' }> = ({
+const SharedMentionsComponent: React.FC<MentionsInputProps & { as: typeof Input | typeof Textarea }> = ({
   id,
   value: externalValue,
   onValueChange,
   suggestions,
   placeholder,
+  className,
   as: Component,
 }) => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [trigger, setTrigger] = useState<'@' | '/' | null>(null);
   const [query, setQuery] = useState('');
   const [cursorIndex, setCursorIndex] = useState(0);
-  const [internalValue, setInternalValue] = useState(externalValue);
   
   const inputRef = useRef<HTMLTextAreaElement & HTMLInputElement>(null);
-
-  useEffect(() => {
-    setInternalValue(externalValue);
-  }, [externalValue]);
 
   const handleValueChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     const newValue = e.target.value;
     const cursor = e.target.selectionStart || 0;
     
-    setInternalValue(newValue);
     onValueChange(newValue);
 
     const lastTypedChar = newValue[cursor - 1];
@@ -62,11 +58,10 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
   };
   
   const handleSuggestionSelect = (suggestionValue: string) => {
-    const textBefore = internalValue.substring(0, cursorIndex -1); 
-    const textAfter = internalValue.substring(cursorIndex + query.length);
+    const textBefore = externalValue.substring(0, cursorIndex -1); 
+    const textAfter = externalValue.substring(cursorIndex + query.length);
     
     const newValue = `${textBefore}${suggestionValue} ${textAfter}`;
-    setInternalValue(newValue);
     onValueChange(newValue);
     
     setPopoverOpen(false);
@@ -92,11 +87,11 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
         <Component
             ref={inputRef}
             id={id}
-            value={internalValue}
+            value={externalValue}
             onChange={handleValueChange}
             placeholder={placeholder}
-            className={Component === 'input' ? "" : "min-h-[120px]"}
-            onKeyDown={(e) => {
+            className={className}
+            onKeyDown={(e: any) => {
                 if (popoverOpen && (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Enter")) {
                     e.preventDefault();
                 }
@@ -132,9 +127,9 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
 
 
 export const MentionInput: React.FC<MentionsInputProps> = (props) => (
-    <SharedMentionsComponent {...props} as={Input as any} />
+    <SharedMentionsComponent {...props} as={Input} />
 );
 
 export const MentionTextarea: React.FC<MentionsInputProps> = (props) => (
-    <SharedMentionsComponent {...props} as={Textarea as any} />
+    <SharedMentionsComponent {...props} as={Textarea} className="min-h-[120px]" />
 );
