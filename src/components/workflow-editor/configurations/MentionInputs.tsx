@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover'; 
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -100,7 +100,7 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
 
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-      <PopoverTrigger asChild>
+      <PopoverAnchor asChild>
         <Component
             ref={valueInputRef}
             id={id}
@@ -113,8 +113,9 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
                     e.preventDefault();
                 }
             }}
+            autoComplete="off"
         />
-      </PopoverTrigger>
+      </PopoverAnchor>
       <PopoverContent 
         className="w-[--radix-popover-trigger-width] p-0" 
         align="start"
@@ -125,6 +126,7 @@ const SharedMentionsComponent: React.FC<MentionsInputProps & { as: 'input' | 'te
             placeholder="Search variables..."
             value={query}
             onValueChange={setQuery}
+            className="hidden"
           />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
