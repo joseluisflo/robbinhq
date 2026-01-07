@@ -69,11 +69,18 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
                             id={`email-subject-${selectedBlock.id}`}
                             value={selectedBlock.params.subject || ''}
                             onChange={handleSubjectChange}
-                            placeholder="Type your subject and use '{{' to add variables..."
+                            placeholder="Type your subject type @ for variables"
                             className="mentions"
                         >
                             <Mention
-                                trigger="[["
+                                trigger="@"
+                                data={mentionSuggestions}
+                                markup="{{__display__}}"
+                                className="mentions__mention"
+                                appendSpaceOnAdd
+                            />
+                             <Mention
+                                trigger="/"
                                 data={mentionSuggestions}
                                 markup="{{__display__}}"
                                 className="mentions__mention"
@@ -94,7 +101,14 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
                         className="mentions"
                     >
                         <Mention
-                                trigger="[["
+                                trigger="@"
+                                data={mentionSuggestions}
+                                markup="{{__display__}}"
+                                className="mentions__mention"
+                                appendSpaceOnAdd
+                        />
+                         <Mention
+                                trigger="/"
                                 data={mentionSuggestions}
                                 markup="{{__display__}}"
                                 className="mentions__mention"
