@@ -11,7 +11,7 @@ import {
   showMultipleChoiceStep,
   waitForUserReplyStep,
 } from '@/app/workflows/agent-steps';
-import type { Workflow, WorkflowRun, WorkflowBlock } from '@/lib/types';
+import type { Workflow, WorkflowRun, WorkflowBlock, Agent } from '@/lib/types';
 import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue }from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
@@ -72,6 +72,10 @@ function resolvePlaceholders(value: any, context: Record<string, any>): any {
                 return match; // Return original placeholder if path not found
             }
         }
+        // If the resolved value is an object, stringify it, otherwise return it.
+        if (typeof resolvedValue === 'object' && resolvedValue !== null) {
+            return JSON.stringify(resolvedValue);
+        }
         return resolvedValue;
     });
 }
@@ -109,11 +113,19 @@ export async function runOrResumeWorkflow(
   const now = new Date();
 
   // Load the workflow definition first
-  const workflowRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId).collection('workflows').doc(workflowId);
-  const workflowDoc = await workflowRef.get();
+  const agentDocRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+  const workflowRef = agentDocRef.collection('workflows').doc(workflowId);
+  
+  const [agentDoc, workflowDoc] = await Promise.all([agentDocRef.get(), workflowRef.get()]);
+
+  if (!agentDoc.exists) {
+      return { error: `Agent with ID ${agentId} not found.` };
+  }
   if (!workflowDoc.exists) {
     return { error: `Workflow with ID ${workflowId} not found.` };
   }
+  
+  const agent = agentDoc.data() as Agent;
   const workflow = workflowDoc.data() as Workflow;
   const blocks = workflow.blocks || [];
 
@@ -149,6 +161,14 @@ export async function runOrResumeWorkflow(
       currentStepIndex: 0, 
     };
   }
+
+  // Pass agent info into the context
+  run.context.agent = {
+      name: agent.name,
+      description: agent.description,
+      emailSignature: agent.emailSignature,
+  };
+
 
   // 2. Main execution loop
   while (run.status === 'running' && run.currentStepIndex < blocks.length) {

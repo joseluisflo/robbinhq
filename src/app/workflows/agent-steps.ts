@@ -2,6 +2,9 @@
 "use step";
 
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { sendEmail } from '@/lib/email-service';
+import type { Agent } from '@/lib/types';
+
 
 /**
  * Pauses the workflow and asks the user a question.
@@ -40,12 +43,48 @@ export async function searchWebStep({ query }: { query: string }) {
   return { summary: `Simulated search results for "${query}": AI is transforming industries.` };
 }
 
-// Simulates sending an email
-export async function sendEmailStep({ to, subject, body }: { to: string; subject: string; body: string }) {
-  console.log(`Simulating email send to ${to} with subject "${subject}"`);
-  // In a real implementation, this would use an email service.
-  return { status: "Email sent successfully (simulated)." };
+const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+export async function sendEmailStep(
+    { to, subject, body }: { to: string; subject: string; body: string },
+    context: { agent?: Agent }
+) {
+    console.log(`Attempting to send email to ${to} with subject "${subject}"`);
+
+    if (!to) {
+        throw new Error("Recipient address is empty. Cannot send email.");
+    }
+
+    const recipients = to.split(',').map(email => email.trim()).filter(Boolean);
+    if (recipients.length === 0) {
+        throw new Error("No valid recipient addresses found.");
+    }
+    
+    for (const recipient of recipients) {
+        if (!emailRegex.test(recipient)) {
+            throw new Error(`Invalid email format for recipient: "${recipient}".`);
+        }
+    }
+    
+    if (!context.agent) {
+        throw new Error("Agent context is missing. Cannot determine sender name.");
+    }
+
+    try {
+        await sendEmail({
+            to,
+            subject,
+            text: body,
+            fromName: context.agent.name,
+        });
+        return { status: "Email sent successfully." };
+    } catch (error: any) {
+        console.error("sendEmail service failed:", error);
+        // Re-throw the error to be caught by the workflow runner
+        throw new Error(error.message || "Failed to send email via email service.");
+    }
 }
+
 
 // Simulates sending an SMS
 export async function sendSmsStep({ to, message }: { to: string, message: string }) {

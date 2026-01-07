@@ -196,7 +196,7 @@ export type WorkflowRun = {
   id: string;
   workflowId: string;
   status: 'running' | 'awaiting_input' | 'completed' | 'failed';
-  context: Record<string, any>;
+  context: Record<string, any> & { agent?: Partial<Agent> };
   currentStepIndex: number;
   promptForUser?: string;
 };
