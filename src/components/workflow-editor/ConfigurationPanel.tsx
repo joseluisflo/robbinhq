@@ -67,6 +67,32 @@ export function ConfigurationPanel({
     }
   };
 
+    const handleAddVariable = () => {
+        if (selectedBlock) {
+            const currentVariables = selectedBlock.params.variables || [{ name: '', value: '' }];
+            handleBlockParamChange(selectedBlock.id, 'variables', [...currentVariables, { name: '', value: '' }]);
+        }
+    };
+
+    const handleVariableChange = (index: number, field: 'name' | 'value', fieldValue: string) => {
+        if (selectedBlock) {
+            const currentVariables = selectedBlock.params.variables || [];
+            const updatedVariables = currentVariables.map((v: any, i: number) => 
+                i === index ? { ...v, [field]: fieldValue } : v
+            );
+            handleBlockParamChange(selectedBlock.id, 'variables', updatedVariables);
+        }
+    };
+
+    const handleRemoveVariable = (indexToRemove: number) => {
+        if (selectedBlock) {
+            const currentVariables = selectedBlock.params.variables || [];
+            const updatedVariables = currentVariables.filter((_: any, index: number) => index !== indexToRemove);
+            handleBlockParamChange(selectedBlock.id, 'variables', updatedVariables);
+        }
+    };
+
+
   const getResultKeyForBlock = (blockType: string) => {
     switch (blockType) {
       case 'Ask a question':
@@ -265,57 +291,63 @@ export function ConfigurationPanel({
             )}
             {selectedBlock.type === 'Set variable' && (
               <div className="space-y-4">
-                <div>
-                    <h4 className="font-semibold">Set variable</h4>
-                    <p className="text-sm text-muted-foreground">
-                        Store a value in a variable to use later in the workflow.
-                    </p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h4 className="font-semibold">Set variable</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Store values in variables to use later in the workflow.
+                        </p>
+                    </div>
+                     <Button variant="outline" size="sm" onClick={handleAddVariable}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add variable
+                    </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`variable-name-${selectedBlock.id}`}>
-                      Variable Name
-                    </Label>
-                    <Input
-                      id={`variable-name-${selectedBlock.id}`}
-                      placeholder="e.g. userEmail"
-                      value={selectedBlock.params.variableName || ''}
-                      onChange={(e) =>
-                        handleBlockParamChange(
-                          selectedBlock.id,
-                          'variableName',
-                          e.target.value
-                        )
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`variable-value-${selectedBlock.id}`}>
-                      Value
-                    </Label>
-                    <Select
-                      value={selectedBlock.params.value || ''}
-                      onValueChange={(value) => handleBlockParamChange(selectedBlock.id, 'value', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a value..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="{{userInput}}">
-                          Initial User Input
-                        </SelectItem>
-                        {availableVariables.map(block => {
-                            const resultKey = getResultKeyForBlock(block.type);
-                            const variable = resultKey ? `{{${block.id}.${resultKey}}}` : `{{${block.id}}}`;
-                            return (
-                                <SelectItem key={block.id} value={variable}>
-                                    Result of &quot;{block.type}&quot; ({block.id})
-                                </SelectItem>
-                            )
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-4">
+                    {(selectedBlock.params.variables || [{ name: '', value: '' }]).map((variable: any, index: number) => (
+                        <div key={index} className="grid grid-cols-[1fr_1fr_auto] items-end gap-2 p-3 border rounded-lg">
+                             <div className="space-y-1.5">
+                                <Label htmlFor={`variable-name-${selectedBlock.id}-${index}`}>
+                                    Variable Name
+                                </Label>
+                                <Input
+                                id={`variable-name-${selectedBlock.id}-${index}`}
+                                placeholder="e.g. userEmail"
+                                value={variable.name || ''}
+                                onChange={(e) => handleVariableChange(index, 'name', e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor={`variable-value-${selectedBlock.id}-${index}`}>
+                                Value
+                                </Label>
+                                <Select
+                                value={variable.value || ''}
+                                onValueChange={(value) => handleVariableChange(index, 'value', value)}
+                                >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a value..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="{{userInput}}">
+                                    Initial User Input
+                                    </SelectItem>
+                                    {availableVariables.map(block => {
+                                        const resultKey = getResultKeyForBlock(block.type);
+                                        const variable = resultKey ? `{{${block.id}.${resultKey}}}` : `{{${block.id}}}`;
+                                        return (
+                                            <SelectItem key={block.id} value={variable}>
+                                                Result of &quot;{block.type}&quot; ({block.id})
+                                            </SelectItem>
+                                        )
+                                    })}
+                                </SelectContent>
+                                </Select>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleRemoveVariable(index)}>
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))}
                 </div>
               </div>
             )}
