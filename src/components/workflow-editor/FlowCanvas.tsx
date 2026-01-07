@@ -30,19 +30,20 @@ export function FlowCanvas({
   onConnect,
   onNodeClick,
 }: FlowCanvasProps) {
-    const reactFlowInstance = useReactFlow();
-    
-    React.useEffect(() => {
-        if (nodes.length > 0) {
-            reactFlowInstance.fitView({ 
-                duration: 300, 
-                padding: 2,      // Mucho más padding
-                maxZoom: 0.6,    // Limita el zoom más bajo
-                minZoom: 0.3     // Permite zoom más alejado
-            });
-        }
+  const reactFlowInstance = useReactFlow();
+
+  React.useEffect(() => {
+    if (nodes.length > 0) {
+      // Ajustamos esto para que sea consistente con la vista inicial
+      reactFlowInstance.fitView({ 
+        duration: 300, 
+        padding: 0.2, 
+        maxZoom: 1,    // Evita que se haga zoom in excesivo
+        minZoom: 0.3     
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [nodes.length]);
+  }, [nodes.length]);
 
   return (
     <div className="flex h-full items-center justify-center bg-muted/30">
@@ -54,10 +55,14 @@ export function FlowCanvas({
         onConnect={onConnect}
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
+        // --- AQUÍ ESTÁ EL CAMBIO PRINCIPAL ---
         fitView
-        defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}  // Zoom inicial al 50%
-        minZoom={0.3}   // Permite alejarse más
-        maxZoom={2}     // Límite superior razonable
+        fitViewOptions={{ 
+          padding: 0.2, // Deja un margen agradable
+          maxZoom: 1    // IMPORTANTE: Esto evita que el nodo se vea gigante al inicio
+        }}
+        minZoom={0.3}
+        maxZoom={2}
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} />

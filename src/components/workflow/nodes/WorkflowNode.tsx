@@ -52,7 +52,9 @@ export function WorkflowNode({ data, selected }: NodeProps<{ label: string; type
         </div>
         <span className="text-sm font-medium text-foreground">{label}</span>
       </div>
-      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !-top-1 !bg-primary" />
+      {data.type !== 'Trigger' && (
+        <Handle type="target" position={Position.Top} className="!w-2 !h-2 !-top-1 !bg-primary" />
+      )}
       <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !-bottom-1 !bg-primary" />
     </div>
   );
