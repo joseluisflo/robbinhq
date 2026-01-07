@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -6,7 +5,6 @@ import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
@@ -15,11 +13,17 @@ export type Tag = {
   text: string
 }
 
+export type Suggestion = {
+    value: string;
+    label: React.ReactNode;
+}
+
 export interface TagInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   tags: Tag[]
   setTags: (tags: Tag[]) => void
   activeTagIndex?: number | null
-  setActiveTagIndex?: (index: number | null) => void
+  setActiveTagIndex?: (index: number | null) => void;
+  suggestions?: Suggestion[];
   styleClasses?: {
     inlineTagsContainer?: string
     input?: string
@@ -40,6 +44,7 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
       setTags,
       activeTagIndex,
       setActiveTagIndex,
+      suggestions = [],
       styleClasses,
       ...props
     },
@@ -47,19 +52,32 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
   ) => {
     const [inputValue, setInputValue] = React.useState("")
     const inputRef = React.useRef<HTMLInputElement>(null)
+    const [popoverOpen, setPopoverOpen] = React.useState(false);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setInputValue(e.target.value)
+      const newValue = e.target.value;
+      setInputValue(newValue);
+      if ((newValue.includes('@') || newValue.includes('/')) && suggestions.length > 0) {
+        setPopoverOpen(true);
+      } else {
+        setPopoverOpen(false);
+      }
     }
+    
+    const addTag = (text: string) => {
+        if (text) {
+            const newTag = { id: `${Date.now()}`, text };
+            setTags([...tags, newTag]);
+            setInputValue("");
+            setPopoverOpen(false);
+        }
+    };
+
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter" || e.key === ",") {
         e.preventDefault()
-        const newTagText = inputValue.trim()
-        if (newTagText) {
-          setTags([...tags, { id: `${Date.now()}`, text: newTagText }])
-          setInputValue("")
-        }
+        addTag(inputValue.trim());
       } else if (e.key === "Backspace" && inputValue === "" && tags.length > 0) {
         e.preventDefault()
         const newTags = [...tags]
@@ -70,6 +88,10 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
           newTags.pop()
         }
         setTags(newTags)
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (popoverOpen) {
+          e.preventDefault();
+        }
       }
     }
 
@@ -78,41 +100,77 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     }
 
     return (
-      <div
-        className={cn(
-          "flex flex-wrap items-center gap-2 rounded-md border border-input p-2",
-          styleClasses?.inlineTagsContainer,
-          className,
-        )}
-        onClick={() => inputRef.current?.focus()}
-      >
-        {tags.map((tag, index) => (
-          <Badge
-            key={tag.id}
-            variant="secondary"
-            className={cn("gap-1 pr-1", styleClasses?.tag?.body)}
-          >
-            {tag.text}
-            <button
-              className={cn("rounded-full p-0.5 hover:bg-destructive/20", styleClasses?.tag?.closeButton)}
-              onClick={() => removeTag(tag.id)}
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+        <PopoverTrigger asChild>
+            <div
+                className={cn(
+                "flex flex-wrap items-center gap-2 rounded-md border border-input p-2",
+                styleClasses?.inlineTagsContainer,
+                className,
+                )}
+                onClick={() => inputRef.current?.focus()}
             >
-              <XIcon className="h-3 w-3" />
-            </button>
-          </Badge>
-        ))}
-        <input
-          ref={inputRef}
-          id={id}
-          type="text"
-          placeholder={placeholder}
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          className={cn("flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground", styleClasses?.input)}
-          {...props}
-        />
-      </div>
+                {tags.map((tag, index) => (
+                <Badge
+                    key={tag.id}
+                    variant="secondary"
+                    className={cn("gap-1 pr-1", styleClasses?.tag?.body)}
+                >
+                    {tag.text}
+                    <button
+                    className={cn("rounded-full p-0.5 hover:bg-destructive/20", styleClasses?.tag?.closeButton)}
+                    onClick={() => removeTag(tag.id)}
+                    >
+                    <XIcon className="h-3 w-3" />
+                    </button>
+                </Badge>
+                ))}
+                <input
+                    ref={inputRef}
+                    id={id}
+                    type="text"
+                    placeholder={placeholder}
+                    value={inputValue}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    className={cn("flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground", styleClasses?.input)}
+                    {...props}
+                />
+            </div>
+        </PopoverTrigger>
+         <PopoverContent 
+            className="w-[--radix-popover-trigger-width] p-0"
+            align="start"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+            <Command>
+              <CommandInput 
+                placeholder="Search variables..."
+                value={inputValue.substring(inputValue.lastIndexOf('@') + 1)}
+                onValueChange={(search) => {
+                    const atIndex = inputValue.lastIndexOf('@');
+                    setInputValue(inputValue.substring(0, atIndex + 1) + search);
+                }}
+              />
+              <CommandList>
+                <CommandEmpty>No results found.</CommandEmpty>
+                <CommandGroup>
+                  {suggestions.map((suggestion) => (
+                    <CommandItem
+                      key={suggestion.value}
+                      value={suggestion.value}
+                      onSelect={(currentValue) => {
+                        addTag(currentValue);
+                      }}
+                    >
+                      {suggestion.label}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+        </PopoverContent>
+      </Popover>
     )
   },
 )

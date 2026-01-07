@@ -10,7 +10,7 @@ import type { WorkflowBlock } from '@/lib/types';
 import { AddBlockPopover } from '@/components/add-block-popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Tag, TagInput } from '../ui/tag-input';
+import { Tag, TagInput, type Suggestion } from '../ui/tag-input';
 
 const blockGroups: Record<string, string> = {
   Trigger: 'Core',
@@ -152,6 +152,24 @@ export function ConfigurationPanel({
     ? allBlocks.slice(0, allBlocks.findIndex(b => b.id === selectedBlock.id))
                .filter(b => b.type !== 'Trigger' && b.type !== 'Wait for User Reply')
     : [];
+    
+  const suggestions: Suggestion[] = availableVariables.flatMap(block => {
+    if (block.type === 'Set variable') {
+        return (block.params.variables || []).map((v: any) => ({
+            value: `{{${v.name}}}`,
+            label: <span className="flex items-center gap-2">Set variable: <span className="font-semibold">{v.name}</span></span>,
+        }));
+    } else {
+        const resultKey = getResultKeyForBlock(block.type);
+        const value = resultKey ? `{{${block.id}.${resultKey}}}` : `{{${block.id}}}`;
+        return {
+            value: value,
+            label: `Result of "${block.type}" (${block.id})`,
+        }
+    }
+  });
+  
+  suggestions.unshift({ value: '{{userInput}}', label: 'Initial User Input' });
 
 
   return (
@@ -337,16 +355,16 @@ export function ConfigurationPanel({
                         <PlusCircle className="mr-2 h-4 w-4" /> Add variable
                     </Button>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2">
                     {(selectedBlock.params.variables || []).map((variable: any, index: number) => (
-                        <div key={index} className="grid grid-cols-[1fr_1fr_auto] items-end gap-2 p-3 border rounded-lg">
+                        <div key={index} className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
                              <div className="space-y-1.5">
                                 <Label htmlFor={`variable-name-${selectedBlock.id}-${index}`}>
                                     Variable Name
                                 </Label>
                                 <Input
                                 id={`variable-name-${selectedBlock.id}-${index}`}
-                                placeholder="e.g. userEmail"
+                                placeholder="e.g. user_email"
                                 value={variable.name || ''}
                                 onChange={(e) => handleVariableChange(index, 'name', e.target.value)}
                                 />
@@ -401,7 +419,7 @@ export function ConfigurationPanel({
                         <Label htmlFor={`email-to-${selectedBlock.id}`}>To</Label>
                         <TagInput
                             id={`email-to-${selectedBlock.id}`}
-                            placeholder="Add recipient..."
+                            placeholder="Add recipient or type @ for variables..."
                             tags={emailTags}
                             setTags={(newTags) => {
                                 const newEmails = newTags.map(tag => tag.text).join(', ');
@@ -409,6 +427,7 @@ export function ConfigurationPanel({
                             }}
                             activeTagIndex={activeTagIndex}
                             setActiveTagIndex={setActiveTagIndex}
+                            suggestions={suggestions}
                         />
                     </div>
                     <div className="space-y-2">
