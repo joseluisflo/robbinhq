@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -51,6 +51,14 @@ export function ConfigurationPanel({
 }: ConfigurationPanelProps) {
   const [newOption, setNewOption] = useState('');
 
+  // Effect to initialize variables for 'Set variable' block if they don't exist
+  useEffect(() => {
+    if (selectedBlock?.type === 'Set variable' && !selectedBlock.params.variables) {
+      handleBlockParamChange(selectedBlock.id, 'variables', [{ name: '', value: '' }]);
+    }
+  }, [selectedBlock, handleBlockParamChange]);
+
+
   const handleAddOption = () => {
     if (newOption.trim() && selectedBlock) {
       const currentOptions = selectedBlock.params.options || [];
@@ -69,7 +77,7 @@ export function ConfigurationPanel({
 
     const handleAddVariable = () => {
         if (selectedBlock) {
-            const currentVariables = selectedBlock.params.variables || [{ name: '', value: '' }];
+            const currentVariables = selectedBlock.params.variables || [];
             handleBlockParamChange(selectedBlock.id, 'variables', [...currentVariables, { name: '', value: '' }]);
         }
     };
@@ -87,6 +95,7 @@ export function ConfigurationPanel({
     const handleRemoveVariable = (indexToRemove: number) => {
         if (selectedBlock) {
             const currentVariables = selectedBlock.params.variables || [];
+            if (currentVariables.length <= 1) return; // Prevent removing the last one
             const updatedVariables = currentVariables.filter((_: any, index: number) => index !== indexToRemove);
             handleBlockParamChange(selectedBlock.id, 'variables', updatedVariables);
         }
@@ -303,7 +312,7 @@ export function ConfigurationPanel({
                     </Button>
                 </div>
                 <div className="space-y-4">
-                    {(selectedBlock.params.variables || [{ name: '', value: '' }]).map((variable: any, index: number) => (
+                    {(selectedBlock.params.variables || []).map((variable: any, index: number) => (
                         <div key={index} className="grid grid-cols-[1fr_1fr_auto] items-end gap-2 p-3 border rounded-lg">
                              <div className="space-y-1.5">
                                 <Label htmlFor={`variable-name-${selectedBlock.id}-${index}`}>
@@ -324,7 +333,7 @@ export function ConfigurationPanel({
                                 value={variable.value || ''}
                                 onValueChange={(value) => handleVariableChange(index, 'value', value)}
                                 >
-                                <SelectTrigger>
+                                <SelectTrigger className="shadow-sm">
                                     <SelectValue placeholder="Select a value..." />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -343,9 +352,11 @@ export function ConfigurationPanel({
                                 </SelectContent>
                                 </Select>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleRemoveVariable(index)}>
-                                <X className="h-4 w-4" />
-                            </Button>
+                            {(selectedBlock.params.variables.length > 1) && (
+                                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleRemoveVariable(index)}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            )}
                         </div>
                     ))}
                 </div>
