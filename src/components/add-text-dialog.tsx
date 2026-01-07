@@ -96,7 +96,7 @@ export function AddTextDialog({ children }: { children: React.ReactNode }) {
             Train your AI Agent with clear, text-based data.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <div className="space-y-4">
           {isLimitReached && (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />

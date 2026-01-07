@@ -59,7 +59,7 @@ export function AddStarterDialog({
             {description}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="starter-text">
               Rule
@@ -78,7 +78,7 @@ export function AddStarterDialog({
             />
           </div>
         </div>
-        <DialogFooter className="grid grid-cols-2 gap-2 sm:space-x-0">
+        <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="outline">
               Cancel
