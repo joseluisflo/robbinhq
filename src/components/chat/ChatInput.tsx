@@ -163,7 +163,7 @@ export function ChatInput({
         </div>
         {isBrandingEnabled && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            Powered by <Logo width={60} height={12} alt="Robbin logo" />
+            Powered by <Logo width={60} height={12} alt="Robbin logo" className="grayscale" />
           </div>
         )}
       </div>
