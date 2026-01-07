@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { XIcon } from "lucide-react"
+import { useToast } from "@/hooks/use-toast";
 
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -34,6 +35,10 @@ export interface TagInputProps extends React.InputHTMLAttributes<HTMLInputElemen
   }
 }
 
+const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+const variableRegex = /^{{\s*[\w.-]+\s*}}$/;
+
+
 export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
   (
     {
@@ -53,6 +58,7 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     const [inputValue, setInputValue] = React.useState("")
     const inputRef = React.useRef<HTMLInputElement>(null)
     const [popoverOpen, setPopoverOpen] = React.useState(false);
+    const { toast } = useToast();
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
@@ -65,11 +71,20 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     }
     
     const addTag = (text: string) => {
-        if (text) {
-            const newTag = { id: `${Date.now()}`, text };
-            setTags([...tags, newTag]);
-            setInputValue("");
-            setPopoverOpen(false);
+        const trimmedText = text.trim();
+        if (trimmedText) {
+            if (emailRegex.test(trimmedText) || variableRegex.test(trimmedText)) {
+                const newTag = { id: `${Date.now()}`, text: trimmedText };
+                setTags([...tags, newTag]);
+                setInputValue("");
+                setPopoverOpen(false);
+            } else {
+                toast({
+                    title: "Invalid Email",
+                    description: "Please enter a valid email address or select a variable.",
+                    variant: "destructive",
+                });
+            }
         }
     };
 
@@ -77,7 +92,7 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter" || e.key === ",") {
         e.preventDefault()
-        addTag(inputValue.trim());
+        addTag(inputValue);
       } else if (e.key === "Backspace" && inputValue === "" && tags.length > 0) {
         e.preventDefault()
         const newTags = [...tags]
