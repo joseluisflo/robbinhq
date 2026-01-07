@@ -78,9 +78,9 @@ export function AddStarterDialog({
             />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="grid grid-cols-2 gap-2">
           <DialogClose asChild>
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" className="w-full">
               Cancel
             </Button>
           </DialogClose>
@@ -88,6 +88,7 @@ export function AddStarterDialog({
             type="button"
             onClick={handleAdd}
             disabled={!starter.trim()}
+            className="w-full"
           >
             Add
           </Button>

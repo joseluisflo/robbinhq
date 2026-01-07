@@ -132,16 +132,17 @@ export function AddTextDialog({ children }: { children: React.ReactNode }) {
             />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="grid grid-cols-2 gap-2">
           <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Close
+            <Button type="button" variant="outline" className="w-full">
+              Cancel
             </Button>
           </DialogClose>
           <Button
             type="button"
             onClick={handleAddText}
             disabled={!title || !content || isSaving || isLimitReached}
+            className="w-full"
           >
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Add text

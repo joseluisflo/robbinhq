@@ -238,6 +238,8 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const hasFiles = files.length > 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -296,37 +298,35 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        <DialogFooter className="mt-4 sm:justify-between items-center">
-          {files.length > 0 ? (
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              onClick={() => setFiles([])}
-              className="order-1 sm:order-none"
-              disabled={isUploading}
-            >
-              Remove all files
-            </Button>
-          ) : <div />}
-          <div className="flex gap-2">
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isUploading}>
-                Close
-              </Button>
+        <DialogFooter className={cn("grid gap-2", hasFiles ? "grid-cols-3" : "grid-cols-2")}>
+            {hasFiles && (
+                <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => setFiles([])}
+                    disabled={isUploading}
+                    className="w-full"
+                >
+                    Remove all
+                </Button>
+            )}
+             <DialogClose asChild className="w-full">
+                <Button type="button" variant="outline" disabled={isUploading}>
+                    Cancel
+                </Button>
             </DialogClose>
             <Button
-              type="button"
-              onClick={handleAddFiles}
-              disabled={files.length === 0 || isUploading}
+                type="button"
+                onClick={handleAddFiles}
+                disabled={files.length === 0 || isUploading}
+                className="w-full"
             >
-              {isUploading ? (
-                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...</>
-              ) : (
-                `Add ${files.length} file${files.length === 1 ? '' : 's'}`
-              )}
+                {isUploading ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...</>
+                ) : (
+                    `Add ${files.length} file${files.length === 1 ? '' : 's'}`
+                )}
             </Button>
-          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
