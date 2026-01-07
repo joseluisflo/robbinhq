@@ -467,7 +467,7 @@ export function ConfigurationPanel({
                             <PopoverTrigger asChild>
                                 <Input
                                     id={`email-subject-${selectedBlock.id}`}
-                                    placeholder="Your email subject or type @ for variables..."
+                                    placeholder="Type your subject or type @ for variables..."
                                     value={selectedBlock.params.subject || ''}
                                     onChange={handleSubjectChange}
                                 />
