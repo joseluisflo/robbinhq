@@ -98,11 +98,11 @@
 
 
 .mentions__suggestions {
-  @apply mt-2 w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md;
+  @apply z-50 mt-1 min-w-[var(--radix-popover-trigger-width)] max-h-60 overflow-y-auto rounded-md border bg-popover text-popover-foreground p-1 shadow-md;
 }
 
 .mentions__suggestions__list {
-  @apply max-h-60 overflow-y-auto p-1;
+  @apply outline-none;
 }
 
 .mentions__suggestions__item {
