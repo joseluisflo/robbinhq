@@ -34,15 +34,16 @@ export function FlowCanvas({
 
   React.useEffect(() => {
     if (nodes.length > 0) {
-      // Ajustamos esto para que sea consistente con la vista inicial
-      reactFlowInstance.fitView({ 
-        duration: 300, 
-        padding: 0.2, 
-        maxZoom: 1,    // Evita que se haga zoom in excesivo
-        minZoom: 0.3     
-      });
+      // Give it a brief moment for the layout to settle before fitting the view
+      setTimeout(() => {
+        reactFlowInstance.fitView({ 
+          duration: 300, 
+          padding: 0.2,
+          maxZoom: 1,
+        });
+      }, 50);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes.length]);
 
   return (
@@ -55,11 +56,10 @@ export function FlowCanvas({
         onConnect={onConnect}
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
-        // --- AQUÍ ESTÁ EL CAMBIO PRINCIPAL ---
         fitView
         fitViewOptions={{ 
-          padding: 0.2, // Deja un margen agradable
-          maxZoom: 1    // IMPORTANTE: Esto evita que el nodo se vea gigante al inicio
+          padding: 0.2,
+          maxZoom: 1
         }}
         minZoom={0.3}
         maxZoom={2}

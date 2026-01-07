@@ -111,33 +111,55 @@ export function useWorkflowEditor(workflowId: string) {
         const savedBlocks = data.blocks || [];
         setBlocks(savedBlocks);
 
-        let initialNodes;
+        let initialNodes: Node[] = [];
         if (data.nodes && data.nodes.length > 0) {
             initialNodes = data.nodes.map(n => ({...n, type: 'workflowNode', data: { ...n.data, label: n.data.label || n.data.type }}));
-        } else {
+        } else if (savedBlocks.length > 0) {
             initialNodes = savedBlocks.map((block, index) => ({
                 id: block.id,
                 type: 'workflowNode',
                 position: { x: 0, y: index * 120 },
                 data: { label: block.type, type: block.type },
             }));
+        } else {
+             // Handle brand new workflow with no saved blocks
+             const triggerBlock = { id: uuidv4(), type: 'Trigger', params: {} };
+             setBlocks([triggerBlock]); // Ensure blocks state is updated
+             initialNodes = [{
+                 id: triggerBlock.id,
+                 type: 'workflowNode',
+                 position: { x: 0, y: 0 },
+                 data: { label: 'Start', type: 'Trigger' },
+             }];
         }
 
-        const lastNode = initialNodes.at(-1);
+        const lastNode = initialNodes.length > 0 ? initialNodes[initialNodes.length - 1] : null;
+        
         const addNode: Node = {
             id: 'add-block-node',
             type: 'addBlockNode',
-            position: { x: lastNode?.position.x || 0, y: (lastNode?.position.y || -120) + 120},
+            position: { x: lastNode?.position.x ?? 0, y: (lastNode?.position.y ?? -120) + 120},
             data: { onAddBlock: handleAddBlock },
         };
 
+        const nodesWithAdd = [...initialNodes, addNode];
+        setNodes(nodesWithAdd);
+
         let initialEdges = data.edges || [];
-        if (lastNode) {
-            initialEdges.push({id: `e${lastNode.id}-add`, source: lastNode.id, target: 'add-block-node'});
+        if (initialEdges.length === 0 && savedBlocks.length > 0) {
+          // If no edges are saved, generate them from blocks
+          for (let i = 0; i < savedBlocks.length - 1; i++) {
+              initialEdges.push({id: `e-${savedBlocks[i].id}-${savedBlocks[i+1].id}`, source: savedBlocks[i].id, target: savedBlocks[i+1].id});
+          }
         }
-        
-        setNodes([...initialNodes, addNode]);
-        setEdges(initialEdges);
+
+        // Always ensure the add-block-node is connected
+        const finalEdges = [...initialEdges.filter(e => e.target !== 'add-block-node')];
+        if (lastNode) {
+          finalEdges.push({id: `e-${lastNode.id}-add`, source: lastNode.id, target: 'add-block-node'});
+        }
+
+        setEdges(finalEdges);
 
       } else {
         setWorkflow(null);
@@ -208,33 +230,51 @@ export function useWorkflowEditor(workflowId: string) {
         const savedBlocks = workflow.blocks || [];
         setBlocks(savedBlocks);
         
-        let initialNodes;
+        let initialNodes: Node[];
         if (workflow.nodes && workflow.nodes.length > 0) {
             initialNodes = workflow.nodes.map(n => ({...n, type: 'workflowNode', data: {...n.data, label: n.data.label || n.data.type}}));
-        } else {
+        } else if (savedBlocks.length > 0) {
             initialNodes = savedBlocks.map((block, index) => ({
                 id: block.id,
                 type: 'workflowNode',
                 position: { x: 0, y: index * 120 },
                 data: { label: block.type, type: block.type },
             }));
+        } else {
+           const triggerBlock = { id: uuidv4(), type: 'Trigger', params: {} };
+           setBlocks([triggerBlock]); // Ensure blocks state is updated
+           initialNodes = [{
+               id: triggerBlock.id,
+               type: 'workflowNode',
+               position: { x: 0, y: 0 },
+               data: { label: 'Start', type: 'Trigger' },
+           }];
         }
 
-        const lastNode = initialNodes.at(-1);
+        const lastNode = initialNodes.length > 0 ? initialNodes[initialNodes.length - 1] : null;
         const addNode: Node = {
             id: 'add-block-node',
             type: 'addBlockNode',
-            position: { x: lastNode?.position.x || 0, y: (lastNode?.position.y || -120) + 120},
+            position: { x: lastNode?.position.x ?? 0, y: (lastNode?.position.y ?? -120) + 120},
             data: { onAddBlock: handleAddBlock },
         };
 
+        const nodesWithAdd = [...initialNodes, addNode];
+        setNodes(nodesWithAdd);
+
         let initialEdges = workflow.edges || [];
-        if (lastNode) {
-            initialEdges.push({id: `e${lastNode.id}-add`, source: lastNode.id, target: 'add-block-node'});
+        if (initialEdges.length === 0 && savedBlocks.length > 0) {
+            for (let i = 0; i < savedBlocks.length - 1; i++) {
+                initialEdges.push({id: `e-${savedBlocks[i].id}-${savedBlocks[i+1].id}`, source: savedBlocks[i].id, target: savedBlocks[i+1].id});
+            }
         }
         
-        setNodes([...initialNodes, addNode]);
-        setEdges(initialEdges);
+        const finalEdges = [...initialEdges.filter(e => e.target !== 'add-block-node')];
+        if (lastNode) {
+          finalEdges.push({id: `e-${lastNode.id}-add`, source: lastNode.id, target: 'add-block-node'});
+        }
+        
+        setEdges(finalEdges);
     }
   };
 
