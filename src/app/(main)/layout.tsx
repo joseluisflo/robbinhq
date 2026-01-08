@@ -132,7 +132,7 @@ export default function AppLayout({
         )}
         <AppSidebar />
         <SidebarInset className="grid h-screen grid-rows-[auto_1fr]">
-          <AppHeader />
+          <AppHeader isWorkflowDetailPage={isWorkflowDetailPage} />
           <main className={cn("flex flex-col overflow-y-auto", !noPadding && "p-4 sm:p-6")}>
             {children}
           </main>
