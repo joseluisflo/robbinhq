@@ -1,12 +1,12 @@
 import { genkit, type Plugin } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
-import { googleSearch } from '@genkit-ai/google-genai';
+import { googleAI, googleSearch } from '@genkit-ai/google-genai';
 
 const plugins: Plugin<any>[] = [];
 
 if (process.env.GEMINI_API_KEY) {
+  // Configure the googleAI plugin with the googleSearch tool
   plugins.push(googleAI({
-    tools: [googleSearch],
+      tools: [googleSearch]
   }));
 } else {
   console.warn(
@@ -16,5 +16,7 @@ if (process.env.GEMINI_API_KEY) {
 
 export const ai = genkit({
   plugins,
+  // The model definition here acts as a default.
+  // Flows can still specify their own models.
   model: plugins.length ? 'googleai/gemini-2.5-flash' : undefined,
 });

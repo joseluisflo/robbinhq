@@ -31,6 +31,8 @@ const prompt = ai.definePrompt({
   name: 'webSearchPrompt',
   input: { schema: WebSearchInputSchema },
   output: { schema: WebSearchOutputSchema },
+  // The googleSearch tool is now provided by the central 'ai' instance.
+  // No need to define it here again.
   tools: [googleSearch],
   prompt: `
     You are an expert web researcher.
