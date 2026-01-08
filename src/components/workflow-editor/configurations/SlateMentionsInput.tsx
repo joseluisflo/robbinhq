@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useMemo, useState, useCallback } from 'react';
-import { createEditor, Descendant, Editor, Range, Transforms, Point } from 'slate';
+import { createEditor, Descendant, Editor, Range, Transforms } from 'slate';
 import { Slate, Editable, withReact, ReactEditor, RenderElementProps } from 'slate-react';
 import { withHistory } from 'slate-history';
 import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover';
-import { Command, CommandGroup, CommandItem, CommandList, CommandEmpty } from '@/components/ui/command';
+import { Command, CommandGroup, CommandItem, CommandList, CommandEmpty, CommandInput } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
-// Tipos
+// Types
 interface Suggestion {
   value: string;
   label: string | React.ReactElement;
@@ -30,7 +30,7 @@ interface SlateMentionsInputProps {
   initialValue?: Descendant[];
   singleLine?: boolean;
   isTextarea?: boolean;
-  triggerChars?: string[]; // Añadido para permitir múltiples triggers
+  triggerChars?: string[];
 }
 
 export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
@@ -41,7 +41,7 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
   initialValue: initialValueProp,
   singleLine = false,
   isTextarea = false,
-  triggerChars = ['@', '/'], // Por defecto @ y /
+  triggerChars = ['@', '/'],
 }) => {
   const [target, setTarget] = useState<Range | null>(null);
   const [index, setIndex] = useState(0);
@@ -52,13 +52,15 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
   const initialValue: Descendant[] = useMemo(() => initialValueProp || [{ type: 'paragraph', children: [{ text: '' }] }], [initialValueProp]);
 
   const filteredSuggestions = suggestions.filter(s => {
-      const label = React.isValidElement(s.label) ? (s.label as any).props.children.join('').toLowerCase() : String(s.label).toLowerCase();
-      return label.includes(search.toLowerCase());
+      const label = React.isValidElement(s.label) ? 
+          ((s.label as any).props.children.find((c: any) => typeof c === 'string' && c.includes(search)) || s.value)
+          : String(s.label).toLowerCase();
+      return label.toLowerCase().includes(search.toLowerCase());
   });
 
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-        if (singleLine && event.key === 'Enter') {
+        if (singleLine && event.key === 'Enter' && !target) {
             event.preventDefault();
         }
 
@@ -66,13 +68,11 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
         switch (event.key) {
           case 'ArrowDown':
             event.preventDefault();
-            const prevIndex = index >= filteredSuggestions.length - 1 ? 0 : index + 1;
-            setIndex(prevIndex);
+            setIndex(prevIndex => (prevIndex >= filteredSuggestions.length - 1 ? 0 : prevIndex + 1));
             break;
           case 'ArrowUp':
             event.preventDefault();
-            const nextIndex = index <= 0 ? filteredSuggestions.length - 1 : index - 1;
-            setIndex(nextIndex);
+            setIndex(prevIndex => (prevIndex <= 0 ? filteredSuggestions.length - 1 : prevIndex - 1));
             break;
           case 'Tab':
           case 'Enter':
@@ -131,44 +131,19 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
 
                 if (selection && Range.isCollapsed(selection)) {
                     const [start] = Range.edges(selection);
-                    const charBefore = Editor.before(editor, start, { unit: 'character' });
-                    const charBeforeRange = charBefore && Editor.range(editor, charBefore, start);
-                    const charBeforeText = charBeforeRange && Editor.string(editor, charBeforeRange);
-                    
-                    // Verificar si el carácter anterior es uno de los triggers
-                    if (charBeforeText && triggerChars.includes(charBeforeText)) {
-                        // Verificar que sea el inicio o que el carácter antes del trigger sea un espacio
-                        const beforeTrigger = charBefore && Editor.before(editor, charBefore, { unit: 'character' });
-                        const beforeTriggerRange = beforeTrigger && Editor.range(editor, beforeTrigger, charBefore);
-                        const beforeTriggerText = beforeTriggerRange && Editor.string(editor, beforeTriggerRange);
-                        
-                        if (!beforeTriggerText || beforeTriggerText === ' ' || beforeTriggerText === '\n') {
-                            setTarget(charBeforeRange);
-                            setSearch('');
-                            setIndex(0);
-                            return;
-                        }
-                    }
-                    
-                    // Buscar el texto después del trigger
-                    const wordBefore = Editor.before(editor, start, { unit: 'word' });
-                    const before = wordBefore && Editor.before(editor, wordBefore);
+                    const before = Editor.before(editor, start, { unit: 'word' });
                     const beforeRange = before && Editor.range(editor, before, start);
                     const beforeText = beforeRange && Editor.string(editor, beforeRange);
-                    
-                    // Crear regex dinámico basado en triggerChars
-                    const escapedTriggers = triggerChars.map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-                    const triggerRegex = new RegExp(`(${escapedTriggers})(\\w*)$`);
-                    const beforeMatch = beforeText && beforeText.match(triggerRegex);
-                    
-                    if (beforeMatch) {
+                    const triggerRegex = new RegExp(`([${triggerChars.join('')}])(\\w*)$`);
+                    const match = beforeText && beforeText.match(triggerRegex);
+
+                    if (match) {
                         setTarget(beforeRange);
-                        setSearch(beforeMatch[2]); // El texto después del trigger
+                        setSearch(match[2]);
                         setIndex(0);
                         return;
                     }
                 }
-
                 setTarget(null);
             }}
         >
@@ -185,15 +160,17 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
                 </PopoverAnchor>
                 
                 <PopoverContent 
-                    className="p-0 w-[--radix-popover-anchor-width]" 
-                    align="start" 
+                    className="p-0 w-[--radix-popover-anchor-width]"
+                    align="start"
                     onOpenAutoFocus={e => e.preventDefault()}
                     onCloseAutoFocus={e => e.preventDefault()}
-                    style={{
-                        position: 'relative',
-                    }}
                 >
                     <Command>
+                        <CommandInput 
+                            placeholder="Search variables..."
+                            value={search}
+                            onValueChange={setSearch}
+                        />
                         <CommandList>
                             <CommandEmpty>No results.</CommandEmpty>
                             <CommandGroup heading="Variables">
@@ -248,22 +225,28 @@ const insertMention = (editor: Editor, suggestion: Suggestion, targetRange: Rang
     const mention: MentionElement = {
         type: 'mention',
         id: suggestion.value,
-        label: React.isValidElement(suggestion.label) ? (suggestion.label as any).props.children.join('') : String(suggestion.label),
+        label: React.isValidElement(suggestion.label) ? 
+               (suggestion.label as any).props.children.find((c: any) => typeof c === 'object')?.props.children || (suggestion.label as any).props.children[0]
+               : String(suggestion.label),
         children: [{ text: '' }],
     };
     
+    // Replace the trigger text with the mention
     Transforms.insertNodes(editor, mention);
+    // Move the cursor after the inserted mention
     Transforms.move(editor);
+    // Add a space after the mention
+    Transforms.insertText(editor, ' ');
 };
 
-// Componente de demostración
+// Demo Component (can be removed if not needed)
 export default function Demo() {
   const suggestions = [
-    { value: 'name', label: 'Name' },
-    { value: 'email', label: 'Email' },
-    { value: 'phone', label: 'Phone' },
-    { value: 'address', label: 'Address' },
-    { value: 'company', label: 'Company' },
+    { value: '{{name}}', label: 'Name' },
+    { value: '{{email}}', label: 'Email' },
+    { value: '{{phone}}', label: 'Phone' },
+    { value: '{{address}}', label: 'Address' },
+    { value: '{{company}}', label: 'Company' },
   ];
 
   return (
