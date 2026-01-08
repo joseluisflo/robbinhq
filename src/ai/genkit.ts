@@ -1,10 +1,13 @@
 import { genkit, type Plugin } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
+import { googleSearch } from '@genkit-ai/google-genai';
 
 const plugins: Plugin<any>[] = [];
 
 if (process.env.GEMINI_API_KEY) {
-  plugins.push(googleAI());
+  plugins.push(googleAI({
+    tools: [googleSearch],
+  }));
 } else {
   console.warn(
     'GEMINI_API_KEY is not set. Google AI plugin will not be available.'

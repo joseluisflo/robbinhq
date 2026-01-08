@@ -5,6 +5,7 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { sendEmail } from '@/lib/email-service';
 import type { Agent } from '@/lib/types';
 import { runSubagent } from '@/ai/flows/subagent-flow';
+import { searchWeb as webSearchFlow } from '@/ai/flows/web-search-flow';
 
 
 /**
@@ -39,9 +40,11 @@ export async function showMultipleChoiceStep({ prompt, options }: { prompt: stri
 // Simulates web search functionality
 export async function searchWebStep({ query }: { query: string }) {
   console.log(`Searching web for: ${query}`);
-  // In a real implementation, this would call an external search API.
-  // We'll simulate a result.
-  return { summary: `Simulated search results for "${query}": AI is transforming industries.` };
+  if (!query) {
+    throw new Error("A search query is required for the 'Search web' block.");
+  }
+  const result = await webSearchFlow({ query });
+  return { summary: result.summary };
 }
 
 const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
