@@ -25,7 +25,7 @@ const generateShortId = () => {
 export function useWorkflowEditor(workflowId: string) {
   const { user } = useUser();
   const firestore = useFirestore();
-  const { activeAgent } = useActiveAgent();
+  const { activeAgent, setWorkflowName } = useActiveAgent();
   const { toast } = useToast();
 
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
@@ -114,6 +114,7 @@ export function useWorkflowEditor(workflowId: string) {
       if (docSnap.exists()) {
         const data = docSnap.data() as Workflow;
         setWorkflow({ ...data, id: docSnap.id });
+        setWorkflowName(data.name); // Set workflow name in context
         const savedBlocks = data.blocks || [];
         setBlocks(savedBlocks);
 
@@ -178,8 +179,11 @@ export function useWorkflowEditor(workflowId: string) {
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [docRef, toast, handleAddBlock, setNodes, setEdges, user, activeAgent]);
+    return () => {
+      unsubscribe();
+      setWorkflowName(null); // Cleanup on unmount
+    }
+  }, [docRef, toast, handleAddBlock, setNodes, setEdges, user, activeAgent, setWorkflowName]);
   
   const isChanged = useMemo(() => {
     if (!workflow) return false;

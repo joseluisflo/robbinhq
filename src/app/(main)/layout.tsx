@@ -18,6 +18,8 @@ interface ActiveAgentContextType {
   agents: Agent[];
   agentsLoading: boolean;
   userProfile: userProfile | null;
+  workflowName: string | null;
+  setWorkflowName: (name: string | null) => void;
 }
 
 const ActiveAgentContext = createContext<ActiveAgentContextType | undefined>(undefined);
@@ -42,6 +44,8 @@ export default function AppLayout({
   const firestore = useFirestore();
 
   const [activeAgent, setActiveAgent] = useState<Agent | null>(null);
+  const [workflowName, setWorkflowName] = useState<string | null>(null);
+
 
   const agentsQuery = useMemo(() => {
     if (!user) return null;
@@ -77,6 +81,14 @@ export default function AppLayout({
       setNeedsAgent(false);
     }
   }, [agents, agentsLoading]);
+
+  // Reset workflow name when navigating away from workflow detail page
+  useEffect(() => {
+    if (!pathname.startsWith('/workflow/')) {
+        setWorkflowName(null);
+    }
+  }, [pathname]);
+
   
   const isTrainingPage = pathname.startsWith('/training');
   const isDesignPage = pathname.startsWith('/design');
@@ -99,8 +111,18 @@ export default function AppLayout({
     return null;
   }
   
+  const contextValue = {
+    activeAgent, 
+    setActiveAgent, 
+    agents: agents || [], 
+    agentsLoading, 
+    userProfile,
+    workflowName,
+    setWorkflowName,
+  };
+
   return (
-    <ActiveAgentContext.Provider value={{ activeAgent, setActiveAgent, agents: agents || [], agentsLoading, userProfile }}>
+    <ActiveAgentContext.Provider value={contextValue}>
       <SidebarProvider>
         {needsAgent && (
           <CreateAgentDialog 

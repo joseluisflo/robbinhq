@@ -12,6 +12,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import { useActiveAgent } from '@/app/(main)/layout';
 
 function capitalize(str: string) {
   if (!str) return str;
@@ -20,6 +21,7 @@ function capitalize(str: string) {
 
 export function AppBreadcrumbs() {
   const pathname = usePathname();
+  const { workflowName } = useActiveAgent();
   const segments = pathname.split('/').filter(Boolean);
 
   if (segments.length === 0) {
@@ -32,8 +34,14 @@ export function AppBreadcrumbs() {
         {segments.map((segment, index) => {
           const href = '/' + segments.slice(0, index + 1).join('/');
           const isLast = index === segments.length - 1;
-          const label = capitalize(segment.replace(/-/g, ' '));
           
+          let label = capitalize(segment.replace(/-/g, ' '));
+          
+          // Check if this is the workflow ID segment
+          if (segments[index - 1] === 'workflow' && isLast && workflowName) {
+            label = workflowName;
+          }
+
           return (
             <React.Fragment key={href}>
               <BreadcrumbItem>
