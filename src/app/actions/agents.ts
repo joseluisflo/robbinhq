@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { generateAgentInstructions } from '@/ai/flows/agent-instruction-generation';
@@ -107,6 +105,9 @@ interface AgentResponseInput {
     message: string;
     runId: string | null;
     sessionId: string;
+    // For live testing
+    currentWorkflowId?: string | null;
+    currentWorkflowBlocks?: any[] | null;
 }
 
 type ChatResponse = { type: 'chat', response: string };
@@ -249,7 +250,7 @@ async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId
 
 
 export async function getAgentResponse(input: AgentResponseInput): Promise<AgentResponse> {
-  const { userId, agentId, message, runId, sessionId } = input;
+  const { userId, agentId, message, runId, sessionId, currentWorkflowId, currentWorkflowBlocks } = input;
   if (!agentId || !sessionId) {
     return { error: 'Sorry, I cannot respond without an agent context.' };
   }
@@ -348,29 +349,36 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         });
     }
 
-    const workflowsSnapshot = await agentRef.collection('workflows').where('status', '==', 'enabled').get();
-    const enabledWorkflows = workflowsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Workflow[];
-
     let selectedWorkflowId: string | null = null;
     
-    if (enabledWorkflows.length > 0) {
-      const plainWorkflows = enabledWorkflows.map(w => ({
-        id: w.id!,
-        triggerDescription: w.blocks?.[0]?.params.description || ''
-      }));
-      
-      const { output } = await workflowSelectorPrompt({ userInput: message, workflows: plainWorkflows })
-        .catch(err => {
-            console.error("Workflow selector prompt failed:", err);
-            return { output: null };
-        });
-        
-      selectedWorkflowId = output?.workflowId ?? null;
-      
-      if (selectedWorkflowId === "null") {
-        selectedWorkflowId = null;
-      }
+    // If testing a specific workflow, use it directly
+    if (currentWorkflowId) {
+        selectedWorkflowId = currentWorkflowId;
+    } else {
+        // Otherwise, use AI to select a workflow
+        const workflowsSnapshot = await agentRef.collection('workflows').where('status', '==', 'enabled').get();
+        const enabledWorkflows = workflowsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Workflow[];
+
+        if (enabledWorkflows.length > 0) {
+            const plainWorkflows = enabledWorkflows.map(w => ({
+                id: w.id!,
+                triggerDescription: w.blocks?.[0]?.params.description || ''
+            }));
+            
+            const { output } = await workflowSelectorPrompt({ userInput: message, workflows: plainWorkflows })
+                .catch(err => {
+                    console.error("Workflow selector prompt failed:", err);
+                    return { output: null };
+                });
+                
+            selectedWorkflowId = output?.workflowId ?? null;
+            
+            if (selectedWorkflowId === "null") {
+                selectedWorkflowId = null;
+            }
+        }
     }
+
 
     if (selectedWorkflowId) {
       await addLogStep(logRef, `Triggering workflow: "${selectedWorkflowId}"`);
@@ -382,6 +390,8 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         runId,
         userInput: message,
         logRef,
+        // Pass live blocks if available
+        liveBlocks: currentWorkflowBlocks
       });
 
       if ('error' in workflowResult) {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useTransition, useCallback } from 'react';
@@ -25,7 +24,7 @@ const generateShortId = () => {
 export function useWorkflowEditor(workflowId: string) {
   const { user } = useUser();
   const firestore = useFirestore();
-  const { activeAgent, setWorkflowName } = useActiveAgent();
+  const { activeAgent, setWorkflowName, setCurrentTestBlocks } = useActiveAgent();
   const { toast } = useToast();
 
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
@@ -117,6 +116,7 @@ export function useWorkflowEditor(workflowId: string) {
         setWorkflowName(data.name); // Set workflow name in context
         const savedBlocks = data.blocks || [];
         setBlocks(savedBlocks);
+        setCurrentTestBlocks(savedBlocks);
 
         let initialNodes: Node[] = [];
         if (data.nodes && data.nodes.length > 0) {
@@ -183,8 +183,12 @@ export function useWorkflowEditor(workflowId: string) {
       unsubscribe();
       setWorkflowName(null); // Cleanup on unmount
     }
-  }, [docRef, toast, handleAddBlock, setNodes, setEdges, user, activeAgent, setWorkflowName]);
+  }, [docRef, toast, handleAddBlock, setNodes, setEdges, user, activeAgent, setWorkflowName, setCurrentTestBlocks]);
   
+  useEffect(() => {
+    setCurrentTestBlocks(blocks);
+  }, [blocks, setCurrentTestBlocks]);
+
   const isChanged = useMemo(() => {
     if (!workflow) return false;
     const workflowBlocks = workflow.blocks || [];

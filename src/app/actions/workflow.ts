@@ -1,4 +1,3 @@
-
 'use server';
 
 import {
@@ -28,6 +27,7 @@ interface RunWorkflowParams {
   runId: string | null;
   userInput: any;
   logRef: FirebaseFirestore.DocumentReference;
+  liveBlocks?: WorkflowBlock[] | null;
 }
 
 
@@ -109,7 +109,7 @@ async function addLogStep(logRef: FirebaseFirestore.DocumentReference, descripti
 export async function runOrResumeWorkflow(
   params: RunWorkflowParams
 ): Promise<Partial<WorkflowRun> | { error: string }> {
-  const { userId, agentId, workflowId, runId, userInput, logRef } = params;
+  const { userId, agentId, workflowId, runId, userInput, logRef, liveBlocks } = params;
   const firestore = firebaseAdmin.firestore();
 
   let run: WorkflowRun;
@@ -130,7 +130,10 @@ export async function runOrResumeWorkflow(
   
   const agent = agentDoc.data() as Agent;
   const workflow = workflowDoc.data() as Workflow;
-  const blocks = workflow.blocks || [];
+  
+  // Use liveBlocks if provided (for testing), otherwise use saved blocks
+  const blocks = liveBlocks || workflow.blocks || [];
+
 
   // 1. Differentiate between starting a new run and resuming an existing one.
   if (runId) {

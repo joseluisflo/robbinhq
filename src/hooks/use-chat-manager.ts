@@ -1,39 +1,64 @@
-
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
-import type { Agent, Message } from '@/lib/types';
+import { useState, useTransition, useEffect, useMemo } from 'react';
+import type { Agent, Message, WorkflowBlock } from '@/lib/types';
 import { useUser } from '@/firebase';
 import { getAgentResponse } from '@/app/actions/agents';
-import { useSearchParams, useParams } from 'next/navigation';
+import { useSearchParams, useParams, usePathname } from 'next/navigation';
+import { useActiveAgent } from '@/app/(main)/layout';
 
 // Define the shape of the data the hook will manage and return
 export interface UseChatManagerProps {
   agent: (Partial<Agent> & { id?: string }) | null;
+  // This prop is for the workflow test widget to override the workflow
+  workflowOverride?: {
+    workflowId: string;
+    blocks: WorkflowBlock[];
+  } | null;
 }
 
-export function useChatManager({ agent }: UseChatManagerProps) {
+export function useChatManager({ agent, workflowOverride }: UseChatManagerProps) {
   const { user } = useUser();
   const searchParams = useSearchParams();
   const params = useParams();
+  const pathname = usePathname();
 
+  const { currentTestBlocks } = useActiveAgent();
+  
   const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState('');
   const [isResponding, startResponding] = useTransition();
   const [currentWorkflowRunId, setCurrentWorkflowRunId] = useState<string | null>(null);
 
-  const sessionId = searchParams.get('sessionId');
+  const isTestWidget = workflowOverride !== undefined;
   
+  const sessionId = useMemo(() => {
+    // For regular widget, get from URL or generate.
+    // For test widget, use a static or unique-per-session ID.
+    if (isTestWidget) {
+        return `test-session-${agent?.id || 'unknown'}`;
+    }
+    let currentSessionId = searchParams.get('sessionId');
+    if (!currentSessionId) {
+      currentSessionId = `session-${Date.now()}`;
+      if (typeof window !== 'undefined') {
+        const newUrl = `${pathname}?sessionId=${currentSessionId}`;
+        window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+      }
+    }
+    return currentSessionId;
+  }, [searchParams, pathname, isTestWidget, agent?.id]);
+
   const userId = user ? user.uid : (params.userId as string);
   const agentId = agent?.id;
-
+  
   // Effect to set initial welcome message
   useEffect(() => {
     if (agent) {
       const isWelcomeEnabled = agent.isWelcomeMessageEnabled ?? true;
       const welcomeMessage = agent.welcomeMessage;
 
-      if (isWelcomeEnabled && welcomeMessage) {
+      if (isWelcomeEnabled && welcomeMessage && messages.length === 0) {
         const welcomeMsg: Message = {
           id: 'welcome-1',
           sender: 'agent',
@@ -41,12 +66,15 @@ export function useChatManager({ agent }: UseChatManagerProps) {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
         setMessages([welcomeMsg]);
-      } else {
+      } else if (messages.length === 0) {
         setMessages([]);
       }
       setCurrentWorkflowRunId(null);
     }
+     // We only want to run this when the agent changes, not when messages array changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agent]);
+
 
   const handleSendMessage = (messageText: string) => {
     if (!messageText.trim() || !agentId || !userId || !sessionId) return;
@@ -67,6 +95,9 @@ export function useChatManager({ agent }: UseChatManagerProps) {
         message: messageText,
         runId: currentWorkflowRunId,
         sessionId: sessionId,
+        // Pass workflow override if it exists
+        currentWorkflowId: workflowOverride?.workflowId,
+        currentWorkflowBlocks: workflowOverride?.blocks
       });
       
       let agentMessage: Message | null = null;

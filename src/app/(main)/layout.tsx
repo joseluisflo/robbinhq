@@ -9,7 +9,8 @@ import { useUser, useCollection, useFirestore, collection, query, doc, useDoc } 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { CreateAgentDialog } from '@/components/create-agent-dialog';
-import type { Agent, userProfile } from '@/lib/types';
+import type { Agent, userProfile, WorkflowBlock } from '@/lib/types';
+import { WorkflowTestWidget } from '@/components/workflow-editor/WorkflowTestWidget';
 
 // 1. Create a context to hold the active agent state
 interface ActiveAgentContextType {
@@ -20,6 +21,9 @@ interface ActiveAgentContextType {
   userProfile: userProfile | null;
   workflowName: string | null;
   setWorkflowName: (name: string | null) => void;
+  // State for testing workflow
+  currentTestBlocks: WorkflowBlock[] | null;
+  setCurrentTestBlocks: (blocks: WorkflowBlock[] | null) => void;
 }
 
 const ActiveAgentContext = createContext<ActiveAgentContextType | undefined>(undefined);
@@ -45,6 +49,9 @@ export default function AppLayout({
 
   const [activeAgent, setActiveAgent] = useState<Agent | null>(null);
   const [workflowName, setWorkflowName] = useState<string | null>(null);
+  const [needsAgent, setNeedsAgent] = useState(false);
+  const [isTestWidgetOpen, setTestWidgetOpen] = useState(false);
+  const [currentTestBlocks, setCurrentTestBlocks] = useState<WorkflowBlock[] | null>(null);
 
 
   const agentsQuery = useMemo(() => {
@@ -59,8 +66,6 @@ export default function AppLayout({
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
   const { data: userProfile, loading: profileLoading } = useDoc<userProfile>(userProfileRef);
-
-  const [needsAgent, setNeedsAgent] = useState(false);
 
   useEffect(() => {
     if (!userLoading && !user) {
@@ -86,6 +91,7 @@ export default function AppLayout({
   useEffect(() => {
     if (!pathname.startsWith('/workflow/')) {
         setWorkflowName(null);
+        setCurrentTestBlocks(null); // Clean up test blocks
     }
   }, [pathname]);
 
@@ -119,6 +125,8 @@ export default function AppLayout({
     userProfile,
     workflowName,
     setWorkflowName,
+    currentTestBlocks,
+    setCurrentTestBlocks,
   };
 
   return (
@@ -132,11 +140,23 @@ export default function AppLayout({
         )}
         <AppSidebar />
         <SidebarInset className="grid h-screen grid-rows-[auto_1fr]">
-          <AppHeader isWorkflowDetailPage={isWorkflowDetailPage} />
+          <AppHeader 
+            isWorkflowDetailPage={isWorkflowDetailPage} 
+            onTestClick={() => setTestWidgetOpen(true)}
+          />
           <main className={cn("flex flex-col overflow-y-auto", !noPadding && "p-4 sm:p-6")}>
             {children}
           </main>
         </SidebarInset>
+
+        {activeAgent && (
+          <WorkflowTestWidget 
+            agent={activeAgent}
+            isOpen={isTestWidgetOpen}
+            onOpenChange={setTestWidgetOpen}
+          />
+        )}
+
       </SidebarProvider>
     </ActiveAgentContext.Provider>
   );
