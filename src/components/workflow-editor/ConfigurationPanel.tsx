@@ -119,17 +119,6 @@ export function ConfigurationPanel({
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold flex items-center gap-2 h-8">
-            {selectedBlock ? (
-              <>
-                <span>{selectedBlock.type}</span>
-                <span className="text-sm font-mono text-muted-foreground">({selectedBlock.id})</span>
-              </>
-            ) : null}
-          </h3>
-        </div>
-
         {!selectedBlock ? (
           <div className="text-center text-muted-foreground pt-12">
             <p>Select a block from the canvas to configure it.</p>
