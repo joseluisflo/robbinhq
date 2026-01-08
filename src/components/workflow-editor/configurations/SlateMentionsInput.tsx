@@ -114,19 +114,22 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
             onChange={(value) => {
                 onChange?.(value);
                 const { selection } = editor;
+
                 if (selection && Range.isCollapsed(selection)) {
                     const [start] = Range.edges(selection);
                     const before = Editor.before(editor, start, { unit: 'word' });
                     const beforeRange = before && Editor.range(editor, before, start);
                     const beforeText = beforeRange && Editor.string(editor, beforeRange);
-                    const match = beforeText && beforeText.match(/^(@|\/)([\w-]*)$/);
-                    if (match) {
+                    const match = beforeText && beforeText.match(/^@(\w*)$/);
+
+                    if (match && beforeRange) {
                         setTarget(beforeRange);
-                        setSearch(match[2]);
+                        setSearch(match[1]);
                         setIndex(0);
                         return;
                     }
                 }
+
                 setTarget(null);
             }}
         >
@@ -135,10 +138,16 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
                     <div
                         ref={(el) => {
                             if (target && el) {
-                                const domRange = ReactEditor.toDOMRange(editor, target);
-                                const rect = domRange.getBoundingClientRect();
-                                el.style.top = `${rect.bottom + window.scrollY}px`;
-                                el.style.left = `${rect.left + window.scrollX}px`;
+                                try {
+                                    const domRange = ReactEditor.toDOMRange(editor, target);
+                                    const rect = domRange.getBoundingClientRect();
+                                    el.style.top = `${rect.bottom + window.scrollY}px`;
+                                    el.style.left = `${rect.left + window.scrollX}px`;
+                                } catch (e) {
+                                    // Sometimes Slate can't resolve the range if the DOM is in flux.
+                                    // We can safely ignore this error and wait for the next render.
+                                    console.warn("Could not resolve DOM range from Slate range.", e);
+                                }
                             }
                         }}
                         style={{position: 'absolute'}}
