@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -168,11 +169,11 @@ export async function runOrResumeWorkflow(
     };
   }
 
-  // Pass agent info into the context
+  // Pass agent info into the context, ensuring no undefined values
   run.context.agent = {
-      name: agent.name,
-      description: agent.description,
-      emailSignature: agent.emailSignature,
+      name: agent.name || '',
+      description: agent.description || '',
+      emailSignature: agent.emailSignature || '',
   };
 
 
