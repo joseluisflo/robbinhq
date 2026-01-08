@@ -5,7 +5,6 @@ import type { Agent, Message, WorkflowBlock } from '@/lib/types';
 import { useUser } from '@/firebase';
 import { getAgentResponse } from '@/app/actions/agents';
 import { useSearchParams, useParams, usePathname } from 'next/navigation';
-import { useActiveAgent } from '@/app/(main)/layout';
 
 // Define the shape of the data the hook will manage and return
 export interface UseChatManagerProps {
@@ -22,8 +21,6 @@ export function useChatManager({ agent, workflowOverride }: UseChatManagerProps)
   const searchParams = useSearchParams();
   const params = useParams();
   const pathname = usePathname();
-
-  const { currentTestBlocks } = useActiveAgent();
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState('');

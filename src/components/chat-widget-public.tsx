@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import type { Agent, Message } from '@/lib/types';
+import type { Agent, Message, WorkflowBlock } from '@/lib/types';
 import { useChatManager } from '@/hooks/use-chat-manager';
 import { useLiveAgent } from '@/hooks/use-live-agent';
 import { ChatHeader } from '@/components/chat/ChatHeader';
@@ -15,9 +15,13 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 interface ChatWidgetPublicProps {
   agent: Agent;
+  workflowOverride?: {
+    workflowId: string;
+    blocks: WorkflowBlock[];
+  } | null;
 }
 
-export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
+export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicProps) {
   // If we are in an iframe, we are open by default.
   // The parent window (widget.js) will be responsible for hiding/showing the iframe itself.
   const [isWidgetOpen, setIsWidgetOpen] = useState(typeof window !== 'undefined' && window.self !== window.top);
@@ -66,7 +70,7 @@ export function ChatWidgetPublic({ agent }: ChatWidgetPublicProps) {
     handleOptionClick,
     userId,
     agentId
-  } = useChatManager({ agent });
+  } = useChatManager({ agent, workflowOverride });
 
   const { 
     connectionState, 
