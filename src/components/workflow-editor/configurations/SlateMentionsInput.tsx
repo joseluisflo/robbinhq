@@ -7,16 +7,18 @@ import { withHistory } from 'slate-history';
 import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandItem, CommandList, CommandEmpty } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge'; // Usamos el Badge de Shadcn para el chip
+import { Badge } from '@/components/ui/badge';
 import type { Suggestion } from '@/components/ui/tag-input';
 import { MentionElement } from '@/lib/slate-types';
 
 interface SlateMentionsInputProps {
   suggestions: Suggestion[];
-  onChange?: (value: Descendant[]) => void; // Devuelve el JSON de Slate
+  onChange?: (value: Descendant[]) => void;
   placeholder?: string;
   className?: string;
   initialValue?: Descendant[];
+  singleLine?: boolean;
+  isTextarea?: boolean;
 }
 
 export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
@@ -25,24 +27,28 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
   placeholder,
   className,
   initialValue: initialValueProp,
+  singleLine = false,
+  isTextarea = false,
 }) => {
   const [target, setTarget] = useState<Range | null>(null);
   const [index, setIndex] = useState(0);
   const [search, setSearch] = useState('');
   
-  // Inicializamos el editor con los plugins necesarios
   const editor = useMemo(() => withMentions(withReact(withHistory(createEditor()))), []);
   
-  // Valor inicial (Un párrafo vacío)
   const initialValue: Descendant[] = useMemo(() => initialValueProp || [{ type: 'paragraph', children: [{ text: '' }] }], [initialValueProp]);
 
-  const filteredSuggestions = suggestions.filter(c =>
-    c.label.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredSuggestions = suggestions.filter(s => {
+      const label = React.isValidElement(s.label) ? (s.label as any).props.children.join('') : s.label;
+      return label.toLowerCase().includes(search.toLowerCase());
+  });
 
-  // --- LÓGICA DE DETECCIÓN DE @ o / ---
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
+        if (singleLine && event.key === 'Enter') {
+            event.preventDefault();
+        }
+
       if (target && filteredSuggestions.length > 0) {
         switch (event.key) {
           case 'ArrowDown':
@@ -70,10 +76,9 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
         }
       }
     },
-    [index, search, target, editor, filteredSuggestions]
+    [index, search, target, editor, filteredSuggestions, singleLine]
   );
 
-  // --- RENDERIZADO DE ELEMENTOS (Chips vs Texto) ---
   const renderElement = useCallback((props: RenderElementProps) => {
     const { attributes, children, element } = props;
     switch (element.type) {
@@ -81,10 +86,9 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
         return (
           <span
             {...attributes}
-            contentEditable={false} // CRUCIAL: Slate maneja esto como una unidad atómica
+            contentEditable={false}
             className="inline-block align-middle mx-1 select-none"
           >
-            {/* Aquí usamos tu estilo de Shadcn */}
             <Badge variant="secondary" className="px-1 py-0 text-xs cursor-default hover:bg-secondary">
                {element.label}
             </Badge>
@@ -96,26 +100,26 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
     }
   }, []);
 
+  const editorContainerClasses = cn(
+    "relative w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text",
+    isTextarea ? "min-h-[120px]" : "min-h-[40px] flex items-center",
+    className
+  );
+
   return (
-    <div className={cn("relative w-full", className)}>
+    <div className="relative w-full">
         <Slate 
             editor={editor} 
-            initialValue={initialValue} 
+            initialValue={initialValue}
             onChange={(value) => {
                 onChange?.(value);
-                
-                // Lógica para detectar triggers (@ o /)
                 const { selection } = editor;
                 if (selection && Range.isCollapsed(selection)) {
                     const [start] = Range.edges(selection);
-                    const wordBefore = Editor.before(editor, start, { unit: 'word' });
-                    const before = wordBefore && Editor.before(editor, wordBefore);
+                    const before = Editor.before(editor, start, { unit: 'word' });
                     const beforeRange = before && Editor.range(editor, before, start);
                     const beforeText = beforeRange && Editor.string(editor, beforeRange);
-                    
-                    // Regex para capturar @algo o /algo
                     const match = beforeText && beforeText.match(/^(@|\/)([\w-]*)$/);
-                    
                     if (match) {
                         setTarget(beforeRange);
                         setSearch(match[2]);
@@ -126,25 +130,27 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
                 setTarget(null);
             }}
         >
-             {/* POPOVER DE SHADCN ANCLADO AL CURSOR */}
             <Popover open={!!target && filteredSuggestions.length > 0}>
-                <PopoverAnchor
-                    ref={(el) => {
-                        if (target && el) {
-                            const domRange = ReactEditor.toDOMRange(editor, target);
-                            const rect = domRange.getBoundingClientRect();
-                            el.style.top = `${rect.top + window.scrollY}px`;
-                            el.style.left = `${rect.left + window.scrollX}px`;
-                        }
-                    }}
-                />
+                <PopoverAnchor asChild>
+                    <div
+                        ref={(el) => {
+                            if (target && el) {
+                                const domRange = ReactEditor.toDOMRange(editor, target);
+                                const rect = domRange.getBoundingClientRect();
+                                el.style.top = `${rect.bottom + window.scrollY}px`;
+                                el.style.left = `${rect.left + window.scrollX}px`;
+                            }
+                        }}
+                        style={{position: 'absolute'}}
+                    />
+                </PopoverAnchor>
                 
-                <div className="min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text">
+                <div className={editorContainerClasses}>
                      <Editable
                         renderElement={renderElement}
                         onKeyDown={onKeyDown}
                         placeholder={placeholder}
-                        className="outline-none min-h-[60px]"
+                        className="outline-none w-full"
                     />
                 </div>
 
@@ -156,8 +162,11 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
                                 {filteredSuggestions.map((suggestion, i) => (
                                     <CommandItem
                                         key={suggestion.value}
-                                        value={suggestion.label} // Usamos label para el key interno de Command
+                                        value={typeof suggestion.label === 'string' ? suggestion.label : suggestion.value}
                                         onSelect={() => {
+                                            if (target) {
+                                                Transforms.select(editor, target);
+                                            }
                                             insertMention(editor, suggestion);
                                             setTarget(null);
                                         }}
@@ -176,9 +185,6 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
   );
 };
 
-// --- PLUGIN DE SLATE PARA MENCIONES ---
-// Esto le dice a Slate que los nodos 'mention' son inline (fluyen con el texto)
-// y void (no tienen contenido editable dentro)
 const withMentions = (editor: ReactEditor) => {
   const { isInline, isVoid, markableVoid } = editor;
 
@@ -190,7 +196,6 @@ const withMentions = (editor: ReactEditor) => {
     return element.type === 'mention' ? true : isVoid(element);
   };
   
-  // Esto previene bugs raros de selección al borrar
   editor.markableVoid = element => {
      return element.type === 'mention' || markableVoid(element)
   }
@@ -198,15 +203,14 @@ const withMentions = (editor: ReactEditor) => {
   return editor;
 };
 
-// --- FUNCIÓN PARA INSERTAR EL NODO ---
 const insertMention = (editor: Editor, suggestion: Suggestion) => {
   const mention: MentionElement = {
     type: 'mention',
     id: suggestion.value,
-    label: suggestion.label,
-    children: [{ text: '' }], // Los void nodes necesitan un hijo vacío
+    label: React.isValidElement(suggestion.label) ? (suggestion.label as any).props.children.join('') : suggestion.label,
+    children: [{ text: '' }],
   };
   
   Transforms.insertNodes(editor, mention);
-  Transforms.move(editor); // Mover el cursor después del chip
+  Transforms.move(editor);
 };

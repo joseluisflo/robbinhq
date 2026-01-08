@@ -1,11 +1,57 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { Descendant, Node as SlateNode } from 'slate';
 import type { WorkflowBlock } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { Tag, TagInput, type Suggestion } from '@/components/ui/tag-input';
-import { MentionInput, MentionTextarea } from './MentionInputs';
-import { Input } from '@/components/ui/input';
+import { SlateMentionsInput } from './SlateMentionsInput';
+
+// Helper to convert Slate's Descendant[] back to a string with variables
+const serializeToString = (nodes: Descendant[]): string => {
+  return nodes.map(n => {
+    if (!n.children) return '';
+    return (n.children as any[]).map((child: any) => {
+      if (child.type === 'mention') {
+        return child.id; // The 'id' holds the variable, e.g., "{{user_email}}"
+      }
+      return child.text;
+    }).join('');
+  }).join('\n');
+};
+
+// Helper to convert a string with variables into Slate's initialValue
+const deserializeFromString = (text: string): Descendant[] => {
+    if (!text) {
+        return [{ type: 'paragraph', children: [{ text: '' }] }];
+    }
+
+    const variableRegex = /{{\s*[\w.-]+\s*}}/g;
+    const parts = text.split(variableRegex);
+    const matches = [...text.matchAll(variableRegex)];
+    
+    const children: any[] = [];
+
+    parts.forEach((part, index) => {
+        if (part) {
+            children.push({ text: part });
+        }
+        const match = matches[index];
+        if (match) {
+            const variableId = match[0];
+            // Find the suggestion to get the label
+            const label = variableId; // Fallback to id if not found
+            children.push({
+                type: 'mention',
+                id: variableId,
+                label: label,
+                children: [{ text: '' }],
+            });
+        }
+    });
+
+    return [{ type: 'paragraph', children: children.length > 0 ? children : [{ text: '' }] }];
+};
 
 
 interface SendEmailConfigurationProps {
@@ -17,6 +63,11 @@ interface SendEmailConfigurationProps {
 export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, suggestions }: SendEmailConfigurationProps) {
     const [emailTags, setEmailTags] = useState<Tag[]>([]);
     const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
+
+    // Initial values for Slate editors
+    const initialSubjectValue = deserializeFromString(selectedBlock.params.subject || '');
+    const initialBodyValue = deserializeFromString(selectedBlock.params.body || '');
+
 
     useEffect(() => {
         const toValue = selectedBlock.params.to;
@@ -57,24 +108,30 @@ export function SendEmailConfiguration({ selectedBlock, handleBlockParamChange, 
                     <Label htmlFor={`email-subject-${selectedBlock.id}`}>
                     Subject
                     </Label>
-                     <MentionInput
-                        id={`email-subject-${selectedBlock.id}`}
-                        value={selectedBlock.params.subject || ''}
-                        onValueChange={(val) => handleBlockParamChange(selectedBlock.id, 'subject', val)}
-                        placeholder="Type subject or use @ for variables"
+                     <SlateMentionsInput
+                        initialValue={initialSubjectValue}
                         suggestions={suggestions}
+                        onChange={(newValue) => {
+                            const stringValue = serializeToString(newValue);
+                            handleBlockParamChange(selectedBlock.id, 'subject', stringValue);
+                        }}
+                        placeholder="Type subject or use @ for variables"
+                        singleLine={true} // For subject-like behavior
                     />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor={`email-body-${selectedBlock.id}`}>
                     Body
                     </Label>
-                    <MentionTextarea
-                        id={`email-body-${selectedBlock.id}`}
-                        value={selectedBlock.params.body || ''}
-                        onValueChange={(val) => handleBlockParamChange(selectedBlock.id, 'body', val)}
-                        placeholder="Write your email content here. Use @ for variables."
+                    <SlateMentionsInput
+                        initialValue={initialBodyValue}
                         suggestions={suggestions}
+                        onChange={(newValue) => {
+                            const stringValue = serializeToString(newValue);
+                            handleBlockParamChange(selectedBlock.id, 'body', stringValue);
+                        }}
+                        placeholder="Write your email content here. Use @ for variables."
+                        isTextarea={true} // For body-like behavior
                     />
                 </div>
             </div>
