@@ -1,11 +1,12 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Play, Wrench, GitFork, Database } from 'lucide-react';
+import { Play, Wrench, GitFork, Database, BrainCircuit } from 'lucide-react';
 import { Handle, Position, type NodeProps } from 'reactflow';
 
 const blockGroups: Record<string, string> = {
     "Trigger": "Core",
+    "Subagent": "Core",
     "Ask a question": "Tools",
     "Wait for User Reply": "Tools",
     "Show Multiple Choice": "Tools",
@@ -19,7 +20,7 @@ const blockGroups: Record<string, string> = {
 };
 
 const groupIcons: Record<string, React.ElementType> = {
-    Core: Play,
+    Core: BrainCircuit,
     Tools: Wrench,
     Logic: GitFork,
     Data: Database,

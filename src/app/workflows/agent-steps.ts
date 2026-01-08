@@ -4,6 +4,7 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { sendEmail } from '@/lib/email-service';
 import type { Agent } from '@/lib/types';
+import { runSubagent } from '@/ai/flows/subagent-flow';
 
 
 /**
@@ -127,4 +128,17 @@ export async function setVariableStep({ variableName, value }: { variableName: s
     return value; // This will be stored under the block's ID
 }
 
+/**
+ * Runs a sub-agent with a specific prompt.
+ * @param params An object containing the prompt for the sub-agent.
+ * @returns The result from the sub-agent.
+ */
+export async function runSubagentStep({ prompt }: { prompt: string }) {
+  console.log(`Running subagent with prompt: ${prompt}`);
+  if (!prompt) {
+    throw new Error("Prompt is required for the Subagent block.");
+  }
+  const result = await runSubagent({ prompt });
+  return { result: result.response };
+}
     

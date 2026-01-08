@@ -10,6 +10,7 @@ import {
   setVariableStep,
   showMultipleChoiceStep,
   waitForUserReplyStep,
+  runSubagentStep,
 } from '@/app/workflows/agent-steps';
 import type { Workflow, WorkflowRun, WorkflowBlock, Agent } from '@/lib/types';
 import { firebaseAdmin } from '@/firebase/admin';
@@ -40,6 +41,7 @@ const stepRegistry = new Map<string, (params: any, context: any) => Promise<any>
   ['Send SMS', sendSmsStep],
   ['Create PDF', createPdfStep],
   ['Set variable', setVariableStep],
+  ['Subagent', runSubagentStep],
   // 'Condition' and 'Loop' will require special handling within the engine
 ]);
 
@@ -54,6 +56,7 @@ const blockCosts: Record<string, number> = {
     'Show Multiple Choice': 1,
     'Send Email': 1,
     'Send SMS': 1,
+    'Subagent': 2,
     'Search web': 2,
     'Create PDF': 2,
 };
@@ -261,6 +264,8 @@ export async function runOrResumeWorkflow(
           run.context.finalResult = lastResult.summary;
       } else if (lastResult && typeof lastResult === 'object' && lastResult.status) {
           run.context.finalResult = lastResult.status;
+      } else if (lastResult && typeof lastResult === 'object' && lastResult.result) { // For Subagent
+          run.context.finalResult = lastResult.result;
       } else {
           run.context.finalResult = "Workflow finished.";
       }

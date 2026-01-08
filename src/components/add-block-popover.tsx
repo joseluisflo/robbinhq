@@ -20,6 +20,7 @@ const blockGroups = [
     group: "Core",
     items: [
       { value: "Trigger" },
+      { value: "Subagent" },
     ],
   },
   {

@@ -15,6 +15,7 @@ import { SendEmailConfiguration } from './configurations/SendEmailConfiguration'
 import { SendSmsConfiguration } from './configurations/SendSmsConfiguration';
 import { CreatePdfConfiguration } from './configurations/CreatePdfConfiguration';
 import { SetVariableConfiguration } from './configurations/SetVariableConfiguration';
+import { SubagentConfiguration } from './configurations/SubagentConfiguration';
 
 
 interface BlockConfigurationProps {
@@ -32,6 +33,7 @@ const BlockConfigurations: { [key: string]: React.FC<BlockConfigurationProps> } 
   'Send SMS': SendSmsConfiguration,
   'Create PDF': CreatePdfConfiguration,
   'Set variable': SetVariableConfiguration,
+  'Subagent': SubagentConfiguration,
 };
 
 
@@ -85,6 +87,8 @@ export function ConfigurationPanel({
         return 'pdfBase64';
       case 'Set variable':
         return '';
+      case 'Subagent':
+        return 'result';
       default:
         return 'result';
     }
