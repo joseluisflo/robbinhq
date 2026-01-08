@@ -41,9 +41,10 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
   const initialValue: Descendant[] = useMemo(() => initialValueProp || [{ type: 'paragraph', children: [{ text: '' }] }], [initialValueProp]);
 
   const filteredSuggestions = suggestions.filter(s => {
-      const label = React.isValidElement(s.label) ? (s.label as any).props.children.join('') : s.label;
-      return label.toLowerCase().includes(search.toLowerCase());
+      const label = React.isValidElement(s.label) ? (s.label as any).props.children.join('').toLowerCase() : String(s.label).toLowerCase();
+      return label.includes(search.toLowerCase());
   });
+
 
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -138,36 +139,28 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
             }}
         >
             <Popover open={!!target && filteredSuggestions.length > 0}>
-                <PopoverAnchor
-                     virtualRef={{
-                        getBoundingClientRect: () => {
-                          if (target) {
-                            try {
-                              const domRange = ReactEditor.toDOMRange(editor, target);
-                              return domRange.getBoundingClientRect();
-                            } catch (e) {
-                              return { top: -9999, left: -9999, width: 0, height: 0, bottom: 0, right: 0 } as DOMRect;
-                            }
-                          }
-                          return { top: -9999, left: -9999, width: 0, height: 0, bottom: 0, right: 0 } as DOMRect;
-                        },
-                      }}
-                />
+                <PopoverAnchor>
+                     <div className={editorContainerClasses}>
+                         <Editable
+                            renderElement={renderElement}
+                            onKeyDown={onKeyDown}
+                            placeholder={placeholder}
+                            className="outline-none w-full h-full"
+                        />
+                    </div>
+                </PopoverAnchor>
                 
-                <div className={editorContainerClasses}>
-                     <Editable
-                        renderElement={renderElement}
-                        onKeyDown={onKeyDown}
-                        placeholder={placeholder}
-                        className="outline-none w-full h-full"
-                    />
-                </div>
-
                 <PopoverContent 
-                    className="p-0 w-[200px]" 
+                    className="p-0 w-[--radix-popover-anchor-width]" 
                     align="start" 
                     onOpenAutoFocus={e => e.preventDefault()}
                     onCloseAutoFocus={e => e.preventDefault()}
+                    style={{
+                        // This is a workaround to make the popover appear below the anchor
+                        // when the anchor is at the top of the screen.
+                        // You may need to adjust this based on your layout.
+                         position: 'relative',
+                    }}
                 >
                     <Command>
                         <CommandList>
@@ -224,7 +217,7 @@ const insertMention = (editor: Editor, suggestion: Suggestion, targetRange: Rang
     const mention: MentionElement = {
         type: 'mention',
         id: suggestion.value,
-        label: React.isValidElement(suggestion.label) ? (suggestion.label as any).props.children.join('') : suggestion.label,
+        label: React.isValidElement(suggestion.label) ? (suggestion.label as any).props.children.join('') : String(suggestion.label),
         children: [{ text: '' }],
     };
     
