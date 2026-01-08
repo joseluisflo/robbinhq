@@ -120,7 +120,7 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
         <PopoverTrigger asChild>
             <div
                 className={cn(
-                "flex flex-wrap items-center gap-2 rounded-md border border-input p-2",
+                "flex flex-wrap items-center gap-2 rounded-md border border-input p-2 shadow-sm",
                 styleClasses?.inlineTagsContainer,
                 className,
                 )}

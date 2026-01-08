@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useCallback } from 'react';
-import { createEditor, Descendant, Editor, Range, Transforms } from 'slate';
+import { createEditor, Descendant, Editor, Range, Transforms, Point } from 'slate';
 import { Slate, Editable, withReact, ReactEditor, RenderElementProps } from 'slate-react';
 import { withHistory } from 'slate-history';
 import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover';
@@ -10,8 +10,17 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
 // Tipos
-import type { Suggestion } from '@/components/ui/tag-input'; 
-import { MentionElement } from '@/lib/slate-types';
+interface Suggestion {
+  value: string;
+  label: string | React.ReactElement;
+}
+
+interface MentionElement {
+  type: 'mention';
+  id: string;
+  label: string;
+  children: { text: string }[];
+}
 
 interface SlateMentionsInputProps {
   suggestions: Suggestion[];
@@ -21,6 +30,7 @@ interface SlateMentionsInputProps {
   initialValue?: Descendant[];
   singleLine?: boolean;
   isTextarea?: boolean;
+  triggerChars?: string[]; // Añadido para permitir múltiples triggers
 }
 
 export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
@@ -31,6 +41,7 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
   initialValue: initialValueProp,
   singleLine = false,
   isTextarea = false,
+  triggerChars = ['@', '/'], // Por defecto @ y /
 }) => {
   const [target, setTarget] = useState<Range | null>(null);
   const [index, setIndex] = useState(0);
@@ -44,7 +55,6 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
       const label = React.isValidElement(s.label) ? (s.label as any).props.children.join('').toLowerCase() : String(s.label).toLowerCase();
       return label.includes(search.toLowerCase());
   });
-
 
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -100,7 +110,7 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
           </span>
         );
       default:
-        return <p {...attributes} className={cn("m-0 leading-normal", className)}>{children}</p>;
+        return <div {...attributes} className={cn("m-0 leading-normal", className)}>{children}</div>;
     }
   }, [className]);
 
@@ -121,15 +131,39 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
 
                 if (selection && Range.isCollapsed(selection)) {
                     const [start] = Range.edges(selection);
+                    const charBefore = Editor.before(editor, start, { unit: 'character' });
+                    const charBeforeRange = charBefore && Editor.range(editor, charBefore, start);
+                    const charBeforeText = charBeforeRange && Editor.string(editor, charBeforeRange);
+                    
+                    // Verificar si el carácter anterior es uno de los triggers
+                    if (charBeforeText && triggerChars.includes(charBeforeText)) {
+                        // Verificar que sea el inicio o que el carácter antes del trigger sea un espacio
+                        const beforeTrigger = charBefore && Editor.before(editor, charBefore, { unit: 'character' });
+                        const beforeTriggerRange = beforeTrigger && Editor.range(editor, beforeTrigger, charBefore);
+                        const beforeTriggerText = beforeTriggerRange && Editor.string(editor, beforeTriggerRange);
+                        
+                        if (!beforeTriggerText || beforeTriggerText === ' ' || beforeTriggerText === '\n') {
+                            setTarget(charBeforeRange);
+                            setSearch('');
+                            setIndex(0);
+                            return;
+                        }
+                    }
+                    
+                    // Buscar el texto después del trigger
                     const wordBefore = Editor.before(editor, start, { unit: 'word' });
                     const before = wordBefore && Editor.before(editor, wordBefore);
                     const beforeRange = before && Editor.range(editor, before, start);
                     const beforeText = beforeRange && Editor.string(editor, beforeRange);
-                    const beforeMatch = beforeText && beforeText.match(/@(\w*)$/);
+                    
+                    // Crear regex dinámico basado en triggerChars
+                    const escapedTriggers = triggerChars.map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+                    const triggerRegex = new RegExp(`(${escapedTriggers})(\\w*)$`);
+                    const beforeMatch = beforeText && beforeText.match(triggerRegex);
                     
                     if (beforeMatch) {
                         setTarget(beforeRange);
-                        setSearch(beforeMatch[1]);
+                        setSearch(beforeMatch[2]); // El texto después del trigger
                         setIndex(0);
                         return;
                     }
@@ -156,10 +190,7 @@ export const SlateMentionsInput: React.FC<SlateMentionsInputProps> = ({
                     onOpenAutoFocus={e => e.preventDefault()}
                     onCloseAutoFocus={e => e.preventDefault()}
                     style={{
-                        // This is a workaround to make the popover appear below the anchor
-                        // when the anchor is at the top of the screen.
-                        // You may need to adjust this based on your layout.
-                         position: 'relative',
+                        position: 'relative',
                     }}
                 >
                     <Command>
@@ -224,3 +255,57 @@ const insertMention = (editor: Editor, suggestion: Suggestion, targetRange: Rang
     Transforms.insertNodes(editor, mention);
     Transforms.move(editor);
 };
+
+// Componente de demostración
+export default function Demo() {
+  const suggestions = [
+    { value: 'name', label: 'Name' },
+    { value: 'email', label: 'Email' },
+    { value: 'phone', label: 'Phone' },
+    { value: 'address', label: 'Address' },
+    { value: 'company', label: 'Company' },
+  ];
+
+  return (
+    <div className="max-w-2xl mx-auto p-8 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold mb-2">Slate Mentions Input</h1>
+        <p className="text-muted-foreground mb-4">
+          Type @ or / to see the variable suggestions menu
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">Single Line Input</label>
+          <SlateMentionsInput
+            suggestions={suggestions}
+            placeholder="Type @ or / to insert variables..."
+            singleLine={true}
+            onChange={(value) => console.log('Value:', value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Textarea</label>
+          <SlateMentionsInput
+            suggestions={suggestions}
+            placeholder="Type @ or / to insert variables..."
+            isTextarea={true}
+            onChange={(value) => console.log('Value:', value)}
+          />
+        </div>
+      </div>
+
+      <div className="mt-8 p-4 bg-muted rounded-lg">
+        <h3 className="font-semibold mb-2">Instructions:</h3>
+        <ul className="text-sm space-y-1 list-disc list-inside">
+          <li>Type @ or / followed by text to filter suggestions</li>
+          <li>Use arrow keys to navigate the menu</li>
+          <li>Press Enter or Tab to select a suggestion</li>
+          <li>Press Escape to close the menu</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
