@@ -66,23 +66,29 @@ const blockCosts: Record<string, number> = {
 function resolvePlaceholders(value: any, context: Record<string, any>): any {
     if (typeof value !== 'string') return value;
 
-    // This regex finds placeholders like {{variable.path}}
+    // This regex finds all placeholders like {{variable.path}}
     return value.replace(/{{\s*([\w.-]+)\s*}}/g, (match, placeholder) => {
         const keys = placeholder.split('.');
-        let resolvedValue = context;
+        let current = context;
+
+        // Traverse the context object using the keys from the placeholder
         for (const key of keys) {
-            if (resolvedValue && typeof resolvedValue === 'object' && key in resolvedValue) {
-                resolvedValue = resolvedValue[key];
+            if (current && typeof current === 'object' && key in current) {
+                current = current[key];
             } else {
-                // If at any point the path is invalid, return the original placeholder
+                // If any key in the path is invalid, return the original placeholder
+                console.warn(`[Workflow] Placeholder '${placeholder}' could not be resolved. Key '${key}' not found.`);
                 return match; 
             }
         }
-        // If the resolved value is an object, stringify it, otherwise return it.
-        if (typeof resolvedValue === 'object' && resolvedValue !== null) {
-            return JSON.stringify(resolvedValue);
+        
+        // If the final resolved value is an object, stringify it.
+        if (typeof current === 'object' && current !== null) {
+            return JSON.stringify(current);
         }
-        return resolvedValue;
+
+        // Return the resolved primitive value, or an empty string if it's null/undefined
+        return current ?? '';
     });
 }
 
