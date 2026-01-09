@@ -42,6 +42,17 @@ export function SetVariableConfiguration({ selectedBlock, handleBlockParamChange
         const updatedVariables = currentVariables.filter((_: any, index: number) => index !== indexToRemove);
         handleBlockParamChange(selectedBlock.id, 'variables', updatedVariables);
     };
+    
+    // Manage popover state for each variable input independently
+    const [openPopovers, setOpenPopovers] = useState<boolean[]>(
+        (selectedBlock.params.variables || []).map(() => false)
+    );
+
+    const setPopoverOpen = (index: number, open: boolean) => {
+        const newOpenState = [...openPopovers];
+        newOpenState[index] = open;
+        setOpenPopovers(newOpenState);
+    }
 
     return (
         <div className="space-y-4">
@@ -74,7 +85,7 @@ export function SetVariableConfiguration({ selectedBlock, handleBlockParamChange
                         <Label htmlFor={`variable-value-${selectedBlock.id}-${index}`}>
                         Value
                         </Label>
-                        <Popover>
+                        <Popover open={openPopovers[index]} onOpenChange={(open) => setPopoverOpen(index, open)}>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant="outline"
@@ -96,6 +107,7 @@ export function SetVariableConfiguration({ selectedBlock, handleBlockParamChange
                                             value={suggestion.value}
                                             onSelect={(currentValue) => {
                                                 handleVariableChange(index, 'value', currentValue);
+                                                setPopoverOpen(index, false);
                                             }}
                                         >
                                             {suggestion.label}
