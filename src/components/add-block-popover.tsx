@@ -53,6 +53,11 @@ const blockGroups = [
 export function AddBlockPopover({ children, onAddBlock }: { children: React.ReactNode, onAddBlock: (blockType: string) => void }) {
   const [open, setOpen] = useState<boolean>(false)
 
+  const handleSelect = (blockType: string) => {
+    onAddBlock(blockType);
+    setOpen(false);
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -73,10 +78,7 @@ export function AddBlockPopover({ children, onAddBlock }: { children: React.Reac
                     <CommandItem
                       key={item.value}
                       value={item.value}
-                      onSelect={() => {
-                        onAddBlock(item.value);
-                        setOpen(false)
-                      }}
+                      onSelect={() => handleSelect(item.value)}
                     >
                       {item.value}
                     </CommandItem>
