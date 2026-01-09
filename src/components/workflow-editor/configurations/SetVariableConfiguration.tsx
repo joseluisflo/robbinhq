@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -106,8 +105,8 @@ export function SetVariableConfiguration({ selectedBlock, handleBlockParamChange
                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                 <Command>
                                     <CommandInput placeholder="Search value..." />
-                                    <CommandEmpty>No value found.</CommandEmpty>
                                     <CommandList>
+                                        <CommandEmpty>No value found.</CommandEmpty>
                                         {variableSuggestions.length > 0 && (
                                             <CommandGroup heading="Variables">
                                                 {variableSuggestions.map((suggestion) => (
