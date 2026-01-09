@@ -26,8 +26,46 @@ export function SetVariableConfiguration({ selectedBlock, handleBlockParamChange
         const currentVariables = selectedBlock.params.variables || [];
         
         let finalValue = fieldValue;
+        
         if (field === 'name') {
+            // Reemplaza espacios por guiones bajos en nombres de variables
             finalValue = fieldValue.replace(/\s+/g, '_');
+        } else if (field === 'value') {
+            // 🔧 FIX CRÍTICO: Convertir IDs de bloques a placeholders
+            // Si es un ID simple (sin espacios, sin llaves ya), necesitamos agregar {{}}
+            if (fieldValue && !fieldValue.includes(' ') && !fieldValue.startsWith('{{')) {
+                // Busca el tipo de bloque en las suggestions
+                const suggestion = suggestions.find(s => s.value === fieldValue);
+                
+                if (suggestion) {
+                    const label = suggestion.label.toLowerCase();
+                    
+                    // Para "Ask a question" o "Show Multiple Choice", usar .answer
+                    if (label.includes('ask a question') || label.includes('multiple choice')) {
+                        finalValue = `{{${fieldValue}.answer}}`;
+                    }
+                    // Para "Subagent", usar .result
+                    else if (label.includes('subagent')) {
+                        finalValue = `{{${fieldValue}.result}}`;
+                    }
+                    // Para "Search web", usar .summary
+                    else if (label.includes('search web')) {
+                        finalValue = `{{${fieldValue}.summary}}`;
+                    }
+                    // Para "Initial User Input", usar directamente
+                    else if (label.includes('initial user input')) {
+                        finalValue = `{{userInput}}`;
+                    }
+                    // Para otros bloques, usar el ID directamente
+                    else {
+                        finalValue = `{{${fieldValue}}}`;
+                    }
+                } else {
+                    // Si no encuentra el suggestion (por seguridad), agregar llaves básicas
+                    finalValue = `{{${fieldValue}}}`;
+                }
+            }
+            // Si ya tiene llaves o espacios, dejarlo como está
         }
 
         const updatedVariables = currentVariables.map((v: any, i: number) => 
@@ -92,7 +130,7 @@ export function SetVariableConfiguration({ selectedBlock, handleBlockParamChange
                                     role="combobox"
                                     className="w-full justify-between shadow-sm rounded-lg"
                                 >
-                                    <span className="truncate">{suggestions.find(s => s.value === variable.value)?.label || variable.value || "Select a value..."}</span>
+                                    <span className="truncate">{suggestions.find(s => s.value === variable.value || s.value === variable.value.replace(/{{|}}/g, '').split('.')[0])?.label || variable.value || "Select a value..."}</span>
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>

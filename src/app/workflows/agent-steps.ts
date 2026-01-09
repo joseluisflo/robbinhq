@@ -125,17 +125,82 @@ export async function createPdfStep({ content }: { content: string }) {
 
 // This step's main purpose is to be used within the orchestrator to manage state.
 // It returns the value to be stored in the context.
-export async function setVariableStep({ variableName, value }: { variableName: string, value: any }, context: any) {
-    if (!variableName) {
-        console.warn(`[Workflow] setVariableStep was called without a variable name. Value was:`, value);
-        // Return the value so it's still stored by block ID, but not in the root context.
-        return value === undefined ? null : value;
+export async function setVariableStep(params: any, context: any) {
+    const variables = params.variables || [];
+    
+    // Validar que haya variables
+    if (!Array.isArray(variables) || variables.length === 0) {
+      console.error('[Workflow] setVariableStep was called without variables. Params:', params);
+      return { 
+        status: 'error', 
+        message: 'No variables provided' 
+      };
     }
-    console.log(`Setting variable '${variableName}' to:`, value);
-    // Directly modify context for subsequent steps in the same run
-    context[variableName] = value === undefined ? null : value;
-    return value === undefined ? null : value; // This will be stored under the block's ID
-}
+    
+    const results: Array<{ name: string; value: any }> = [];
+    const errors: Array<{ name: string; error: string }> = [];
+    
+    // Procesar cada variable
+    for (const variable of variables) {
+      const { name, value } = variable;
+      
+      // Validar que tenga nombre
+      if (!name || name.trim() === '') {
+        console.error('[Workflow] setVariableStep: Variable without a name. Value:', value);
+        errors.push({ 
+          name: '(unnamed)', 
+          error: 'Variable name is required' 
+        });
+        continue;
+      }
+      
+      // Validar que tenga valor
+      if (value === undefined || value === null || value === '') {
+        console.error(`[Workflow] setVariableStep: Variable '${name}' has no value.`);
+        errors.push({ 
+          name, 
+          error: 'Variable value is required' 
+        });
+        continue;
+      }
+      
+      // IMPORTANTE: El value ya viene procesado por resolvePlaceholders() en workflow.ts
+      // Si era "{{hzgt.answer}}", ya debería ser "Jose" aquí
+      // Si era "{{dgvh.result}}", ya debería ser el resultado del Subagent aquí
+      context[name] = value;
+      
+      console.log(`[Workflow] ✅ Variable '${name}' set to:`, typeof value === 'string' && value.length > 100 ? value.substring(0, 100) + '...' : value);
+      
+      results.push({ name, value });
+    }
+    
+    // Retornar resultado
+    if (errors.length > 0 && results.length === 0) {
+      // Si todas las variables fallaron
+      return {
+        status: 'error',
+        message: `Failed to set all variables`,
+        errors
+      };
+    } else if (errors.length > 0) {
+      // Si algunas variables fallaron pero otras no
+      return {
+        status: 'partial',
+        message: `Set ${results.length} variable(s), ${errors.length} failed`,
+        variablesSet: results.length,
+        variables: results,
+        errors
+      };
+    } else {
+      // Si todas las variables se guardaron correctamente
+      return {
+        status: 'success',
+        message: `Successfully set ${results.length} variable(s)`,
+        variablesSet: results.length,
+        variables: results
+      };
+    }
+  }
 
 /**
  * Runs a sub-agent with a specific prompt.
