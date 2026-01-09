@@ -13,6 +13,8 @@ import {
     useEdgesState,
     addEdge as rfAddEdge,
     type Connection,
+    type OnNodesChange,
+    type NodeChange,
 } from 'reactflow';
 
 // Function to generate a short, 4-character alphanumeric ID
@@ -203,6 +205,15 @@ export function useWorkflowEditor(workflowId: string) {
     return hasBlockChanges || hasNodeChanges || hasEdgeChanges;
   }, [blocks, nodes, edges, workflow]);
 
+  const handleNodesChange: OnNodesChange = (changes) => {
+    onNodesChange(changes);
+    // Sync `blocks` state when a node is removed
+    for (const change of changes) {
+        if (change.type === 'remove') {
+            setBlocks((prevBlocks) => prevBlocks.filter(block => block.id !== change.id));
+        }
+    }
+  };
 
   const handleBlockParamChange = (blockId: string, paramName: string, value: any) => {
     setBlocks(prevBlocks =>
@@ -303,7 +314,7 @@ export function useWorkflowEditor(workflowId: string) {
     nodes,
     edges,
     selectedBlock,
-    onNodesChange,
+    onNodesChange: handleNodesChange,
     onEdgesChange,
     onConnect,
     handleNodeClick,
