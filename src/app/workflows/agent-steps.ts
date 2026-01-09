@@ -1,4 +1,5 @@
 
+
 "use step";
 
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
@@ -125,6 +126,11 @@ export async function createPdfStep({ content }: { content: string }) {
 // This step's main purpose is to be used within the orchestrator to manage state.
 // It returns the value to be stored in the context.
 export async function setVariableStep({ variableName, value }: { variableName: string, value: any }, context: any) {
+    if (!variableName) {
+        console.warn(`[Workflow] setVariableStep was called without a variable name. Value was:`, value);
+        // Return the value so it's still stored by block ID, but not in the root context.
+        return value;
+    }
     console.log(`Setting variable '${variableName}' to:`, value);
     // Directly modify context for subsequent steps in the same run
     context[variableName] = value;
