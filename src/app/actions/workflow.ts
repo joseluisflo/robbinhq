@@ -66,30 +66,45 @@ const blockCosts: Record<string, number> = {
 function resolvePlaceholders(value: any, context: Record<string, any>): any {
     if (typeof value !== 'string') return value;
 
-    // This regex finds all placeholders like {{variable.path}}
-    return value.replace(/{{\s*([\w.-]+)\s*}}/g, (match, placeholder) => {
+    // Step 1: Resolve placeholders with braces {{...}}
+    const resolved = value.replace(/{{\s*([\w.-]+)\s*}}/g, (match, placeholder) => {
         const keys = placeholder.split('.');
         let current = context;
 
-        // Traverse the context object using the keys from the placeholder
         for (const key of keys) {
             if (current && typeof current === 'object' && key in current) {
                 current = current[key];
             } else {
-                // If any key in the path is invalid, return the original placeholder
                 console.warn(`[Workflow] Placeholder '${placeholder}' could not be resolved. Key '${key}' not found.`);
                 return match; 
             }
         }
         
-        // If the final resolved value is an object, stringify it.
         if (typeof current === 'object' && current !== null) {
             return JSON.stringify(current);
         }
 
-        // Return the resolved primitive value, or an empty string if it's null/undefined
         return current ?? '';
     });
+
+    // Step 2: If no placeholders were found, check if the value itself is a key in the context.
+    if (resolved === value && !value.includes(' ') && !value.includes('{{') && context[value]) {
+        const blockResult = context[value];
+        
+        // For blocks that return an object with a specific result key
+        if (blockResult && typeof blockResult === 'object') {
+            if ('answer' in blockResult) return blockResult.answer; // Ask a question, Show Multiple Choice
+            if ('result' in blockResult) return blockResult.result; // Subagent
+            if ('summary' in blockResult) return blockResult.summary; // Search web
+        }
+        
+        // If it's a primitive value or an unhandled object, return it.
+        // Let the step function decide how to handle the object.
+        return blockResult;
+    }
+
+
+    return resolved;
 }
 
 function processParams(params: Record<string, any>, context: Record<string, any>): Record<string, any> {
@@ -327,5 +342,3 @@ export async function updateWorkflowStatus(
     return { error: e.message || 'Failed to update workflow status.' };
   }
 }
-
-      
