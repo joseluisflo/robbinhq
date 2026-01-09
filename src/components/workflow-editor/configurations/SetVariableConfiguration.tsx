@@ -49,15 +49,28 @@ export function SetVariableConfiguration({ selectedBlock, handleBlockParamChange
     const [openPopovers, setOpenPopovers] = useState<boolean[]>(
         (selectedBlock.params.variables || []).map(() => false)
     );
+     const [search, setSearch] = useState('');
+
 
     const setPopoverOpen = (index: number, open: boolean) => {
         const newOpenState = [...openPopovers];
         newOpenState[index] = open;
         setOpenPopovers(newOpenState);
+        if (!open) {
+            setSearch(''); // Reset search on close
+        }
     }
     
-    const blockResultSuggestions = suggestions.filter(s => !s.value.startsWith('{{userInput}}') && !s.label.toString().toLowerCase().includes('set variable'));
-    const variableSuggestions = suggestions.filter(s => s.value.startsWith('{{userInput}}') || s.label.toString().toLowerCase().includes('set variable'));
+    const blockResultSuggestions = suggestions.filter(s => 
+        !s.value.startsWith('{{userInput}}') && 
+        !s.label.toString().toLowerCase().includes('set variable') &&
+        (typeof s.label === 'string' ? s.label.toLowerCase().includes(search.toLowerCase()) : true)
+    );
+
+    const variableSuggestions = suggestions.filter(s => 
+        (s.value.startsWith('{{userInput}}') || s.label.toString().toLowerCase().includes('set variable')) &&
+        (typeof s.label === 'string' ? s.label.toLowerCase().includes(search.toLowerCase()) : true)
+    );
 
 
     return (
@@ -104,44 +117,40 @@ export function SetVariableConfiguration({ selectedBlock, handleBlockParamChange
                             </PopoverTrigger>
                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                 <Command>
-                                    <CommandInput placeholder="Search value..." />
+                                    <CommandInput placeholder="Search value..." value={search} onValueChange={setSearch} />
                                     <CommandList>
                                         <CommandEmpty>No value found.</CommandEmpty>
                                         {variableSuggestions.length > 0 && (
-                                            <Fragment>
-                                                <CommandGroup heading="Variables">
-                                                    {variableSuggestions.map((suggestion) => (
-                                                    <CommandItem
-                                                        key={suggestion.value}
-                                                        value={suggestion.value}
-                                                        onSelect={(currentValue) => {
-                                                            handleVariableChange(index, 'value', currentValue);
-                                                            setPopoverOpen(index, false);
-                                                        }}
-                                                    >
-                                                        {suggestion.label}
-                                                    </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </Fragment>
+                                            <CommandGroup heading="Variables">
+                                                {variableSuggestions.map((suggestion) => (
+                                                <CommandItem
+                                                    key={suggestion.value}
+                                                    value={suggestion.value}
+                                                    onSelect={(currentValue) => {
+                                                        handleVariableChange(index, 'value', currentValue);
+                                                        setPopoverOpen(index, false);
+                                                    }}
+                                                >
+                                                    {suggestion.label}
+                                                </CommandItem>
+                                                ))}
+                                            </CommandGroup>
                                         )}
                                         {blockResultSuggestions.length > 0 && (
-                                            <Fragment>
-                                                <CommandGroup heading="Block Results">
-                                                    {blockResultSuggestions.map((suggestion) => (
-                                                    <CommandItem
-                                                        key={suggestion.value}
-                                                        value={suggestion.value}
-                                                        onSelect={(currentValue) => {
-                                                            handleVariableChange(index, 'value', currentValue);
-                                                            setPopoverOpen(index, false);
-                                                        }}
-                                                    >
-                                                        {suggestion.label}
-                                                    </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </Fragment>
+                                            <CommandGroup heading="Block Results">
+                                                {blockResultSuggestions.map((suggestion) => (
+                                                <CommandItem
+                                                    key={suggestion.value}
+                                                    value={suggestion.value}
+                                                    onSelect={(currentValue) => {
+                                                        handleVariableChange(index, 'value', currentValue);
+                                                        setPopoverOpen(index, false);
+                                                    }}
+                                                >
+                                                    {suggestion.label}
+                                                </CommandItem>
+                                                ))}
+                                            </CommandGroup>
                                         )}
                                     </CommandList>
                                 </Command>
