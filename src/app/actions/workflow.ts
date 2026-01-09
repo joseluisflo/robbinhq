@@ -66,6 +66,7 @@ const blockCosts: Record<string, number> = {
 function resolvePlaceholders(value: any, context: Record<string, any>): any {
     if (typeof value !== 'string') return value;
 
+    // This regex finds placeholders like {{variable.path}}
     return value.replace(/{{\s*([\w.-]+)\s*}}/g, (match, placeholder) => {
         const keys = placeholder.split('.');
         let resolvedValue = context;
@@ -73,7 +74,8 @@ function resolvePlaceholders(value: any, context: Record<string, any>): any {
             if (resolvedValue && typeof resolvedValue === 'object' && key in resolvedValue) {
                 resolvedValue = resolvedValue[key];
             } else {
-                return match; // Return original placeholder if path not found
+                // If at any point the path is invalid, return the original placeholder
+                return match; 
             }
         }
         // If the resolved value is an object, stringify it, otherwise return it.
@@ -220,6 +222,7 @@ export async function runOrResumeWorkflow(
     }
 
     try {
+        // Here we process the parameters, resolving any placeholders like {{variable}}
         const processedParams = processParams(currentBlock.params, run.context);
         const stepResult = await stepFunction(processedParams, run.context);
 
@@ -279,7 +282,10 @@ export async function runOrResumeWorkflow(
 
   // 4. Persist the final state of the run to Firestore
   const runRef = firestore.collection('workflowRuns').doc(run.id);
-  await runRef.set(run);
+  // Sanitize context before saving to prevent undefined values
+  const contextToSave = JSON.parse(JSON.stringify(run.context, (key, value) => value === undefined ? null : value));
+  await runRef.set({ ...run, context: contextToSave });
+
 
   // 5. Return the relevant state to the client
   return {
@@ -315,3 +321,5 @@ export async function updateWorkflowStatus(
     return { error: e.message || 'Failed to update workflow status.' };
   }
 }
+
+      
