@@ -63,48 +63,59 @@ const blockCosts: Record<string, number> = {
 };
 
 
+// En src/app/actions/workflow.ts
+
 function resolvePlaceholders(value: any, context: Record<string, any>): any {
-    if (typeof value !== 'string') return value;
+  // 1. Si es un ARRAY, procesar cada elemento recursivamente
+  if (Array.isArray(value)) {
+      return value.map(item => resolvePlaceholders(item, context));
+  }
 
-    // Step 1: Resolve placeholders with braces {{...}}
-    const resolved = value.replace(/{{\s*([\w.-]+)\s*}}/g, (match, placeholder) => {
-        const keys = placeholder.split('.');
-        let current = context;
+  // 2. Si es un OBJETO (y no es nulo), procesar cada propiedad recursivamente
+  if (value !== null && typeof value === 'object') {
+      const resolvedObj: any = {};
+      for (const key in value) {
+          resolvedObj[key] = resolvePlaceholders(value[key], context);
+      }
+      return resolvedObj;
+  }
 
-        for (const key of keys) {
-            if (current && typeof current === 'object' && key in current) {
-                current = current[key];
-            } else {
-                console.warn(`[Workflow] Placeholder '${placeholder}' could not be resolved. Key '${key}' not found.`);
-                return match; 
-            }
-        }
-        
-        if (typeof current === 'object' && current !== null) {
-            return JSON.stringify(current);
-        }
+  // 3. Si no es un STRING, devolver tal cual (números, booleanos, etc.)
+  if (typeof value !== 'string') return value;
 
-        return current ?? '';
-    });
+  // 4. Si es un STRING, ejecutar la lógica de reemplazo de {{placeholders}}
+  const resolved = value.replace(/{{\s*([\w.-]+)\s*}}/g, (match, placeholder) => {
+      const keys = placeholder.split('.');
+      let current = context;
 
-    // Step 2: If no placeholders were found, check if the value itself is a key in the context.
-    if (resolved === value && !value.includes(' ') && !value.includes('{{') && context[value]) {
-        const blockResult = context[value];
-        
-        // For blocks that return an object with a specific result key
-        if (blockResult && typeof blockResult === 'object') {
-            if ('answer' in blockResult) return blockResult.answer; // Ask a question, Show Multiple Choice
-            if ('result' in blockResult) return blockResult.result; // Subagent
-            if ('summary' in blockResult) return blockResult.summary; // Search web
-        }
-        
-        // If it's a primitive value or an unhandled object, return it.
-        // Let the step function decide how to handle the object.
-        return blockResult;
-    }
+      for (const key of keys) {
+          if (current && typeof current === 'object' && key in current) {
+              current = current[key];
+          } else {
+              console.warn(`[Workflow] Placeholder '${placeholder}' could not be resolved.`);
+              return match; // Mantiene el {{placeholder}} si no lo encuentra
+          }
+      }
+      
+      if (typeof current === 'object' && current !== null) {
+          return JSON.stringify(current);
+      }
 
+      return current ?? '';
+  });
 
-    return resolved;
+  // 5. Soporte para resolución simple (cuando el string es solo el ID del bloque sin llaves)
+  if (resolved === value && !value.includes(' ') && !value.includes('{{') && context[value]) {
+      const blockResult = context[value];
+      if (blockResult && typeof blockResult === 'object') {
+          if ('answer' in blockResult) return blockResult.answer;
+          if ('result' in blockResult) return blockResult.result;
+          if ('summary' in blockResult) return blockResult.summary;
+      }
+      return blockResult;
+  }
+
+  return resolved;
 }
 
 function processParams(params: Record<string, any>, context: Record<string, any>): Record<string, any> {
