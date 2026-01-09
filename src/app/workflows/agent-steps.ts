@@ -129,12 +129,12 @@ export async function setVariableStep({ variableName, value }: { variableName: s
     if (!variableName) {
         console.warn(`[Workflow] setVariableStep was called without a variable name. Value was:`, value);
         // Return the value so it's still stored by block ID, but not in the root context.
-        return value;
+        return value === undefined ? null : value;
     }
     console.log(`Setting variable '${variableName}' to:`, value);
     // Directly modify context for subsequent steps in the same run
-    context[variableName] = value;
-    return value; // This will be stored under the block's ID
+    context[variableName] = value === undefined ? null : value;
+    return value === undefined ? null : value; // This will be stored under the block's ID
 }
 
 /**

@@ -97,7 +97,7 @@ async function addLogStep(logRef: FirebaseFirestore.DocumentReference, descripti
     await logRef.collection('steps').add({
         description,
         timestamp: FieldValue.serverTimestamp(),
-        metadata,
+        metadata: { ...metadata, result: metadata.result === undefined ? null : metadata.result },
     });
 }
 
@@ -241,7 +241,8 @@ export async function runOrResumeWorkflow(
             break; // Exit the loop to wait for user input
         } else {
             // Continue execution: Store step result and move to the next step
-            run.context[currentBlock.id] = stepResult;
+            // Convert undefined to null before storing
+            run.context[currentBlock.id] = stepResult === undefined ? null : stepResult;
             await addLogStep(logRef, `Step completed. Result stored.`, { result: stepResult });
             run.currentStepIndex++;
         }
