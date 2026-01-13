@@ -40,6 +40,8 @@ export function WorkflowNode({ data, selected }: NodeProps<{ label: string; type
   const colorClass = groupColors[group] || groupColors.Tools;
   const label = data.type === 'Trigger' ? 'Start' : data.label;
 
+  const isCondition = data.type === 'Condition';
+
   return (
     <div
       className={cn(
@@ -47,16 +49,38 @@ export function WorkflowNode({ data, selected }: NodeProps<{ label: string; type
         selected && 'ring-2 ring-primary'
       )}
     >
+      {data.type !== 'Trigger' && (
+        <Handle type="target" position={Position.Top} className="!w-2 !h-2 !-top-1 !bg-primary" />
+      )}
       <div className="flex items-center gap-3">
         <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', colorClass)}>
           <Icon className="h-5 w-5" />
         </div>
         <span className="text-sm font-medium text-foreground">{label}</span>
       </div>
-      {data.type !== 'Trigger' && (
-        <Handle type="target" position={Position.Top} className="!w-2 !h-2 !-top-1 !bg-primary" />
+      
+      {isCondition ? (
+        <>
+            <div className="absolute -bottom-3 left-1/4 -translate-x-1/2 text-xs text-muted-foreground">Yes</div>
+            <Handle 
+                type="source" 
+                position={Position.Bottom} 
+                id="yes"
+                style={{ left: '25%' }}
+                className="!w-2 !h-2 !-bottom-1 !bg-primary"
+            />
+            <div className="absolute -bottom-3 right-1/4 translate-x-1/2 text-xs text-muted-foreground">No</div>
+             <Handle 
+                type="source" 
+                position={Position.Bottom} 
+                id="no"
+                style={{ left: '75%' }}
+                className="!w-2 !h-2 !-bottom-1 !bg-primary"
+            />
+        </>
+      ) : (
+        <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !-bottom-1 !bg-primary" />
       )}
-      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !-bottom-1 !bg-primary" />
     </div>
   );
 }
