@@ -11,8 +11,9 @@ import {
   showMultipleChoiceStep,
   waitForUserReplyStep,
   runSubagentStep,
+  conditionStep,
 } from '@/app/workflows/agent-steps';
-import type { Workflow, WorkflowRun, WorkflowBlock, Agent } from '@/lib/types';
+import type { Workflow, WorkflowRun, WorkflowBlock, Agent, Edge } from '@/lib/types';
 import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue }from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,6 +30,7 @@ interface RunWorkflowParams {
   userInput: any;
   logRef: FirebaseFirestore.DocumentReference;
   liveBlocks?: WorkflowBlock[] | null;
+  liveEdges?: Edge[] | null;
 }
 
 
@@ -43,7 +45,8 @@ const stepRegistry = new Map<string, (params: any, context: any) => Promise<any>
   ['Create PDF', createPdfStep],
   ['Set variable', setVariableStep],
   ['Subagent', runSubagentStep],
-  // 'Condition' and 'Loop' will require special handling within the engine
+  ['Condition', conditionStep],
+  // 'Loop' will require special handling within the engine
 ]);
 
 // Define credit costs for each block type
@@ -62,8 +65,6 @@ const blockCosts: Record<string, number> = {
     'Create PDF': 2,
 };
 
-
-// En src/app/actions/workflow.ts
 
 function resolvePlaceholders(value: any, context: Record<string, any>): any {
   // 1. Si es un ARRAY, procesar cada elemento recursivamente
@@ -144,11 +145,10 @@ async function addLogStep(logRef: FirebaseFirestore.DocumentReference, descripti
 export async function runOrResumeWorkflow(
   params: RunWorkflowParams
 ): Promise<Partial<WorkflowRun> | { error: string }> {
-  const { userId, agentId, workflowId, runId, userInput, logRef, liveBlocks } = params;
+  const { userId, agentId, workflowId, runId, userInput, logRef, liveBlocks, liveEdges } = params;
   const firestore = firebaseAdmin.firestore();
 
   let run: WorkflowRun;
-  const now = new Date();
 
   // Load the workflow definition first
   const agentDocRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
@@ -166,8 +166,9 @@ export async function runOrResumeWorkflow(
   const agent = agentDoc.data() as Agent;
   const workflow = workflowDoc.data() as Workflow;
   
-  // Use liveBlocks if provided (for testing), otherwise use saved blocks
   const blocks = liveBlocks || workflow.blocks || [];
+  const edges = liveEdges || workflow.edges || [];
+  const blocksMap = new Map(blocks.map(block => [block.id, block]));
 
 
   // 1. Differentiate between starting a new run and resuming an existing one.
@@ -180,26 +181,32 @@ export async function runOrResumeWorkflow(
     }
     run = runDoc.data() as WorkflowRun;
     
-    // Store the user's new input in the context, keyed by the previous step's ID
-    if (run.status === 'awaiting_input' && run.currentStepIndex > 0) {
-        const previousBlockId = blocks[run.currentStepIndex - 1].id;
-        run.context[previousBlockId] = { ...run.context[previousBlockId], answer: userInput };
+    // Store the user's new input in the context, keyed by the previous paused block's ID
+    if (run.status === 'awaiting_input' && run.currentBlockId) {
+        const previousBlock = blocksMap.get(run.currentBlockId);
+        if (previousBlock) {
+            run.context[previousBlock.id] = { ...run.context[previousBlock.id], answer: userInput };
+        }
         await addLogStep(logRef, `Resuming workflow with user input: "${userInput}"`);
     } else {
         run.context.userInput = userInput; // Initial input
     }
     
-    run.status = 'running'; // Set to running to start the loop
+    run.status = 'running';
   } else {
     // Start new run
     const newRunId = uuidv4();
+    const triggerBlock = blocks.find(b => b.type === 'Trigger');
+    if (!triggerBlock) {
+        return { error: 'Workflow must have a Trigger block.' };
+    }
+
     run = {
       id: newRunId,
       workflowId: workflowId,
       status: 'running',
       context: { userInput },
-      // Start at index 0. We will skip the trigger block inside the loop.
-      currentStepIndex: 0, 
+      currentBlockId: triggerBlock.id,
     };
   }
 
@@ -212,22 +219,15 @@ export async function runOrResumeWorkflow(
 
 
   // 2. Main execution loop
-  while (run.status === 'running' && run.currentStepIndex < blocks.length) {
-    const currentBlock = blocks[run.currentStepIndex];
+  while (run.status === 'running' && run.currentBlockId) {
+    const currentBlock = blocksMap.get(run.currentBlockId);
     if (!currentBlock) {
       run.status = 'failed';
-      run.context.error = 'Invalid step index.';
-      await addLogStep(logRef, `Workflow failed: Invalid step index.`, { error: true });
+      run.context.error = `Block with ID ${run.currentBlockId} not found in workflow.`;
+      await addLogStep(logRef, `Workflow failed: ${run.context.error}`, { error: true });
       break;
     }
     
-    // If the block is a Trigger, just skip to the next one.
-    if (currentBlock.type === 'Trigger') {
-      await addLogStep(logRef, `Executing: Trigger`, { blockId: currentBlock.id, blockType: currentBlock.type, params: currentBlock.params });
-      run.currentStepIndex++;
-      continue;
-    }
-
     // --- CREDIT DEDUCTION ---
     const cost = blockCosts[currentBlock.type] ?? 0;
     if (cost > 0) {
@@ -243,9 +243,9 @@ export async function runOrResumeWorkflow(
     await addLogStep(logRef, `Executing: ${currentBlock.type}`, { blockId: currentBlock.id, blockType: currentBlock.type, cost });
     // --- END CREDIT DEDUCTION ---
 
-
+    // Find the step function in the registry
     const stepFunction = stepRegistry.get(currentBlock.type);
-    if (!stepFunction) {
+    if (!stepFunction && currentBlock.type !== 'Trigger') {
       run.status = 'failed';
       const errorMsg = `Unknown step type: ${currentBlock.type}`;
       run.context.error = errorMsg;
@@ -254,50 +254,69 @@ export async function runOrResumeWorkflow(
     }
 
     try {
-        // Here we process the parameters, resolving any placeholders like {{variable}}
         const processedParams = processParams(currentBlock.params, run.context);
-        const stepResult = await stepFunction(processedParams, run.context);
+        let stepResult: any;
+        
+        if (currentBlock.type === 'Trigger') {
+            stepResult = { status: 'triggered' };
+        } else {
+             // @ts-ignore - stepFunction is checked above
+            stepResult = await stepFunction(processedParams, run.context);
+        }
+
+        // Store result
+        run.context[currentBlock.id] = stepResult === undefined ? null : stepResult;
+        await addLogStep(logRef, `Step completed. Result stored.`, { result: stepResult });
+
 
         // 3. Handle signals from steps
         if (stepResult && stepResult._type === 'pause') {
             run.status = 'awaiting_input';
             run.promptForUser = stepResult.metadata.prompt;
             
-            // THE FIX: Only assign options if they exist, otherwise remove them
             if (stepResult.metadata.options) {
                 run.context.options = stepResult.metadata.options;
             } else {
                 delete run.context.options;
             }
+            
+            // Find the next block ID to resume from.
+            const nextEdge = edges.find(edge => edge.source === run.currentBlockId);
+            run.currentBlockId = nextEdge ? nextEdge.target : null;
 
             await addLogStep(logRef, `Workflow paused. Prompting user: "${run.promptForUser}"`, { result: stepResult });
-            // IMPORTANT: Increment step index BEFORE pausing, so we resume at the next step.
-            run.currentStepIndex++;
             break; // Exit the loop to wait for user input
+        
+        } else if (currentBlock.type === 'Condition') {
+            const conditionResult = stepResult.result === true;
+            await addLogStep(logRef, `Condition evaluated to: ${conditionResult}`);
+            const handleId = conditionResult ? 'yes' : 'no';
+            const nextEdge = edges.find(edge => edge.source === run.currentBlockId && edge.sourceHandle === handleId);
+            run.currentBlockId = nextEdge ? nextEdge.target : null;
+
         } else {
-            // Continue execution: Store step result and move to the next step
-            // Convert undefined to null before storing
-            run.context[currentBlock.id] = stepResult === undefined ? null : stepResult;
-            await addLogStep(logRef, `Step completed. Result stored.`, { result: stepResult });
-            run.currentStepIndex++;
+            // Standard execution: Find the next block ID
+            const nextEdge = edges.find(edge => edge.source === run.currentBlockId);
+            run.currentBlockId = nextEdge ? nextEdge.target : null;
         }
 
     } catch (e: any) {
-        console.error(`Error executing step ${run.currentStepIndex}:`, e);
+        console.error(`Error executing block ${run.currentBlockId}:`, e);
         run.status = 'failed';
         const errorMsg = e.message || 'An unknown error occurred during step execution.';
         run.context.error = errorMsg;
+        run.currentBlockId = null; // Stop execution
         await addLogStep(logRef, `Workflow failed: ${errorMsg}`, { error: true, stack: e.stack });
         break;
     }
   }
 
-  // Check if workflow completed
-  if (run.status === 'running' && run.currentStepIndex >= blocks.length) {
+  // Check if workflow completed (no more blocks to run)
+  if (run.status === 'running' && !run.currentBlockId) {
       run.status = 'completed';
-      // Try to find a meaningful final result, otherwise provide a generic message.
-      const lastBlockId = blocks[blocks.length - 1]?.id;
-      const lastResult = run.context[lastBlockId];
+      const lastExecutedBlock = blocksMap.get(run.lastExecutedBlockId || '');
+      const lastResult = run.context[run.lastExecutedBlockId || ''];
+      
       if (typeof lastResult === 'string') {
           run.context.finalResult = lastResult;
       } else if (lastResult && typeof lastResult === 'object' && lastResult.summary) {
@@ -310,11 +329,12 @@ export async function runOrResumeWorkflow(
           run.context.finalResult = "Workflow finished.";
       }
       await addLogStep(logRef, `Workflow completed successfully. Final result: "${run.context.finalResult}"`);
+  } else {
+      run.lastExecutedBlockId = run.currentBlockId;
   }
 
   // 4. Persist the final state of the run to Firestore
   const runRef = firestore.collection('workflowRuns').doc(run.id);
-  // Sanitize context before saving to prevent undefined values
   const contextToSave = JSON.parse(JSON.stringify(run.context, (key, value) => value === undefined ? null : value));
   await runRef.set({ ...run, context: contextToSave });
 

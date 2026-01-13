@@ -215,4 +215,40 @@ export async function runSubagentStep({ prompt }: { prompt: string }) {
   const result = await runSubagent({ prompt });
   return { result: result.response };
 }
+
+/**
+ * Evaluates a condition and returns a boolean result.
+ * @param params An object containing value1, operator, and value2.
+ * @returns An object with the boolean result.
+ */
+export async function conditionStep(
+    { value1, operator, value2 }: { value1: any; operator: string; value2: any }
+) {
+    let result = false;
+    switch (operator) {
+        case 'equals':
+            result = value1 == value2;
+            break;
+        case 'not_equals':
+            result = value1 != value2;
+            break;
+        case 'contains':
+            result = String(value1).includes(String(value2));
+            break;
+        case 'not_contains':
+            result = !String(value1).includes(String(value2));
+            break;
+        case 'starts_with':
+            result = String(value1).startsWith(String(value2));
+            break;
+        case 'ends_with':
+            result = String(value1).endsWith(String(value2));
+            break;
+        // Add other operators as needed
+        default:
+            console.warn(`[Workflow] Unknown operator in condition: ${operator}`);
+            result = false;
+    }
+    return { result };
+}
     
