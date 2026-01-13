@@ -16,6 +16,7 @@ import { SendSmsConfiguration } from './configurations/SendSmsConfiguration';
 import { CreatePdfConfiguration } from './configurations/CreatePdfConfiguration';
 import { SetVariableConfiguration } from './configurations/SetVariableConfiguration';
 import { SubagentConfiguration } from './configurations/SubagentConfiguration';
+import { ConditionConfiguration } from './configurations/ConditionConfiguration';
 
 
 interface BlockConfigurationProps {
@@ -34,6 +35,7 @@ const BlockConfigurations: { [key: string]: React.FC<BlockConfigurationProps> } 
   'Create PDF': CreatePdfConfiguration,
   'Set variable': SetVariableConfiguration,
   'Subagent': SubagentConfiguration,
+  'Condition': ConditionConfiguration,
 };
 
 
