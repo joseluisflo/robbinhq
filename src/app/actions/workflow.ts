@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import {
@@ -181,11 +182,11 @@ export async function runOrResumeWorkflow(
     }
     run = runDoc.data() as WorkflowRun;
     
-    // Store the user's new input in the context, keyed by the previous paused block's ID
-    if (run.status === 'awaiting_input' && run.currentBlockId) {
-        const previousBlock = blocksMap.get(run.currentBlockId);
-        if (previousBlock) {
-            run.context[previousBlock.id] = { ...run.context[previousBlock.id], answer: userInput };
+    // Store the user's new input in the context, keyed by the block that was waiting
+    if (run.status === 'awaiting_input' && run.lastExecutedBlockId) {
+        const waitingBlock = blocksMap.get(run.lastExecutedBlockId);
+        if (waitingBlock) {
+            run.context[waitingBlock.id] = { ...run.context[waitingBlock.id], answer: userInput };
         }
         await addLogStep(logRef, `Resuming workflow with user input: "${userInput}"`);
     } else {
@@ -257,6 +258,8 @@ export async function runOrResumeWorkflow(
         const processedParams = processParams(currentBlock.params, run.context);
         let stepResult: any;
         
+        run.lastExecutedBlockId = currentBlock.id;
+        
         if (currentBlock.type === 'Trigger') {
             stepResult = { status: 'triggered' };
         } else {
@@ -314,7 +317,6 @@ export async function runOrResumeWorkflow(
   // Check if workflow completed (no more blocks to run)
   if (run.status === 'running' && !run.currentBlockId) {
       run.status = 'completed';
-      const lastExecutedBlock = blocksMap.get(run.lastExecutedBlockId || '');
       const lastResult = run.context[run.lastExecutedBlockId || ''];
       
       if (typeof lastResult === 'string') {
@@ -329,8 +331,6 @@ export async function runOrResumeWorkflow(
           run.context.finalResult = "Workflow finished.";
       }
       await addLogStep(logRef, `Workflow completed successfully. Final result: "${run.context.finalResult}"`);
-  } else {
-      run.lastExecutedBlockId = run.currentBlockId;
   }
 
   // 4. Persist the final state of the run to Firestore
@@ -373,3 +373,4 @@ export async function updateWorkflowStatus(
     return { error: e.message || 'Failed to update workflow status.' };
   }
 }
+
