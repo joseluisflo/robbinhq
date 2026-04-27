@@ -12,18 +12,17 @@ import {
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useAuth } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import Link from 'next/link';
 import { Input } from './ui/input';
+import { signIn } from '@/lib/auth-client';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
+  password: z.string().min(8, { message: 'Password must be at least 8 characters.' }),
 });
 
 
@@ -33,7 +32,6 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
 
   const router = useRouter();
-  const auth = useAuth();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -47,12 +45,19 @@ export function LoginForm({
   const { isSubmitting } = form.formState;
 
   const handleLogin = async (values: z.infer<typeof formSchema>) => {
-    if (!auth) return;
-
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const { error } = await signIn.email({
+        email: values.email,
+        password: values.password,
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Unable to sign in.');
+      }
+
       toast({ title: 'Login Successful' });
       router.push('/dashboard');
+      router.refresh();
     } catch (error: any) {
       console.error('Login error:', error);
       toast({

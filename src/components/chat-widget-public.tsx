@@ -10,7 +10,7 @@ import { ChatInput } from '@/components/chat/ChatInput';
 import { InCallView } from '@/components/chat/InCallView';
 import { cn } from '@/lib/utils';
 import { v4 as uuidv4 } from 'uuid';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 
 
 interface ChatWidgetPublicProps {
@@ -28,7 +28,6 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
   const [currentMode, setCurrentMode] = useState<'chat' | 'in-call'>('chat');
   
   const searchParams = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
 
   const sessionId = useMemo(() => {

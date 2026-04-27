@@ -14,21 +14,20 @@ import {
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Link from 'next/link';
 import { User, Settings, LogOut } from 'lucide-react';
-import { useAuth, useUser } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'firebase/auth';
+import { signOut } from '@/lib/auth-client';
 
 export function UserNav() {
   const avatarImage = PlaceHolderImages.find((img) => img.id === 'avatar-1');
-  const auth = useAuth();
   const { user } = useUser();
   const router = useRouter();
 
   const handleLogout = async () => {
-    if (!auth) return;
     try {
-      await signOut(auth);
+      await signOut();
       router.push('/');
+      router.refresh();
     } catch (error) {
       console.error('Logout error:', error);
     }

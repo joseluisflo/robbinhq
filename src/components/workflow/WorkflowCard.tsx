@@ -4,7 +4,7 @@ import { useTransition } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
-import { MoreHorizontal, PlusCircle, Loader2, Play, Pause, Trash2, Edit } from 'lucide-react';
+import { MoreHorizontal, Play, Pause, Trash2, Edit } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import type { Workflow } from '@/lib/types';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser } from '@/firebase';
 import { updateWorkflowStatus } from '@/app/actions/workflow';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -39,7 +39,7 @@ export function WorkflowCard({ workflow }: { workflow: Workflow }) {
   const handleStatusChange = (status: 'enabled' | 'disabled') => {
     if (!user || !activeAgent?.id || !workflow.id) return;
     startUpdateTransition(async () => {
-      const result = await updateWorkflowStatus(user.uid, activeAgent.id!, workflow.id!, status);
+      const result = await updateWorkflowStatus(activeAgent.id!, workflow.id!, status);
       if ('error' in result) {
         toast({ title: 'Error', description: `Failed to ${status === 'enabled' ? 'enable' : 'disable'} workflow.`, variant: 'destructive'});
       } else {

@@ -67,13 +67,12 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
   const { currentUsageKB, usageLimitKB } = useKnowledgeUsage(textSources, fileSources, userProfile);
   // --- End Knowledge Usage ---
 
-  const triggerFileProcessing = async (fileId: string, agentId: string, token: string) => {
+  const triggerFileProcessing = async (fileId: string, agentId: string) => {
     try {
         const response = await fetch('/api/process-file', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify({ fileId, agentId }),
         });
@@ -178,7 +177,6 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
     if (!files.length || !user || !activeAgent?.id) return;
     
     startUploading(async () => {
-      const token = await user.getIdToken();
       let successCount = 0;
       let errorCount = 0;
 
@@ -186,13 +184,11 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('agentId', activeAgent.id!);
+        formData.append('uploadType', 'file');
 
         try {
           const response = await fetch('/api/upload', {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
             body: formData,
           });
 
@@ -201,7 +197,7 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
           if (response.ok) {
             successCount++;
             // Don't wait for processing to finish, just trigger it.
-            triggerFileProcessing(result.fileId, activeAgent.id!, token);
+            triggerFileProcessing(result.fileId, activeAgent.id!);
           } else {
             errorCount++;
             console.error(`Failed to upload ${file.name}:`, result.error);

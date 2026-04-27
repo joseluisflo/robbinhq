@@ -1,27 +1,39 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { onAuthStateChanged, type User } from 'firebase/auth';
-import { useAuth } from '@/firebase/provider';
+import { useMemo } from 'react';
+import { useSession } from '@/lib/auth-client';
+
+export type AppUser = {
+  id: string;
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  emailVerified: boolean;
+};
 
 export function useUser() {
-  const auth = useAuth();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isPending, error } = useSession();
 
-  useEffect(() => {
-    if (!auth) {
-      setLoading(false);
-      return;
+  const user = useMemo<AppUser | null>(() => {
+    if (!data?.user) {
+      return null;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    return {
+      id: data.user.id,
+      uid: data.user.id,
+      email: data.user.email ?? null,
+      displayName: data.user.name ?? null,
+      photoURL: data.user.image ?? null,
+      emailVerified: Boolean(data.user.emailVerified),
+    };
+  }, [data]);
 
-    return () => unsubscribe();
-  }, [auth]);
-
-  return { user, loading };
+  return {
+    user,
+    loading: isPending,
+    error,
+    session: data?.session ?? null,
+  };
 }

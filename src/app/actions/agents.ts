@@ -11,13 +11,16 @@ import { z } from 'genkit';
 import { headers } from 'next/headers';
 import UAParser from 'ua-parser-js';
 import { deductCredits, getUserCredits } from '@/lib/credit-service';
+import { requireAgentOwner, requireLegacyUserContext } from '@/lib/permissions';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function createAgent(userId: string, name: string, description: string): Promise<{ id: string } | { error: string }> {
-  if (!userId || !name || !description) {
-    return { error: 'User ID, agent name, and description are required.' };
+  if (!name || !description) {
+    return { error: 'Agent name and description are required.' };
   }
 
   try {
+    const viewer = await requireLegacyUserContext();
     let instructions = '';
     try {
       const instructionResult = await generateAgentInstructions({ description });
@@ -27,7 +30,7 @@ export async function createAgent(userId: string, name: string, description: str
     }
     
     const firestore = firebaseAdmin.firestore();
-    const agentRef = firestore.collection('users').doc(userId).collection('agents').doc();
+    const agentRef = firestore.collection('users').doc(viewer.legacyUserId).collection('agents').doc();
     
     const newAgent: Omit<Agent, 'id'> = {
       name,
@@ -62,7 +65,7 @@ export async function createAgent(userId: string, name: string, description: str
 
     // Create a record in the top-level index for efficient lookups
     const agentIndexRef = firestore.collection('agentIndex').doc(agentRef.id);
-    await agentIndexRef.set({ ownerId: userId });
+    await agentIndexRef.set({ ownerId: viewer.legacyUserId });
 
     return { id: agentRef.id };
   } catch (e: any) {
@@ -72,13 +75,12 @@ export async function createAgent(userId: string, name: string, description: str
 }
 
 export async function updateAgent(userId: string, agentId: string, data: Partial<Agent>): Promise<{ success: boolean } | { error: string }> {
-  if (!userId || !agentId || !data) {
-    return { error: 'User ID, agent ID, and data are required.' };
+  if (!agentId || !data) {
+    return { error: 'Agent ID and data are required.' };
   }
 
   try {
-    const firestore = firebaseAdmin.firestore();
-    const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+    const { agentRef } = await requireAgentOwner(agentId);
     
     // Prepare data for update, ensuring we handle nullish values for deletion
     const updateData: { [key: string]: any } = { ...data };
@@ -265,6 +267,24 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
     }
 
     const { agent, agentRef, ownerId: agentOwnerUserId } = agentInfo;
+    const rateLimitConfig = agent.rateLimiting;
+    if (rateLimitConfig?.maxMessages && rateLimitConfig?.timeframe) {
+      const rateLimitWindowMs = rateLimitConfig.timeframe * 1000;
+      const rateLimitKey = `chat:${agentId}:${sessionId}`;
+      const rateLimitResult = await checkRateLimit(
+        rateLimitKey,
+        rateLimitConfig.maxMessages,
+        rateLimitWindowMs
+      );
+
+      if (!rateLimitResult.allowed) {
+        return {
+          error:
+            rateLimitConfig.limitExceededMessage ||
+            'Too many messages in a row. Please wait a moment and try again.',
+        };
+      }
+    }
 
     const sessionRef = agentRef.collection('sessions').doc(sessionId);
     const messagesPath = sessionRef.collection('messages').path;
@@ -473,12 +493,12 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
 }
 
 export async function deleteAgent(userId: string, agentId: string): Promise<{ success: boolean } | { error: string }> {
-    if (!userId || !agentId) {
-        return { error: 'User ID and Agent ID are required.' };
+    if (!agentId) {
+        return { error: 'Agent ID is required.' };
     }
 
+    const { agentRef } = await requireAgentOwner(agentId);
     const firestore = firebaseAdmin.firestore();
-    const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
     const agentIndexRef = firestore.collection('agentIndex').doc(agentId);
 
     try {

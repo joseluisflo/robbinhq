@@ -5,7 +5,6 @@ import { useState, useTransition } from 'react';
 import { useActiveAgent } from '@/app/(main)/layout';
 import { searchAvailableNumbers, purchaseAndConfigureNumber } from '@/app/actions/twilio';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
 
 interface TwilioNumber {
     friendlyName: string;
@@ -13,7 +12,6 @@ interface TwilioNumber {
 }
 
 export function useDeployPhone() {
-    const { user } = useUser();
     const { activeAgent, setActiveAgent } = useActiveAgent();
     const { toast } = useToast();
     const [isSearching, startSearchTransition] = useTransition();
@@ -44,13 +42,13 @@ export function useDeployPhone() {
     }
 
     const handlePurchase = (numberToPurchase: string) => {
-        if (!user || !activeAgent?.id) {
-            toast({ title: 'Error', description: 'You must be logged in and have an active agent.', variant: 'destructive' });
+        if (!activeAgent?.id) {
+            toast({ title: 'Error', description: 'You need an active agent before assigning a phone number.', variant: 'destructive' });
             return;
         }
         setPurchasingNumber(numberToPurchase);
         startPurchaseTransition(async () => {
-            const result = await purchaseAndConfigureNumber(user.uid, activeAgent.id!, numberToPurchase);
+            const result = await purchaseAndConfigureNumber(activeAgent.id!, numberToPurchase);
             if ('error' in result) {
                 toast({ title: 'Purchase Failed', description: result.error, variant: 'destructive' });
             } else {

@@ -70,7 +70,7 @@ async function handleAutoRecharge(
         try {
             const amountToCharge = userData.rechargeAmount * 100; // to cents
             
-            await stripe.paymentIntents.create({
+            const paymentIntent = await stripe.paymentIntents.create({
                 amount: amountToCharge,
                 currency: 'usd',
                 customer: userData.stripeCustomerId,
@@ -95,7 +95,10 @@ async function handleAutoRecharge(
                 amount: creditsToAdd,
                 description: `Auto-recharge of ${creditsToAdd} credits`,
                 timestamp: FieldValue.serverTimestamp(),
-                metadata: { source: 'auto-recharge' }
+                metadata: {
+                    source: 'auto-recharge',
+                    stripePaymentIntentId: paymentIntent.id,
+                }
             });
 
             console.log(`[CreditService] ✅ Auto-recharge successful: Added ${creditsToAdd} credits for user ${userRef.id}.`);

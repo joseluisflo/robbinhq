@@ -4,12 +4,12 @@
 import Stripe from 'stripe';
 import { firebaseAdmin } from '@/firebase/admin';
 import type { userProfile } from '@/lib/types';
+import { requireLegacyUserContext } from '@/lib/permissions';
 
 // Initialize Stripe with the secret key from environment variables
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
 interface CreatePaymentIntentParams {
-  userId: string;
   amount: number; // Amount in cents
 }
 
@@ -22,22 +22,20 @@ interface CreatePaymentIntentParams {
  * @returns {Promise<{ clientSecret: string } | { error: string }>} An object with the clientSecret or an error message.
  */
 export async function createPaymentIntent({
-  userId,
   amount,
 }: CreatePaymentIntentParams): Promise<{ clientSecret: string } | { error: string }> {
-  if (!userId || !amount) {
-    return { error: 'User ID and amount are required.' };
+  if (!amount) {
+    return { error: 'Amount is required.' };
   }
   
   if (amount < 500) { // Stripe's minimum is usually $0.50
       return { error: 'Amount must be at least $5.00.' };
   }
 
-
-  const firestore = firebaseAdmin.firestore();
-  const userRef = firestore.collection('users').doc(userId);
-
   try {
+    const { legacyUserId } = await requireLegacyUserContext();
+    const firestore = firebaseAdmin.firestore();
+    const userRef = firestore.collection('users').doc(legacyUserId);
     const userDoc = await userRef.get();
     if (!userDoc.exists) {
       return { error: 'User not found.' };
@@ -52,7 +50,7 @@ export async function createPaymentIntent({
             email: userData.email,
             name: userData.displayName,
             metadata: {
-                firebaseUID: userId,
+                firebaseUID: legacyUserId,
             },
         });
         stripeCustomerId = customer.id;
@@ -70,7 +68,7 @@ export async function createPaymentIntent({
       },
       // Add metadata to link the payment to the user and purchase type
       metadata: {
-        firebaseUID: userId,
+        firebaseUID: legacyUserId,
         purchaseType: 'credits',
         creditAmount: amount / 100, // Store amount in dollars for clarity
       }

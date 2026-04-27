@@ -6,15 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useUser, useAuth } from "@/firebase";
+import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { updateProfile } from "firebase/auth";
 import { updateUserProfile } from "@/app/actions/users";
 import { Loader2 } from "lucide-react";
+import { updateUser as updateAuthUser } from "@/lib/auth-client";
 
 export function AccountSettings() {
     const { user } = useUser();
-    const auth = useAuth();
     const { toast } = useToast();
 
     const [name, setName] = useState("");
@@ -39,26 +38,20 @@ export function AccountSettings() {
 
         startSaving(async () => {
             if (isNameChanged) {
-                // Update Firebase Auth profile on the client
-                if (auth?.currentUser) {
-                    try {
-                        await updateProfile(auth.currentUser, { displayName: name });
-                        
-                        // Update Firestore profile on the server
-                        const result = await updateUserProfile(user.uid, { displayName: name });
-
-                        if (result.error) {
-                            throw new Error(result.error);
-                        }
-                        
-                        toast({ title: "Success", description: "Your profile has been updated." });
-                        
-                        // Manually trigger a re-render or state update if needed, though useUser should reflect this
-                        // Forcing a refresh might be too heavy, but is an option: router.refresh();
-
-                    } catch (error: any) {
-                         toast({ title: "Error updating profile", description: error.message, variant: "destructive" });
+                try {
+                    const authResult = await updateAuthUser({ name });
+                    if (authResult.error) {
+                        throw new Error(authResult.error.message || "Failed to update auth profile.");
                     }
+
+                    const result = await updateUserProfile({ displayName: name });
+                    if ("error" in result) {
+                        throw new Error(result.error);
+                    }
+
+                    toast({ title: "Success", description: "Your profile has been updated." });
+                } catch (error: any) {
+                    toast({ title: "Error updating profile", description: error.message, variant: "destructive" });
                 }
             }
             // Password change logic will go here in the next step

@@ -1,7 +1,8 @@
 'use server';
 
 import twilio from 'twilio';
-import { firebaseAdmin } from '@/firebase/admin';
+import { requireAgentOwner, requireAuthenticatedUser } from '@/lib/permissions';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -20,11 +21,17 @@ interface TwilioNumber {
 }
 
 export async function searchAvailableNumbers(countryCode: string, areaCode: string): Promise<{ data?: TwilioNumber[] } | { error: string }> {
-    if (!client) {
-        return { error: 'Twilio client is not initialized. Please check server credentials.' };
-    }
-    
     try {
+        const session = await requireAuthenticatedUser();
+        const rateLimit = await checkRateLimit(`twilio-search:${session.user.id}`, 10, 60_000);
+        if (!rateLimit.allowed) {
+            return { error: 'Too many number searches. Please wait a moment and try again.' };
+        }
+
+        if (!client) {
+            return { error: 'Twilio client is not initialized. Please check server credentials.' };
+        }
+
         const availableNumbers = await client.availablePhoneNumbers(countryCode).local.list({
             areaCode: areaCode || undefined,
             limit: 10
@@ -56,7 +63,6 @@ export async function searchAvailableNumbers(countryCode: string, areaCode: stri
 
 
 export async function purchaseAndConfigureNumber(
-  userId: string,
   agentId: string,
   phoneNumber: string
 ): Promise<{ success: boolean, purchasedNumber: string } | { error: string }> {
@@ -68,6 +74,12 @@ export async function purchaseAndConfigureNumber(
   }
 
   try {
+    const { agentRef, authUserId } = await requireAgentOwner(agentId);
+    const rateLimit = await checkRateLimit(`twilio-purchase:${authUserId}`, 3, 60_000);
+    if (!rateLimit.allowed) {
+      return { error: 'Too many purchase attempts. Please wait a moment and try again.' };
+    }
+
     // 1. Purchase the number
     const purchasedNumber = await client.incomingPhoneNumbers.create({
       phoneNumber: phoneNumber,
@@ -83,8 +95,6 @@ export async function purchaseAndConfigureNumber(
     });
 
     // 3. Save to Firestore
-    const firestore = firebaseAdmin.firestore();
-    const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
     await agentRef.update({
         phoneConfig: {
             phoneNumber: purchasedNumber.phoneNumber,

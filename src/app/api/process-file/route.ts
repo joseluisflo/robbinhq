@@ -1,24 +1,16 @@
 
 import { NextResponse } from 'next/server';
-import { firebaseAdmin } from '@/firebase/admin';
 import { s3Client } from '@/lib/r2';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
 import { FieldValue } from 'firebase-admin/firestore';
+import { AuthorizationError, requireAgentOwnerFromHeaders } from '@/lib/permissions';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
-
-async function verifyIdToken(token: string) {
-  try {
-    const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
-    return decodedToken.uid;
-  } catch (error) {
-    console.error('Error verifying ID token:', error);
-    return null;
-  }
-}
+const MAX_PROCESSABLE_FILE_SIZE = 10 * 1024 * 1024;
 
 async function streamToBuffer(stream: Readable): Promise<Buffer> {
   const chunks: Buffer[] = [];
@@ -30,31 +22,25 @@ async function streamToBuffer(stream: Readable): Promise<Buffer> {
 }
 
 export async function POST(request: Request) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
-  }
-
-  const token = authHeader.split('Bearer ')[1];
-  const userId = await verifyIdToken(token);
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
-  }
-
-  const { fileId, agentId } = await request.json();
-
-  if (!fileId || !agentId) {
-    return NextResponse.json({ error: 'File ID and Agent ID are required' }, { status: 400 });
-  }
-  if (!R2_BUCKET_NAME) {
-    return NextResponse.json({ error: 'R2 bucket name is not configured' }, { status: 500 });
-  }
-
-  const firestore = firebaseAdmin.firestore();
-  const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
-  const fileRef = agentRef.collection('files').doc(fileId);
+  let fileRef: FirebaseFirestore.DocumentReference | null = null;
 
   try {
+    const { fileId, agentId } = await request.json();
+
+    if (!fileId || !agentId) {
+      return NextResponse.json({ error: 'File ID and Agent ID are required' }, { status: 400 });
+    }
+    if (!R2_BUCKET_NAME) {
+      return NextResponse.json({ error: 'R2 bucket name is not configured' }, { status: 500 });
+    }
+
+    const owner = await requireAgentOwnerFromHeaders(agentId, request.headers);
+    const rateLimit = await checkRateLimit(`process-file:${owner.legacyUserId}`, 15, 60_000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json({ error: 'Too many file processing requests. Please wait a moment and try again.' }, { status: 429 });
+    }
+
+    fileRef = owner.agentRef.collection('files').doc(fileId);
     const fileDoc = await fileRef.get();
     if (!fileDoc.exists) {
       return NextResponse.json({ error: 'File not found in Firestore' }, { status: 404 });
@@ -66,6 +52,9 @@ export async function POST(request: Request) {
 
     if (!storagePath || !fileType) {
       return NextResponse.json({ error: 'File metadata incomplete' }, { status: 400 });
+    }
+    if ((fileData?.size ?? 0) > MAX_PROCESSABLE_FILE_SIZE) {
+      return NextResponse.json({ error: 'File exceeds the processing size limit.' }, { status: 400 });
     }
 
     // 1. Download from R2
@@ -107,20 +96,26 @@ export async function POST(request: Request) {
     });
 
     // 4. Create Configuration Log
-    await agentRef.collection('configurationLogs').add({
+    await owner.agentRef.collection('configurationLogs').add({
         title: 'Knowledge Base Updated',
         description: `Added file source: "${fileName}"`,
         timestamp: FieldValue.serverTimestamp(),
-        actor: userId,
+        actor: owner.legacyUserId,
     });
 
     return NextResponse.json({ success: true, ...extractionInfo });
   } catch (error) {
+    if (error instanceof AuthorizationError) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+
     console.error('File processing error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     
     // Optionally update Firestore to indicate a processing failure
-    await fileRef.update({ extractedText: `[EXTRACTION_FAILED: ${errorMessage}]` }).catch(console.error);
+    if (fileRef) {
+      await fileRef.update({ extractedText: `[EXTRACTION_FAILED: ${errorMessage}]` }).catch(console.error);
+    }
     
     return NextResponse.json({ error: 'File processing failed', details: errorMessage }, { status: 500 });
   }

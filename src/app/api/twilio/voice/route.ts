@@ -2,9 +2,28 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { twiml } from 'twilio';
+import twilio, { twiml } from 'twilio';
 import { firebaseAdmin } from '@/firebase/admin';
 import type { Agent, AgentFile, TextSource } from '@/lib/types';
+
+function buildRequestValidationUrls(request: Request) {
+    const requestUrl = new URL(request.url);
+    const forwardedHost = request.headers.get('x-forwarded-host');
+    const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const candidates = new Set<string>([request.url]);
+
+    if (forwardedHost) {
+        candidates.add(`${forwardedProto}://${forwardedHost}${requestUrl.pathname}${requestUrl.search}`);
+    }
+
+    if (appUrl) {
+        const normalizedAppUrl = appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl;
+        candidates.add(`${normalizedAppUrl}${requestUrl.pathname}${requestUrl.search}`);
+    }
+
+    return Array.from(candidates);
+}
 
 async function getAgentConfig(agentId: string): Promise<Agent | null> {
     const firestore = firebaseAdmin.firestore();
@@ -46,6 +65,34 @@ export async function POST(request: Request) {
   }
 
   const formData = await request.formData();
+  const signature = request.headers.get('x-twilio-signature');
+
+  if (!process.env.TWILIO_AUTH_TOKEN) {
+    console.error('[Vercel Webhook] TWILIO_AUTH_TOKEN is not configured.');
+    return new Response('Twilio integration is not configured.', { status: 500 });
+  }
+
+  if (!signature) {
+    console.error('[Vercel Webhook] Missing X-Twilio-Signature header.');
+    return new Response('Missing Twilio signature.', { status: 403 });
+  }
+
+  const params = Object.fromEntries(Array.from(formData.entries()).map(([key, value]) => [key, String(value)]));
+  const candidateUrls = buildRequestValidationUrls(request);
+  const isValidRequest = candidateUrls.some((candidateUrl) =>
+    twilio.validateRequest(
+      process.env.TWILIO_AUTH_TOKEN!,
+      signature,
+      candidateUrl,
+      params
+    )
+  );
+
+  if (!isValidRequest) {
+    console.error('[Vercel Webhook] Invalid Twilio signature.', { candidateUrls });
+    return new Response('Invalid Twilio signature.', { status: 403 });
+  }
+
   const callSid = formData.get('CallSid') as string;
 
   if (!callSid) {

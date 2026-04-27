@@ -43,6 +43,11 @@ export async function POST(request: Request) {
   const body = await request.text();
   const signature = headers().get('stripe-signature') ?? '';
 
+  if (!webhookSecret) {
+    console.error('Stripe webhook secret is not configured.');
+    return NextResponse.json({ error: 'Webhook is not configured.' }, { status: 500 });
+  }
+
   let event: Stripe.Event;
 
   try {
@@ -70,6 +75,15 @@ export async function POST(request: Request) {
         const firestore = firebaseAdmin.firestore();
         const userRef = firestore.collection('users').doc(userId);
         const transactionCollection = userRef.collection('creditTransactions');
+        const existingTransactionSnapshot = await transactionCollection
+          .where('metadata.stripePaymentIntentId', '==', paymentIntent.id)
+          .limit(1)
+          .get();
+
+        if (!existingTransactionSnapshot.empty) {
+          console.log(`Skipping already-processed Stripe payment intent ${paymentIntent.id} for user ${userId}.`);
+          return NextResponse.json({ received: true, duplicate: true });
+        }
 
         if (purchaseType === 'credits' || purchaseType === 'auto-recharge-credits') {
           if (!creditAmount) {
@@ -88,7 +102,10 @@ export async function POST(request: Request) {
                 ? `Auto-recharge: ${creditsToAdd} credits`
                 : `Purchase of ${creditsToAdd} credits`,
               timestamp: FieldValue.serverTimestamp(),
-              metadata: { stripePaymentIntentId: paymentIntent.id }
+              metadata: {
+                stripePaymentIntentId: paymentIntent.id,
+                source: purchaseType,
+              }
           });
           console.log(`✅ Successfully added ${creditsToAdd} credits and logged transaction for user ${userId}.`);
 
@@ -120,7 +137,10 @@ export async function POST(request: Request) {
                 amount: creditsForPlan,
                 description: `Subscribed to ${planId} plan`,
                 timestamp: FieldValue.serverTimestamp(),
-                metadata: { stripePaymentIntentId: paymentIntent.id }
+                metadata: {
+                  stripePaymentIntentId: paymentIntent.id,
+                  source: 'plan-upgrade',
+                }
             });
 
             console.log(`✅ Successfully updated user ${userId} to plan ${planId} and logged transaction.`);

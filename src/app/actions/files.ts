@@ -5,6 +5,7 @@ import { firebaseAdmin } from '@/firebase/admin';
 import { s3Client } from '@/lib/r2';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { FieldValue } from 'firebase-admin/firestore';
+import { requireAgentOwner } from '@/lib/permissions';
 
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
 
@@ -13,15 +14,14 @@ export async function deleteAgentFile(
   agentId: string,
   fileId: string
 ): Promise<{ success: boolean } | { error: string }> {
-  if (!userId || !agentId || !fileId) {
-    return { error: 'User ID, Agent ID, and File ID are required.' };
+  if (!agentId || !fileId) {
+    return { error: 'Agent ID and File ID are required.' };
   }
   if (!R2_BUCKET_NAME) {
     return { error: 'R2 bucket name is not configured.' };
   }
 
-  const firestore = firebaseAdmin.firestore();
-  const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+  const { agentRef, legacyUserId } = await requireAgentOwner(agentId);
   const fileRef = agentRef.collection('files').doc(fileId);
 
   try {
@@ -52,7 +52,7 @@ export async function deleteAgentFile(
         title: 'Knowledge Base Updated',
         description: `Removed file source: "${fileName}"`,
         timestamp: FieldValue.serverTimestamp(),
-        actor: userId,
+        actor: legacyUserId,
     });
 
 

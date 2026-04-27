@@ -12,8 +12,6 @@ import {
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useAuth } from '@/firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
@@ -21,11 +19,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import Link from 'next/link';
 import { Input } from './ui/input';
 import { createUserProfile } from '@/app/actions/users';
+import { signUp } from '@/lib/auth-client';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Please enter a valid email.' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
+  password: z.string().min(8, { message: 'Password must be at least 8 characters.' }),
 });
 
 
@@ -35,7 +34,6 @@ export function SignupForm({
 }: React.ComponentProps<"div">) {
 
   const router = useRouter();
-  const auth = useAuth();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -50,23 +48,30 @@ export function SignupForm({
   const { isSubmitting } = form.formState;
 
   const handleSignup = async (values: z.infer<typeof formSchema>) => {
-    if (!auth) return;
-
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      if (userCredential.user) {
-        await updateProfile(userCredential.user, {
-            displayName: values.name,
-        });
+      const { data, error } = await signUp.email({
+        email: values.email,
+        password: values.password,
+        name: values.name,
+      });
 
-        const profileResult = await createUserProfile(userCredential.user.uid, values.name, values.email);
-        if ('error' in profileResult) {
-            console.error('Failed to create user profile in Firestore:', profileResult.error);
-            // Decide if you want to notify the user. For now, we'll log it.
-        }
+      if (error) {
+        throw new Error(error.message || 'Unable to create account.');
       }
+
+      const authUserId = data?.user?.id;
+      if (!authUserId) {
+        throw new Error('Authentication completed but no user ID was returned.');
+      }
+
+      const profileResult = await createUserProfile(authUserId, values.name, values.email);
+      if ('error' in profileResult) {
+        console.error('Failed to create user profile in Firestore:', profileResult.error);
+      }
+
       toast({ title: 'Signup Successful', description: 'Welcome! You are now logged in.' });
       router.push('/dashboard');
+      router.refresh();
     } catch (error: any) {
       console.error('Signup error:', error);
       toast({

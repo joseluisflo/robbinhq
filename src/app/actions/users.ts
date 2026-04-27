@@ -5,6 +5,8 @@
 import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
+import prisma from '@/lib/prisma';
+import { requireLegacyUserContext } from '@/lib/permissions';
 
 const PLAN_CREDITS = {
   free: 150,
@@ -57,6 +59,19 @@ export async function createUserProfile(userId: string, name: string, email: str
         stripeCustomerId: customer.id,
     }, { merge: true }); 
 
+    await prisma.legacyIdentityLink.upsert({
+      where: {
+        authUserId: userId,
+      },
+      update: {
+        legacyUserId: userId,
+      },
+      create: {
+        authUserId: userId,
+        legacyUserId: userId,
+      },
+    });
+
     return { success: true };
   } catch (e: any) {
     console.error('Failed to create user profile:', e);
@@ -65,7 +80,6 @@ export async function createUserProfile(userId: string, name: string, email: str
 }
 
 export async function updateUserProfile(
-    userId: string, 
     data: { 
         displayName?: string;
         autoRechargeEnabled?: boolean;
@@ -73,13 +87,14 @@ export async function updateUserProfile(
         rechargeAmount?: number;
     }
 ): Promise<{ success: boolean } | { error: string }> {
-  if (!userId || !data) {
-    return { error: 'User ID and data are required.' };
+  if (!data) {
+    return { error: 'Data is required.' };
   }
 
   try {
+    const { legacyUserId } = await requireLegacyUserContext();
     const firestore = firebaseAdmin.firestore();
-    const userRef = firestore.collection('users').doc(userId);
+    const userRef = firestore.collection('users').doc(legacyUserId);
 
     const updateData: { [key: string]: any } = {};
     if (data.displayName) {

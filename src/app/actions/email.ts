@@ -166,6 +166,16 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     console.log(`[ACTION] 👤 Agent found. Owner ID: ${ownerId}`);
     
     const emailSessionsRef = agentRef.collection('emailSessions');
+    const existingMessageQuery = await emailSessionsRef
+      .where('messageIds', 'array-contains', messageId)
+      .limit(1)
+      .get();
+
+    if (!existingMessageQuery.empty) {
+      console.log(`[ACTION] ♻️ Message ${messageId} was already processed. Skipping duplicate delivery.`);
+      return { success: true };
+    }
+
     let sessionRef;
     let messages: EmailMessage[] = [];
     
@@ -186,6 +196,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
             subject: subject,
             participants: [from, to],
             lastActivity: FieldValue.serverTimestamp(),
+            messageIds: [],
         });
         console.log('[ACTION] 📝 Created new email session.');
     }
@@ -204,6 +215,10 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     };
 
     await sessionRef.collection('messages').doc(messageId || `no-id-${Date.now()}`).set(newUserMessage);
+    await sessionRef.set({
+      lastActivity: FieldValue.serverTimestamp(),
+      messageIds: FieldValue.arrayUnion(messageId),
+    }, { merge: true });
     console.log(`[ACTION] 📩 Saved incoming message with ID: ${messageId || 'no-id-' + Date.now()}`);
     
     messages.push(newUserMessage);
@@ -284,6 +299,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     // Actualizar última actividad
     await sessionRef.update({
       lastActivity: FieldValue.serverTimestamp(),
+      messageIds: FieldValue.arrayUnion(agentMessageId),
     });
 
     return { success: true };

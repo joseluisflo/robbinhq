@@ -5,6 +5,13 @@ import { Buffer } from "node:buffer";
 import { firebaseAdmin } from '@/firebase/admin';
 import type { Agent } from '@/lib/types';
 import { deductCredits } from '@/lib/credit-service';
+import { checkRateLimit } from '@/lib/rate-limit';
+import {
+  acquireCallLock,
+  refreshCallLock,
+  releaseCallLock,
+  setCallState,
+} from '@/lib/realtime-state';
 
 
 // -------------------------------------------------------------------------
@@ -118,16 +125,25 @@ interface MinimalLiveSession extends LiveSession {
 }
 
 export class CallHandler {
+  private static readonly CALL_LOCK_TTL_SECONDS = 90;
+  private static readonly CALL_STATE_TTL_SECONDS = 120;
+  private static readonly HEARTBEAT_INTERVAL_MS = 15_000;
+
   private ws: WebSocket;
   private googleAISession: MinimalLiveSession | null = null;
   private twilioStreamSid: string | null = null;
+  private callSid: string | null = null;
   
   private agentId: string | null = null;
   private ownerId: string | null = null;
-  private minuteInterval: NodeJS.Timer | null = null;
+  private minuteInterval: NodeJS.Timeout | null = null;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private lockOwnerToken: string;
+  private isClosed = false;
 
   constructor(ws: WebSocket) {
     this.ws = ws;
+    this.lockOwnerToken = `${process.pid}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
     this.ws.on('message', this.handleMessage.bind(this));
     this.ws.on('close', this.onClose.bind(this));
     this.ws.on('error', this.onError.bind(this));
@@ -141,11 +157,17 @@ export class CallHandler {
       if (twilioMessage.event === "start") {
         this.twilioStreamSid = twilioMessage.start.streamSid;
         this.agentId = twilioMessage.start.customParameters?.agentId || null;
-        console.log(`[Handler] 🎬 Stream started: ${this.twilioStreamSid} for Agent: ${this.agentId}`);
+        this.callSid = twilioMessage.start.customParameters?.callSid || null;
+        console.log(`[Handler] 🎬 Stream started: ${this.twilioStreamSid} for Agent: ${this.agentId}, CallSid: ${this.callSid}`);
 
         if (!this.agentId) {
             console.error("[Handler] ❌ Agent ID is missing from custom parameters. Closing connection.");
             this.ws.close(1011, "Agent ID not provided.");
+            return;
+        }
+        if (!this.callSid) {
+            console.error("[Handler] ❌ CallSid is missing from custom parameters. Closing connection.");
+            this.ws.close(1011, "CallSid not provided.");
             return;
         }
 
@@ -157,6 +179,27 @@ export class CallHandler {
         }
         this.ownerId = agentInfo.ownerId;
         console.log(`[Handler] 👤 Agent owner identified: ${this.ownerId}`);
+
+        const acquiredLock = await acquireCallLock(
+          this.callSid,
+          this.lockOwnerToken,
+          CallHandler.CALL_LOCK_TTL_SECONDS
+        );
+        if (!acquiredLock) {
+          console.warn(`[Handler] ⚠️ Duplicate call session detected for ${this.callSid}. Closing connection.`);
+          this.ws.close(4009, "Call already handled by another instance.");
+          return;
+        }
+
+        const voiceRateLimit = await checkRateLimit(`voice-connect:${this.ownerId}:${this.agentId}`, 10, 60_000);
+        if (!voiceRateLimit.allowed) {
+          console.warn(`[Handler] ⚠️ Voice connection rate limit exceeded for user ${this.ownerId} and agent ${this.agentId}.`);
+          this.ws.close(4010, "Too many call attempts.");
+          return;
+        }
+
+        await this.persistCallState("starting");
+        this.startHeartbeat();
 
         // Start billing timer
         this.startBilling();
@@ -181,7 +224,7 @@ export class CallHandler {
         this.sendAudioToGoogle(pcm16k.toString('base64'));
 
       } else if (twilioMessage.event === 'stop') {
-        console.log('[Handler] 🛑 Twilio stream stopped.');
+        console.log(`[Handler] 🛑 Twilio stream stopped for call ${this.callSid}.`);
         this.onClose();
       }
     } catch (e) {
@@ -200,6 +243,7 @@ export class CallHandler {
         const result = await deductCredits(this.ownerId, amount, 'Voice Call Usage');
         if (!result.success) {
           console.warn(`[Handler] ⚠️ Insufficient credits for user ${this.ownerId}. Terminating call.`);
+          await this.persistCallState("insufficient-credits");
           this.ws.close(4002, "Insufficient credits"); // This will trigger the onClose event
         }
       }
@@ -211,6 +255,44 @@ export class CallHandler {
     this.minuteInterval = setInterval(() => {
         deductAndCheck(10);
     }, 60000);
+  }
+
+  private startHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+    }
+
+    this.heartbeatInterval = setInterval(async () => {
+      if (!this.callSid) {
+        return;
+      }
+
+      await refreshCallLock(
+        this.callSid,
+        this.lockOwnerToken,
+        CallHandler.CALL_LOCK_TTL_SECONDS
+      );
+      await this.persistCallState(this.googleAISession ? "active" : "connecting");
+    }, CallHandler.HEARTBEAT_INTERVAL_MS);
+  }
+
+  private async persistCallState(status: string) {
+    if (!this.callSid) {
+      return;
+    }
+
+    await setCallState(
+      this.callSid,
+      {
+        callSid: this.callSid,
+        streamSid: this.twilioStreamSid,
+        agentId: this.agentId,
+        ownerId: this.ownerId,
+        status,
+        updatedAt: new Date().toISOString(),
+      },
+      CallHandler.CALL_STATE_TTL_SECONDS
+    );
   }
 
   private sendAudioToGoogle(base64Payload: string) {
@@ -271,6 +353,7 @@ export class CallHandler {
         callbacks: {
           onopen: () => {
             console.log("[Handler] ✅ Connected to Google AI");
+            void this.persistCallState("connected");
             setTimeout(() => {
                 this.googleAISession?.sendRealtimeInput({ text: "Hello" });
             }, 200);
@@ -307,33 +390,50 @@ export class CallHandler {
           },
           onerror: (e) => {
             console.error("[Handler] ❌ Google AI Error:", e);
+            void this.persistCallState("ai-error");
           },
           onclose: () => {
             console.log("[Handler] 🔌 Google AI session closed.");
+            void this.persistCallState("ai-closed");
           },
         },
       })) as MinimalLiveSession;
     } catch (error) {
       console.error("[Handler] ❌ Connection failed:", error);
+      await this.persistCallState("connection-failed");
       this.ws.close(1011, "Connection failed.");
     }
   }
 
-  private onClose() {
-    console.log("[Handler] 🔌 Connection closed.");
+  private async onClose() {
+    if (this.isClosed) {
+      return;
+    }
+    this.isClosed = true;
+
+    console.log(`[Handler] 🔌 Connection closed for call ${this.callSid}.`);
     if (this.minuteInterval) {
         clearInterval(this.minuteInterval);
         this.minuteInterval = null;
         console.log("[Handler] ⏱️ Billing timer stopped.");
     }
+    if (this.heartbeatInterval) {
+        clearInterval(this.heartbeatInterval);
+        this.heartbeatInterval = null;
+    }
     if (this.googleAISession) {
       this.googleAISession.close();
       this.googleAISession = null;
+    }
+    if (this.callSid) {
+      await this.persistCallState("closed");
+      await releaseCallLock(this.callSid);
     }
   }
 
   private onError(err: Error) {
     console.error(`[Handler] ❌ WebSocket error:`, err);
-    this.onClose();
+    void this.persistCallState("socket-error");
+    void this.onClose();
   }
 }

@@ -19,6 +19,7 @@ import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue }from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { deductCredits } from '@/lib/credit-service';
+import { requireWorkflowOwner } from '@/lib/permissions';
 
 // This server action needs userId, agentId, and workflowId to construct Firestore paths.
 // These will need to be passed from the client that calls this action.
@@ -349,18 +350,16 @@ export async function runOrResumeWorkflow(
 }
 
 export async function updateWorkflowStatus(
-  userId: string,
   agentId: string,
   workflowId: string,
   status: 'enabled' | 'disabled'
 ): Promise<{ success: boolean } | { error: string }> {
-  if (!userId || !agentId || !workflowId || !status) {
-    return { error: 'User ID, Agent ID, Workflow ID, and status are required.' };
+  if (!agentId || !workflowId || !status) {
+    return { error: 'Agent ID, Workflow ID, and status are required.' };
   }
 
   try {
-    const firestore = firebaseAdmin.firestore();
-    const workflowRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId).collection('workflows').doc(workflowId);
+    const { workflowRef } = await requireWorkflowOwner(agentId, workflowId);
     
     await workflowRef.update({
       status: status,

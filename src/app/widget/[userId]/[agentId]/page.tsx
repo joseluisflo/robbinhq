@@ -1,96 +1,89 @@
-
-'use client';
-
-import { Suspense, useEffect, useState } from 'react';
-import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
-import type { Agent, AgentFile, TextSource } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { firebaseAdmin } from '@/firebase/admin';
+import type { Agent } from '@/lib/types';
 import { ChatWidgetPublic } from '@/components/chat-widget-public';
-import { useSearchParams } from 'next/navigation';
 
+type WidgetPageParams = {
+  params: {
+    userId: string;
+    agentId: string;
+  };
+};
 
-function WidgetContent({ params }: { params: { userId: string, agentId: string } }) {
+function buildPublicAgent(agentId: string, data: FirebaseFirestore.DocumentData): Agent {
+  return {
+    id: agentId,
+    name: data.name || 'Agent Preview',
+    description: data.description || '',
+    goals: Array.isArray(data.goals) ? data.goals : [],
+    status: data.status || 'idle',
+    tasks: Array.isArray(data.tasks) ? data.tasks : [],
+    conversationStarters: Array.isArray(data.conversationStarters) ? data.conversationStarters : [],
+    temperature: data.temperature,
+    lastModified: data.lastModified,
+    createdAt: data.createdAt,
+    rateLimiting: data.rateLimiting,
+    welcomeMessage: data.welcomeMessage,
+    inCallWelcomeMessage: data.inCallWelcomeMessage,
+    isWelcomeMessageEnabled: data.isWelcomeMessageEnabled,
+    isDisplayNameEnabled: data.isDisplayNameEnabled,
+    logoUrl: data.logoUrl,
+    themeColor: data.themeColor,
+    chatButtonColor: data.chatButtonColor,
+    chatBubbleAlignment: data.chatBubbleAlignment,
+    chatInputPlaceholder: data.chatInputPlaceholder,
+    isFeedbackEnabled: data.isFeedbackEnabled,
+    isBargeInEnabled: data.isBargeInEnabled,
+    isBrandingEnabled: data.isBrandingEnabled,
+    agentVoice: data.agentVoice,
+    orbColors: data.orbColors,
+  };
+}
+
+async function getPublicAgentConfig(userId: string, agentId: string): Promise<Agent | null> {
+  const firestore = firebaseAdmin.firestore();
+  const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
+  const agentDoc = await agentRef.get();
+
+  if (!agentDoc.exists) {
+    return null;
+  }
+
+  return buildPublicAgent(agentDoc.id, agentDoc.data() || {});
+}
+
+export default async function WidgetPage({ params }: WidgetPageParams) {
   const { userId, agentId } = params;
-  const firestore = useFirestore();
-  const [agent, setAgent] = useState<Agent | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!firestore || !userId || !agentId) {
-        setLoading(false);
-        setError('Invalid parameters.');
-        return;
-    };
-
-    const fetchAgent = async () => {
-      try {
-        const agentDocRef = doc(firestore, 'users', userId, 'agents', agentId);
-        const agentSnap = await getDoc(agentDocRef);
-
-        if (agentSnap.exists()) {
-          const agentData = { id: agentSnap.id, ...agentSnap.data() } as Agent;
-          
-          const textsQuery = collection(firestore, 'users', userId, 'agents', agentId, 'texts');
-          const filesQuery = collection(firestore, 'users', userId, 'agents', agentId, 'files');
-
-          const [textsSnapshot, filesSnapshot] = await Promise.all([
-             getDocs(textsQuery),
-             getDocs(filesQuery)
-          ]);
-
-          agentData.textSources = textsSnapshot.docs.map(d => d.data() as TextSource);
-          agentData.fileSources = filesSnapshot.docs.map(d => d.data() as AgentFile);
-
-          setAgent(agentData);
-
-        } else {
-          setError('Agent not found.');
-        }
-      } catch (err) {
-        console.error('Error fetching agent:', err);
-        setError('Failed to load agent.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAgent();
-  }, [firestore, userId, agentId]);
-
-  if (loading) {
+  if (!userId || !agentId) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-transparent">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex h-screen w-full items-center justify-center bg-transparent p-4">
+        <p className="rounded-lg bg-red-100 p-4 text-red-500">Invalid widget parameters.</p>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-transparent p-4">
-        <p className="text-red-500 bg-red-100 p-4 rounded-lg">{error}</p>
-      </div>
-    );
-  }
-  
-  if (!agent) {
-    return null; // Should be covered by error state, but for safety
-  }
+  try {
+    const agent = await getPublicAgentConfig(userId, agentId);
 
-  return <ChatWidgetPublic agent={agent} />;
-}
-
-
-export default function WidgetPage({ params }: { params: { userId: string, agentId: string } }) {
-    return (
-        <div className="h-screen w-full">
-            <Suspense fallback={<div className="flex h-full w-full items-center justify-center bg-transparent"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}>
-                <WidgetContent params={params} />
-            </Suspense>
+    if (!agent) {
+      return (
+        <div className="flex h-screen w-full items-center justify-center bg-transparent p-4">
+          <p className="rounded-lg bg-red-100 p-4 text-red-500">Agent not found.</p>
         </div>
-    )
-}
+      );
+    }
 
-    
+    return (
+      <div className="h-screen w-full">
+        <ChatWidgetPublic agent={agent} />
+      </div>
+    );
+  } catch (error) {
+    console.error('Failed to load public widget agent configuration:', error);
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-transparent p-4">
+        <p className="rounded-lg bg-red-100 p-4 text-red-500">Failed to load agent.</p>
+      </div>
+    );
+  }
+}

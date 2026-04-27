@@ -31,19 +31,18 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { User, signOut } from "firebase/auth"
-import { useAuth } from "@/firebase"
 import { useRouter } from "next/navigation"
 import { SettingsDialog } from "./settings-dialog"
 import { ChangePlanDialog } from "./settings/change-plan-dialog"
+import { signOut } from "@/lib/auth-client"
+import type { AppUser } from "@/firebase/auth/use-user"
 
 export function NavUser({
   user,
 }: {
-  user: User | null;
+  user: AppUser | null;
 }) {
   const { isMobile } = useSidebar();
-  const auth = useAuth();
   const router = useRouter();
 
   // For now, we'll assume the user is on a free plan.
@@ -51,10 +50,10 @@ export function NavUser({
   const userPlan = 'free';
 
   const handleLogout = async () => {
-    if (!auth) return;
     try {
-      await signOut(auth);
+      await signOut();
       router.push('/');
+      router.refresh();
     } catch (error) {
       console.error('Logout error:', error);
     }

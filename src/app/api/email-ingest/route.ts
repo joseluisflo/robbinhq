@@ -2,6 +2,8 @@
 
 import { NextResponse } from 'next/server';
 import { processInboundEmail } from '@/app/actions/email';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { claimIdempotencyKey } from '@/lib/idempotency';
 
 const INGEST_SECRET = process.env.EMAIL_INGEST_SECRET;
 
@@ -21,6 +23,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const rateLimit = await checkRateLimit(`email-ingest:${forwardedFor}`, 30, 60_000);
+    if (!rateLimit.allowed) {
+      console.error('[API] ❌ Rate limit exceeded for email ingest source.');
+      return NextResponse.json({ success: false, error: 'Too many requests' }, { status: 429 });
+    }
+
     const payload = await request.json();
     console.log('[API] ➡️ Received payload:', JSON.stringify(payload, null, 2));
 
@@ -35,6 +44,12 @@ export async function POST(request: Request) {
     const messageId = payload.messageId || payload.headers?.['message-id'] || `no-id-${Date.now()}`;
     const inReplyTo = payload.inReplyTo || payload.headers?.['in-reply-to'];
     const references = payload.references || payload.headers?.['references'];
+
+    const shouldProcess = await claimIdempotencyKey(`email-ingest:${messageId}`, 60 * 10);
+    if (!shouldProcess) {
+        console.log(`[API] ♻️ Duplicate email ingest ignored for messageId ${messageId}.`);
+        return NextResponse.json({ success: true, message: 'Duplicate webhook ignored.' });
+    }
 
     // 🔍 LOG: Verificar qué se extrajo
     console.log('[API] 📧 Extracted data:');

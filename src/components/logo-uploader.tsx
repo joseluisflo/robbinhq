@@ -86,7 +86,6 @@ export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProp
     if (!file || !user || !activeAgent?.id) return;
 
     startUploading(async () => {
-      const token = await user.getIdToken();
       const formData = new FormData();
       formData.append('file', file);
       formData.append('agentId', activeAgent.id!);
@@ -95,9 +94,6 @@ export function LogoUploader({ agent, onLogoChange, isSaving }: LogoUploaderProp
       try {
         const response = await fetch('/api/upload', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
           body: formData,
         });
 
