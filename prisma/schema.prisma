@@ -18,6 +18,8 @@ model User {
   accounts            Account[]
   legacyIdentityLink  LegacyIdentityLink?
   agents              Agent[]
+  chatSessions        ChatSession[]
+  messageFeedback     MessageFeedback[]
 
   @@map("user")
 }
@@ -115,6 +117,8 @@ model Agent {
   owner                   User        @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
   texts                   AgentText[]
   files                   AgentFile[]
+  chatSessions            ChatSession[]
+  messageFeedback         MessageFeedback[]
 
   @@index([ownerUserId, updatedAt])
   @@index([legacyOwnerId])
@@ -149,4 +153,61 @@ model AgentFile {
 
   @@index([agentId, createdAt])
   @@map("agent_file")
+}
+
+model ChatSession {
+  id                 String            @id
+  agentId            String
+  ownerUserId        String
+  legacyOwnerId      String?
+  title              String
+  lastMessageSnippet String
+  createdAt          DateTime          @default(now())
+  lastActivity       DateTime
+  lastLeadAnalysisAt DateTime?
+  visitorInfo        Json?
+  source             String            @default("chat")
+  deletedAt          DateTime?
+  agent              Agent             @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  owner              User              @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  messages           ChatMessage[]
+  feedback           MessageFeedback[]
+
+  @@index([agentId, lastActivity])
+  @@index([ownerUserId, lastActivity])
+  @@index([legacyOwnerId])
+  @@map("chat_session")
+}
+
+model ChatMessage {
+  id         String      @id
+  sessionId  String
+  sender     String
+  text       String
+  timestamp  DateTime    @default(now())
+  options    Json?
+  session    ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, timestamp])
+  @@map("chat_message")
+}
+
+model MessageFeedback {
+  id          String      @id @default(cuid())
+  agentId      String
+  ownerUserId  String
+  legacyOwnerId String?
+  sessionId    String
+  messageId    String
+  rating       String
+  comment      String?
+  createdAt    DateTime    @default(now())
+  agent        Agent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  owner        User        @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  session      ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, sessionId, createdAt])
+  @@index([ownerUserId, createdAt])
+  @@index([legacyOwnerId])
+  @@map("message_feedback")
 }

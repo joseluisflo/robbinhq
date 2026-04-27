@@ -14,6 +14,13 @@ import { deductCredits, getUserCredits } from '@/lib/credit-service';
 import { requireAgentOwner, requireLegacyUserContext } from '@/lib/permissions';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { createAgentRecord, softDeleteAgentRecord, updateAgentRecord } from '@/lib/data/agents';
+import {
+  createChatMessageRecord,
+  upsertChatSessionRecord,
+} from '@/lib/data/chat';
+import { listAgentFiles } from '@/lib/data/agent-files';
+import { listAgentTexts } from '@/lib/data/agent-texts';
+import prisma from '@/lib/prisma';
 
 export async function createAgent(userId: string, name: string, description: string): Promise<{ id: string } | { error: string }> {
   if (!name || !description) {
@@ -201,11 +208,17 @@ const titleGeneratorPrompt = ai.definePrompt({
   prompt: 'Generate a short, concise title (4-5 words max) for a conversation that starts with this message: "{{message}}"',
 });
 
-async function saveMessage(db: FirebaseFirestore.Firestore, path: string, message: { sender: 'user' | 'agent', text: string }) {
-    await db.collection(path).add({
+async function saveMessage(
+  db: FirebaseFirestore.Firestore,
+  path: string,
+  message: { sender: 'user' | 'agent'; text: string }
+) {
+    const messageRef = db.collection(path).doc();
+    await messageRef.set({
         ...message,
         timestamp: FieldValue.serverTimestamp(),
     });
+    return messageRef.id;
 }
 
 // Helper to manage interaction logs
@@ -279,6 +292,90 @@ async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId
     return null;
 }
 
+async function resolveAuthUserIdFromLegacyUserId(legacyUserId: string) {
+  const link = await prisma.legacyIdentityLink.findUnique({
+    where: { legacyUserId },
+    select: { authUserId: true },
+  });
+
+  if (!link?.authUserId) {
+    throw new Error(`No auth user linked to legacy owner ${legacyUserId}.`);
+  }
+
+  return link.authUserId;
+}
+
+async function mirrorChatMessage(input: {
+  messageId: string;
+  sessionId: string;
+  sender: 'user' | 'agent';
+  text: string;
+  timestamp?: string | Date;
+  options?: string[];
+}) {
+  try {
+    await createChatMessageRecord(input);
+  } catch (mirrorError) {
+    console.error('Failed to mirror chat message to Postgres:', mirrorError);
+  }
+}
+
+async function mirrorChatSession(input: {
+  sessionId: string;
+  agentId: string;
+  ownerUserId: string;
+  legacyOwnerId: string;
+  title: string;
+  lastMessageSnippet: string;
+  createdAt?: string | Date;
+  lastActivity?: string | Date;
+  lastLeadAnalysisAt?: string | Date | null;
+  visitorInfo?: ChatSession['visitorInfo'];
+}) {
+  try {
+    await upsertChatSessionRecord({
+      id: input.sessionId,
+      agentId: input.agentId,
+      ownerUserId: input.ownerUserId,
+      legacyOwnerId: input.legacyOwnerId,
+      title: input.title,
+      lastMessageSnippet: input.lastMessageSnippet,
+      createdAt: input.createdAt,
+      lastActivity: input.lastActivity,
+      lastLeadAnalysisAt: input.lastLeadAnalysisAt,
+      visitorInfo: input.visitorInfo,
+      source: 'chat',
+    });
+  } catch (mirrorError) {
+    console.error('Failed to mirror chat session to Postgres:', mirrorError);
+  }
+}
+
+function coerceDateLike(value: unknown): Date | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  }
+
+  if (typeof value === 'object' && value && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
+    try {
+      return (value as { toDate: () => Date }).toDate();
+    } catch {
+      return undefined;
+    }
+  }
+
+  return undefined;
+}
+
 
 export async function getAgentResponse(input: AgentResponseInput): Promise<AgentResponse> {
   const { userId, agentId, message, runId, sessionId, currentWorkflowId, currentWorkflowBlocks } = input;
@@ -295,7 +392,8 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       return { error: 'Agent not found.' };
     }
 
-    const { agent, agentRef, ownerId: agentOwnerUserId } = agentInfo;
+    const { agent, agentRef, ownerId: agentOwnerLegacyUserId } = agentInfo;
+    const agentOwnerAuthUserId = await resolveAuthUserIdFromLegacyUserId(agentOwnerLegacyUserId);
     const rateLimitConfig = agent.rateLimiting;
     if (rateLimitConfig?.maxMessages && rateLimitConfig?.timeframe) {
       const rateLimitWindowMs = rateLimitConfig.timeframe * 1000;
@@ -318,7 +416,13 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
     const sessionRef = agentRef.collection('sessions').doc(sessionId);
     const messagesPath = sessionRef.collection('messages').path;
 
-    await saveMessage(firestore, messagesPath, { sender: 'user', text: message });
+    const userMessageId = await saveMessage(firestore, messagesPath, { sender: 'user', text: message });
+    await mirrorChatMessage({
+      messageId: userMessageId,
+      sessionId,
+      sender: 'user',
+      text: message,
+    });
 
     // --- LOGGING ---
     const logTitle = `Conversation with Visitor`; // Simplified title
@@ -384,17 +488,42 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         }
 
 
-        await sessionRef.set({
+        const newSession = {
             title: output?.title || message.substring(0, 40),
             createdAt: FieldValue.serverTimestamp(),
             lastActivity: FieldValue.serverTimestamp(),
             lastMessageSnippet: message,
             visitorInfo,
+        };
+        await sessionRef.set(newSession);
+        await mirrorChatSession({
+          sessionId,
+          agentId,
+          ownerUserId: agentOwnerAuthUserId,
+          legacyOwnerId: agentOwnerLegacyUserId,
+          title: output?.title || message.substring(0, 40),
+          createdAt: new Date(),
+          lastActivity: new Date(),
+          lastMessageSnippet: message,
+          visitorInfo,
         });
     } else {
+        const existingSession = sessionDoc.data() as ChatSession | undefined;
         await sessionRef.update({
             lastActivity: FieldValue.serverTimestamp(),
             lastMessageSnippet: message,
+        });
+        await mirrorChatSession({
+          sessionId,
+          agentId,
+          ownerUserId: agentOwnerAuthUserId,
+          legacyOwnerId: agentOwnerLegacyUserId,
+          title: existingSession?.title || message.substring(0, 40),
+          createdAt: coerceDateLike(existingSession?.createdAt),
+          lastActivity: new Date(),
+          lastMessageSnippet: message,
+          visitorInfo: existingSession?.visitorInfo,
+          lastLeadAnalysisAt: coerceDateLike(existingSession?.lastLeadAnalysisAt),
         });
     }
 
@@ -433,7 +562,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       await addLogStep(logRef, `Triggering workflow: "${selectedWorkflowId}"`);
       // Workflow credit logic is handled inside runOrResumeWorkflow
       const workflowResult = await runOrResumeWorkflow({
-        userId: agentOwnerUserId,
+        userId: agentOwnerLegacyUserId,
         agentId,
         workflowId: selectedWorkflowId,
         runId,
@@ -444,15 +573,41 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       });
 
       if ('error' in workflowResult) {
-        await saveMessage(firestore, messagesPath, { sender: 'agent', text: workflowResult.error });
+        const errorMessageId = await saveMessage(firestore, messagesPath, { sender: 'agent', text: workflowResult.error });
+        await mirrorChatMessage({
+          messageId: errorMessageId,
+          sessionId,
+          sender: 'agent',
+          text: workflowResult.error,
+        });
         await logRef.update({ status: 'error' });
         return { error: `Workflow error: ${workflowResult.error}` };
       }
 
       const responseText = workflowResult.promptForUser || workflowResult.context?.finalResult;
       if (responseText) {
-        await saveMessage(firestore, messagesPath, { sender: 'agent', text: responseText });
+        const agentWorkflowMessageId = await saveMessage(firestore, messagesPath, { sender: 'agent', text: responseText });
+        await mirrorChatMessage({
+          messageId: agentWorkflowMessageId,
+          sessionId,
+          sender: 'agent',
+          text: responseText,
+          options: workflowResult.context?.options,
+        });
         await addLogStep(logRef, `Agent: "${responseText}"`);
+        const existingSession = sessionDoc.data() as ChatSession | undefined;
+        const sessionTitle = existingSession?.title || message.substring(0, 40);
+        await mirrorChatSession({
+          sessionId,
+          agentId,
+          ownerUserId: agentOwnerAuthUserId,
+          legacyOwnerId: agentOwnerLegacyUserId,
+          title: sessionTitle,
+          lastActivity: new Date(),
+          lastMessageSnippet: responseText,
+          visitorInfo: existingSession?.visitorInfo,
+          lastLeadAnalysisAt: coerceDateLike(existingSession?.lastLeadAnalysisAt),
+        });
       }
       
       if (workflowResult.status === 'completed') {
@@ -470,7 +625,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       };
     } else {
       // Standard Chat: Deduct 1 credit for a simple chat response.
-      const creditResult = await deductCredits(agentOwnerUserId, 1, 'Chat Response');
+      const creditResult = await deductCredits(agentOwnerLegacyUserId, 1, 'Chat Response');
       if (!creditResult.success) {
         await addLogStep(logRef, `Credit deduction failed: ${creditResult.error}`);
         await logRef.update({ status: 'error' });
@@ -480,11 +635,23 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       
       await addLogStep(logRef, "Answering with standard chat (cost: 1 credit).");
 
-      const textsSnapshot = await agentRef.collection('texts').get();
-      const filesSnapshot = await agentRef.collection('files').get();
+      let textSources: TextSource[] = [];
+      let fileSources: AgentFile[] = [];
+      try {
+        [textSources, fileSources] = await Promise.all([
+          listAgentTexts(agentId),
+          listAgentFiles(agentId),
+        ]);
+      } catch (readError) {
+        console.error('Failed to load knowledge sources from Postgres, falling back to Firestore:', readError);
+      }
 
-      const textSources = textsSnapshot.docs.map(doc => doc.data() as TextSource);
-      const fileSources = filesSnapshot.docs.map(doc => doc.data() as AgentFile);
+      if (textSources.length === 0 && fileSources.length === 0) {
+        const textsSnapshot = await agentRef.collection('texts').get();
+        const filesSnapshot = await agentRef.collection('files').get();
+        textSources = textsSnapshot.docs.map(doc => doc.data() as TextSource);
+        fileSources = filesSnapshot.docs.map(doc => doc.data() as AgentFile);
+      }
 
       const knowledge = [
           ...textSources.map(t => `Title: ${t.title}\nContent: ${t.content}`),
@@ -497,9 +664,28 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         knowledge: knowledge,
       });
 
-      await saveMessage(firestore, messagesPath, { sender: 'agent', text: chatResult.response });
+      const agentMessageId = await saveMessage(firestore, messagesPath, { sender: 'agent', text: chatResult.response });
+      await mirrorChatMessage({
+        messageId: agentMessageId,
+        sessionId,
+        sender: 'agent',
+        text: chatResult.response,
+      });
       await addLogStep(logRef, `Agent: "${chatResult.response}"`);
       await logRef.update({ status: 'success' });
+      const existingSession = sessionDoc.data() as ChatSession | undefined;
+      const sessionTitle = existingSession?.title || message.substring(0, 40);
+      await mirrorChatSession({
+        sessionId,
+        agentId,
+        ownerUserId: agentOwnerAuthUserId,
+        legacyOwnerId: agentOwnerLegacyUserId,
+        title: sessionTitle,
+        lastActivity: new Date(),
+        lastMessageSnippet: chatResult.response,
+        visitorInfo: existingSession?.visitorInfo,
+        lastLeadAnalysisAt: coerceDateLike(existingSession?.lastLeadAnalysisAt),
+      });
 
       return { type: 'chat', response: chatResult.response };
     }
