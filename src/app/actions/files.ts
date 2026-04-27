@@ -6,6 +6,7 @@ import { s3Client } from '@/lib/r2';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { FieldValue } from 'firebase-admin/firestore';
 import { requireAgentOwner } from '@/lib/permissions';
+import { deleteAgentFileRecord } from '@/lib/data/agent-files';
 
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
 
@@ -54,6 +55,12 @@ export async function deleteAgentFile(
         timestamp: FieldValue.serverTimestamp(),
         actor: legacyUserId,
     });
+
+    try {
+      await deleteAgentFileRecord(agentId, fileId);
+    } catch (mirrorError) {
+      console.error('Failed to mirror file deletion to Postgres:', mirrorError);
+    }
 
 
     return { success: true };

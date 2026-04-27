@@ -5,6 +5,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { AuthorizationError, requireAgentOwnerFromHeaders } from '@/lib/permissions';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { createAgentFileRecord } from '@/lib/data/agent-files';
 
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
 const R2_PUBLIC_HOSTNAME = process.env.R2_PUBLIC_HOSTNAME;
@@ -106,6 +107,20 @@ export async function POST(request: Request) {
     };
 
     await fileRef.set(newFileData);
+
+    try {
+      await createAgentFileRecord({
+        id: fileRef.id,
+        agentId,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        url: publicUrl,
+        storagePath,
+      });
+    } catch (mirrorError) {
+      console.error('Failed to mirror uploaded file metadata to Postgres:', mirrorError);
+    }
 
     return NextResponse.json({ success: true, fileId: fileRef.id, url: publicUrl }, { status: 201 });
 

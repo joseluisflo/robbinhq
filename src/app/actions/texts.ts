@@ -4,6 +4,7 @@
 import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { requireAgentOwner } from '@/lib/permissions';
+import { createAgentTextRecord, deleteAgentTextRecord } from '@/lib/data/agent-texts';
 
 export async function addAgentText(
   userId: string,
@@ -32,6 +33,17 @@ export async function addAgentText(
         timestamp: FieldValue.serverTimestamp(),
         actor: legacyUserId,
     });
+
+    try {
+      await createAgentTextRecord({
+        id: textRef.id,
+        agentId,
+        title: data.title,
+        content: data.content,
+      });
+    } catch (mirrorError) {
+      console.error('Failed to mirror text source creation to Postgres:', mirrorError);
+    }
 
 
     return { id: textRef.id };
@@ -69,6 +81,12 @@ export async function deleteAgentText(
         timestamp: FieldValue.serverTimestamp(),
         actor: legacyUserId,
     });
+
+    try {
+      await deleteAgentTextRecord(agentId, textId);
+    } catch (mirrorError) {
+      console.error('Failed to mirror text source deletion to Postgres:', mirrorError);
+    }
 
     return { success: true };
   } catch (e: any) {

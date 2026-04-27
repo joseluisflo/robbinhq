@@ -1,6 +1,7 @@
 import { firebaseAdmin } from '@/firebase/admin';
 import type { Agent } from '@/lib/types';
 import { ChatWidgetPublic } from '@/components/chat-widget-public';
+import { getAgentByLegacyOwnerId } from '@/lib/data/agents';
 
 type WidgetPageParams = {
   params: {
@@ -71,6 +72,11 @@ function toPlainSerializable<T>(value: T): T {
 }
 
 async function getPublicAgentConfig(userId: string, agentId: string): Promise<Agent | null> {
+  const prismaAgent = await getAgentByLegacyOwnerId(userId, agentId);
+  if (prismaAgent) {
+    return prismaAgent;
+  }
+
   const firestore = firebaseAdmin.firestore();
   const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
   const agentDoc = await agentRef.get();

@@ -13,6 +13,7 @@ import UAParser from 'ua-parser-js';
 import { deductCredits, getUserCredits } from '@/lib/credit-service';
 import { requireAgentOwner, requireLegacyUserContext } from '@/lib/permissions';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { createAgentRecord, softDeleteAgentRecord, updateAgentRecord } from '@/lib/data/agents';
 
 export async function createAgent(userId: string, name: string, description: string): Promise<{ id: string } | { error: string }> {
   if (!name || !description) {
@@ -21,6 +22,7 @@ export async function createAgent(userId: string, name: string, description: str
 
   try {
     const viewer = await requireLegacyUserContext();
+    const nowIso = new Date().toISOString();
     let instructions = '';
     try {
       const instructionResult = await generateAgentInstructions({ description });
@@ -67,6 +69,20 @@ export async function createAgent(userId: string, name: string, description: str
     const agentIndexRef = firestore.collection('agentIndex').doc(agentRef.id);
     await agentIndexRef.set({ ownerId: viewer.legacyUserId });
 
+    try {
+      await createAgentRecord({
+        id: agentRef.id,
+        ownerUserId: viewer.authUserId,
+        legacyOwnerId: viewer.legacyUserId,
+        agent: {
+          ...newAgent,
+          createdAt: nowIso,
+        },
+      });
+    } catch (mirrorError) {
+      console.error('Failed to mirror agent creation to Postgres:', mirrorError);
+    }
+
     return { id: agentRef.id };
   } catch (e: any) {
     console.error('Failed to create agent:', e);
@@ -80,7 +96,7 @@ export async function updateAgent(userId: string, agentId: string, data: Partial
   }
 
   try {
-    const { agentRef } = await requireAgentOwner(agentId);
+    const { agentRef, authUserId } = await requireAgentOwner(agentId);
     
     // Prepare data for update, ensuring we handle nullish values for deletion
     const updateData: { [key: string]: any } = { ...data };
@@ -92,6 +108,19 @@ export async function updateAgent(userId: string, agentId: string, data: Partial
       ...updateData,
       lastModified: FieldValue.serverTimestamp(),
     });
+
+    try {
+      await updateAgentRecord({
+        agentId,
+        ownerUserId: authUserId,
+        data: {
+          ...data,
+          lastModified: new Date().toISOString(),
+        },
+      });
+    } catch (mirrorError) {
+      console.error('Failed to mirror agent update to Postgres:', mirrorError);
+    }
 
     return { success: true };
   } catch (e: any) {
@@ -497,7 +526,7 @@ export async function deleteAgent(userId: string, agentId: string): Promise<{ su
         return { error: 'Agent ID is required.' };
     }
 
-    const { agentRef } = await requireAgentOwner(agentId);
+    const { agentRef, authUserId } = await requireAgentOwner(agentId);
     const firestore = firebaseAdmin.firestore();
     const agentIndexRef = firestore.collection('agentIndex').doc(agentId);
 
@@ -518,6 +547,12 @@ export async function deleteAgent(userId: string, agentId: string): Promise<{ su
         batch.delete(agentIndexRef);
         
         await batch.commit();
+
+        try {
+            await softDeleteAgentRecord(agentId, authUserId);
+        } catch (mirrorError) {
+            console.error(`Failed to mirror agent deletion to Postgres for ${agentId}:`, mirrorError);
+        }
 
         return { success: true };
     } catch (e: any) {

@@ -8,6 +8,7 @@ import mammoth from 'mammoth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { AuthorizationError, requireAgentOwnerFromHeaders } from '@/lib/permissions';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { updateAgentFileRecord } from '@/lib/data/agent-files';
 
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
 const MAX_PROCESSABLE_FILE_SIZE = 10 * 1024 * 1024;
@@ -94,6 +95,16 @@ export async function POST(request: Request) {
     await fileRef.update({
       extractedText: extractedText.trim(),
     });
+
+    try {
+      await updateAgentFileRecord({
+        agentId,
+        fileId,
+        extractedText: extractedText.trim(),
+      });
+    } catch (mirrorError) {
+      console.error('Failed to mirror processed file metadata to Postgres:', mirrorError);
+    }
 
     // 4. Create Configuration Log
     await owner.agentRef.collection('configurationLogs').add({

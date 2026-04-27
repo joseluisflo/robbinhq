@@ -17,6 +17,7 @@ model User {
   sessions            Session[]
   accounts            Account[]
   legacyIdentityLink  LegacyIdentityLink?
+  agents              Agent[]
 
   @@map("user")
 }
@@ -75,4 +76,77 @@ model LegacyIdentityLink {
 
   @@index([legacyUserId])
   @@map("legacy_identity_link")
+}
+
+model Agent {
+  id                      String      @id
+  ownerUserId             String
+  legacyOwnerId           String?
+  name                    String
+  description             String      @default("")
+  instructions            String?
+  status                  String      @default("idle")
+  temperature             Float?
+  welcomeMessage          String?
+  inCallWelcomeMessage    String?
+  isWelcomeMessageEnabled Boolean?
+  isDisplayNameEnabled    Boolean?
+  logoUrl                 String?
+  themeColor              String?
+  chatButtonColor         String?
+  chatBubbleAlignment     String?
+  chatInputPlaceholder    String?
+  isFeedbackEnabled       Boolean?
+  isBargeInEnabled        Boolean?
+  isBrandingEnabled       Boolean?
+  agentVoice              String?
+  emailSignature          String?
+  handoffEmail            String?
+  conversationStarters    Json?
+  goals                   Json?
+  tasks                   Json?
+  rateLimiting            Json?
+  orbColors               Json?
+  phoneConfig             Json?
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+  lastModified            DateTime?
+  deletedAt               DateTime?
+  owner                   User        @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  texts                   AgentText[]
+  files                   AgentFile[]
+
+  @@index([ownerUserId, updatedAt])
+  @@index([legacyOwnerId])
+  @@map("agent")
+}
+
+model AgentText {
+  id        String   @id
+  agentId    String
+  title      String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  agent      Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, createdAt])
+  @@map("agent_text")
+}
+
+model AgentFile {
+  id           String   @id
+  agentId       String
+  name          String
+  type          String
+  size          Int
+  url           String
+  storagePath   String
+  extractedText String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, createdAt])
+  @@map("agent_file")
 }
