@@ -54,6 +54,7 @@ export async function upsertChatSessionRecord(input: {
   agentId: string;
   ownerUserId: string;
   legacyOwnerId?: string | null;
+  visitorId?: string | null;
   title: string;
   lastMessageSnippet: string;
   createdAt?: string | Date;
@@ -65,6 +66,7 @@ export async function upsertChatSessionRecord(input: {
   const record = await prisma.chatSession.upsert({
     where: { id: input.id },
     update: {
+      visitorId: input.visitorId ?? undefined,
       title: input.title,
       lastMessageSnippet: input.lastMessageSnippet,
       lastActivity: input.lastActivity ? new Date(input.lastActivity) : new Date(),
@@ -83,6 +85,7 @@ export async function upsertChatSessionRecord(input: {
       agentId: input.agentId,
       ownerUserId: input.ownerUserId,
       legacyOwnerId: input.legacyOwnerId ?? null,
+      visitorId: input.visitorId ?? null,
       title: input.title,
       lastMessageSnippet: input.lastMessageSnippet,
       createdAt: input.createdAt ? new Date(input.createdAt) : new Date(),
@@ -94,6 +97,40 @@ export async function upsertChatSessionRecord(input: {
   });
 
   return mapChatSessionRecord(record);
+}
+
+export async function findLatestChatSessionForVisitor(agentId: string, visitorId: string): Promise<ChatSession | null> {
+  const record = await prisma.chatSession.findFirst({
+    where: {
+      agentId,
+      visitorId,
+      source: "chat",
+      deletedAt: null,
+    },
+    orderBy: {
+      lastActivity: "desc",
+    },
+  });
+
+  return record ? mapChatSessionRecord(record) : null;
+}
+
+export async function findChatSessionForVisitor(
+  agentId: string,
+  visitorId: string,
+  sessionId: string
+): Promise<ChatSession | null> {
+  const record = await prisma.chatSession.findFirst({
+    where: {
+      id: sessionId,
+      agentId,
+      visitorId,
+      source: "chat",
+      deletedAt: null,
+    },
+  });
+
+  return record ? mapChatSessionRecord(record) : null;
 }
 
 export async function createChatMessageRecord(input: {

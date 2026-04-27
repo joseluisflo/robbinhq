@@ -162,6 +162,7 @@ model ChatSession {
   agentId            String
   ownerUserId        String
   legacyOwnerId      String?
+  visitorId          String?
   title              String
   lastMessageSnippet String
   createdAt          DateTime          @default(now())
@@ -176,6 +177,7 @@ model ChatSession {
   feedback           MessageFeedback[]
 
   @@index([agentId, lastActivity])
+  @@index([agentId, visitorId, lastActivity])
   @@index([ownerUserId, lastActivity])
   @@index([legacyOwnerId])
   @@map("chat_session")

@@ -9,6 +9,8 @@ import { ChatMessages } from '@/components/chat/ChatMessages';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { InCallView } from '@/components/chat/InCallView';
 import { cn } from '@/lib/utils';
+import { v4 as uuidv4 } from 'uuid';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 
 interface ChatWidgetPublicProps {
@@ -25,6 +27,99 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
   const [isEmbedded, setIsEmbedded] = useState(false);
   const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<'chat' | 'in-call'>('chat');
+  const [visitorId, setVisitorId] = useState<string | null>(null);
+  const [resolvedSessionId, setResolvedSessionId] = useState<string | null>(null);
+  const [initialMessages, setInitialMessages] = useState<Message[]>([]);
+  const [historyResolved, setHistoryResolved] = useState(false);
+
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const cookieName = 'robbin_visitor_id';
+    const existingCookie = document.cookie
+      .split('; ')
+      .find((entry) => entry.startsWith(`${cookieName}=`))
+      ?.split('=')[1];
+
+    const nextVisitorId = existingCookie || uuidv4();
+    if (!existingCookie) {
+      document.cookie = `${cookieName}=${nextVisitorId}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+    }
+
+    setVisitorId(nextVisitorId);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !agent.id || !visitorId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const resolveSession = async () => {
+      try {
+        setHistoryResolved(false);
+        const requestedSessionId = searchParams.get('sessionId');
+        const params = new URLSearchParams({ visitorId });
+        if (requestedSessionId) {
+          params.set('sessionId', requestedSessionId);
+        }
+
+        const response = await fetch(`/api/public/agents/${agent.id}/session?${params.toString()}`, {
+          cache: 'no-store',
+        });
+
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(payload?.error || 'Failed to resolve visitor session.');
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const nextSessionId = payload?.sessionId || requestedSessionId || `session-${Date.now()}`;
+        setResolvedSessionId(nextSessionId);
+        setInitialMessages(Array.isArray(payload?.messages) ? payload.messages : []);
+
+        const currentUrlSessionId = searchParams.get('sessionId');
+        if (currentUrlSessionId !== nextSessionId) {
+          const newUrl = `${pathname}?sessionId=${nextSessionId}`;
+          window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        console.error('Failed to bootstrap public widget session:', error);
+        const fallbackSessionId = searchParams.get('sessionId') || `session-${Date.now()}`;
+        setResolvedSessionId(fallbackSessionId);
+        setInitialMessages([]);
+
+        const currentUrlSessionId = searchParams.get('sessionId');
+        if (currentUrlSessionId !== fallbackSessionId) {
+          const newUrl = `${pathname}?sessionId=${fallbackSessionId}`;
+          window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+        }
+      } finally {
+        if (!cancelled) {
+          setHistoryResolved(true);
+        }
+      }
+    };
+
+    void resolveSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [agent.id, pathname, searchParams, visitorId]);
   
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -63,7 +158,14 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
     userId,
     agentId,
     sessionId,
-  } = useChatManager({ agent, workflowOverride });
+  } = useChatManager({
+    agent,
+    workflowOverride,
+    sessionIdOverride: resolvedSessionId,
+    initialMessages,
+    historyResolved,
+    visitorId,
+  });
 
   const { 
     connectionState, 

@@ -144,6 +144,7 @@ interface AgentResponseInput {
     message: string;
     runId: string | null;
     sessionId: string;
+    visitorId?: string;
     // For live testing
     currentWorkflowId?: string | null;
     currentWorkflowBlocks?: any[] | null;
@@ -341,6 +342,7 @@ async function mirrorChatSession(input: {
   agentId: string;
   ownerUserId: string;
   legacyOwnerId: string;
+  visitorId?: string;
   title: string;
   lastMessageSnippet: string;
   createdAt?: string | Date;
@@ -354,6 +356,7 @@ async function mirrorChatSession(input: {
       agentId: input.agentId,
       ownerUserId: input.ownerUserId,
       legacyOwnerId: input.legacyOwnerId,
+      visitorId: input.visitorId,
       title: input.title,
       lastMessageSnippet: input.lastMessageSnippet,
       createdAt: input.createdAt,
@@ -397,6 +400,7 @@ async function ensureMirroredChatSession(input: {
   agentId: string;
   ownerUserId: string;
   legacyOwnerId: string;
+  visitorId?: string;
   title: string;
   lastMessageSnippet: string;
   createdAt?: string | Date;
@@ -410,6 +414,7 @@ async function ensureMirroredChatSession(input: {
     agentId: input.agentId,
     ownerUserId: input.ownerUserId,
     legacyOwnerId: input.legacyOwnerId,
+    visitorId: input.visitorId,
     title: input.title,
     lastMessageSnippet: input.lastMessageSnippet,
     createdAt: input.createdAt,
@@ -431,7 +436,7 @@ async function ensureMirroredChatSession(input: {
 
 
 export async function getAgentResponse(input: AgentResponseInput): Promise<AgentResponse> {
-  const { userId, agentId, message, runId, sessionId, currentWorkflowId, currentWorkflowBlocks } = input;
+  const { userId, agentId, message, runId, sessionId, visitorId, currentWorkflowId, currentWorkflowBlocks } = input;
   if (!agentId || !sessionId) {
     return { error: 'Sorry, I cannot respond without an agent context.' };
   }
@@ -484,6 +489,9 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         const userAgent = headerList.get('user-agent') || 'Unknown';
         
         let visitorInfo: Record<string, any> = { ip, userAgent };
+        if (visitorId) {
+            visitorInfo.visitorId = visitorId;
+        }
 
         try {
             if (ip !== 'Unknown') {
@@ -546,6 +554,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
           agentId,
           ownerUserId: agentOwnerAuthUserId,
           legacyOwnerId: agentOwnerLegacyUserId,
+          visitorId,
           title: output?.title || message.substring(0, 40),
           createdAt: new Date(),
           lastActivity: new Date(),
@@ -564,6 +573,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
           agentId,
           ownerUserId: agentOwnerAuthUserId,
           legacyOwnerId: agentOwnerLegacyUserId,
+          visitorId: existingSession?.visitorInfo?.visitorId || visitorId,
           title: existingSession?.title || message.substring(0, 40),
           createdAt: coerceDateLike(existingSession?.createdAt),
           lastActivity: new Date(),
@@ -659,6 +669,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
           agentId,
           ownerUserId: agentOwnerAuthUserId,
           legacyOwnerId: agentOwnerLegacyUserId,
+          visitorId: existingSession?.visitorInfo?.visitorId || visitorId,
           title: sessionTitle,
           lastActivity: new Date(),
           lastMessageSnippet: responseText,
@@ -738,6 +749,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         agentId,
         ownerUserId: agentOwnerAuthUserId,
         legacyOwnerId: agentOwnerLegacyUserId,
+        visitorId: existingSession?.visitorInfo?.visitorId || visitorId,
         title: sessionTitle,
         lastActivity: new Date(),
         lastMessageSnippet: chatResult.response,

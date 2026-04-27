@@ -19,9 +19,20 @@ export interface UseChatManagerProps {
     workflowId: string;
     blocks: WorkflowBlock[];
   } | null;
+  sessionIdOverride?: string | null;
+  initialMessages?: Message[];
+  historyResolved?: boolean;
+  visitorId?: string | null;
 }
 
-export function useChatManager({ agent, workflowOverride }: UseChatManagerProps) {
+export function useChatManager({
+  agent,
+  workflowOverride,
+  sessionIdOverride,
+  initialMessages,
+  historyResolved = true,
+  visitorId,
+}: UseChatManagerProps) {
   const { user } = useUser();
   const searchParams = useSearchParams();
   const params = useParams();
@@ -40,6 +51,12 @@ export function useChatManager({ agent, workflowOverride }: UseChatManagerProps)
     if (isTestWidget) {
         return `test-session-${agent?.id || 'unknown'}`;
     }
+    if (!historyResolved) {
+      return null;
+    }
+    if (sessionIdOverride) {
+      return sessionIdOverride;
+    }
     let currentSessionId = searchParams.get('sessionId');
     if (!currentSessionId) {
       currentSessionId = `session-${Date.now()}`;
@@ -49,7 +66,7 @@ export function useChatManager({ agent, workflowOverride }: UseChatManagerProps)
       }
     }
     return currentSessionId;
-  }, [searchParams, pathname, isTestWidget, agent?.id]);
+  }, [searchParams, pathname, isTestWidget, agent?.id, sessionIdOverride, historyResolved]);
 
   const userId = user ? user.uid : (params.userId as string);
   const agentId = agent?.id;
@@ -57,6 +74,16 @@ export function useChatManager({ agent, workflowOverride }: UseChatManagerProps)
   // Effect to set initial welcome message
   useEffect(() => {
     if (agent) {
+      if (!historyResolved) {
+        return;
+      }
+
+      if (initialMessages && initialMessages.length > 0) {
+        setMessages(initialMessages);
+        setCurrentWorkflowRunId(null);
+        return;
+      }
+
       const isWelcomeEnabled = agent.isWelcomeMessageEnabled ?? true;
       const welcomeMessage = agent.welcomeMessage;
 
@@ -75,7 +102,7 @@ export function useChatManager({ agent, workflowOverride }: UseChatManagerProps)
     }
      // We only want to run this when the agent changes, not when messages array changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agent]);
+  }, [agent, historyResolved, initialMessages, sessionId]);
 
 
   const handleSendMessage = (messageText: string) => {
@@ -97,6 +124,7 @@ export function useChatManager({ agent, workflowOverride }: UseChatManagerProps)
         message: messageText,
         runId: currentWorkflowRunId,
         sessionId: sessionId,
+        visitorId: visitorId || undefined,
         // Pass workflow override if it exists
         currentWorkflowId: workflowOverride?.workflowId,
         currentWorkflowBlocks: workflowOverride?.blocks

@@ -160,6 +160,7 @@ export type ChatSession = {
   lastActivity: any;
   lastLeadAnalysisAt?: any;
   visitorInfo?: {
+    visitorId?: string;
     ip: string;
     userAgent: string;
     location?: {
