@@ -10,7 +10,7 @@ type WidgetPageParams = {
 };
 
 function buildPublicAgent(agentId: string, data: FirebaseFirestore.DocumentData): Agent {
-  return {
+  return toPlainSerializable({
     id: agentId,
     name: data.name || 'Agent Preview',
     description: data.description || '',
@@ -36,7 +36,38 @@ function buildPublicAgent(agentId: string, data: FirebaseFirestore.DocumentData)
     isBrandingEnabled: data.isBrandingEnabled,
     agentVoice: data.agentVoice,
     orbColors: data.orbColors,
-  };
+  });
+}
+
+function toPlainSerializable<T>(value: T): T {
+  if (value == null) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => toPlainSerializable(item)) as T;
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString() as T;
+  }
+
+  if (typeof value === 'object') {
+    if (
+      'toDate' in (value as Record<string, unknown>) &&
+      typeof (value as { toDate?: unknown }).toDate === 'function'
+    ) {
+      return ((value as { toDate: () => Date }).toDate().toISOString()) as T;
+    }
+
+    const plainObject: Record<string, unknown> = {};
+    for (const [key, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+      plainObject[key] = toPlainSerializable(nestedValue);
+    }
+    return plainObject as T;
+  }
+
+  return value;
 }
 
 async function getPublicAgentConfig(userId: string, agentId: string): Promise<Agent | null> {
