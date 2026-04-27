@@ -41,6 +41,51 @@ function registerWindowRefresh(load: () => void) {
   };
 }
 
+function registerPollingRefresh(load: () => void, intervalMs = 4000) {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+
+  let intervalId: ReturnType<typeof window.setInterval> | null = null;
+
+  const start = () => {
+    if (intervalId !== null) {
+      return;
+    }
+    intervalId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void load();
+      }
+    }, intervalMs);
+  };
+
+  const stop = () => {
+    if (intervalId !== null) {
+      window.clearInterval(intervalId);
+      intervalId = null;
+    }
+  };
+
+  start();
+
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      void load();
+      start();
+      return;
+    }
+
+    stop();
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  return () => {
+    stop();
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  };
+}
+
 const AGENTS_CHANGED_EVENT = 'agent-domain:agents-changed';
 
 function agentTextsChangedEvent(agentId: string) {
@@ -349,9 +394,11 @@ export function useAgentChatSessions(agentId: string | undefined) {
     };
 
     let unregisterWindowRefresh = () => {};
+    let unregisterPollingRefresh = () => {};
     if (typeof window !== 'undefined') {
       window.addEventListener(eventName, handleRefresh);
       unregisterWindowRefresh = registerWindowRefresh(load);
+      unregisterPollingRefresh = registerPollingRefresh(load, 3000);
     }
 
     return () => {
@@ -360,6 +407,7 @@ export function useAgentChatSessions(agentId: string | undefined) {
         window.removeEventListener(eventName, handleRefresh);
       }
       unregisterWindowRefresh();
+      unregisterPollingRefresh();
     };
   }, [agentId]);
 
@@ -409,9 +457,11 @@ export function useAgentSessionMessages(agentId: string | undefined, sessionId: 
     };
 
     let unregisterWindowRefresh = () => {};
+    let unregisterPollingRefresh = () => {};
     if (typeof window !== 'undefined') {
       window.addEventListener(eventName, handleRefresh);
       unregisterWindowRefresh = registerWindowRefresh(load);
+      unregisterPollingRefresh = registerPollingRefresh(load, 3000);
     }
 
     return () => {
@@ -420,6 +470,7 @@ export function useAgentSessionMessages(agentId: string | undefined, sessionId: 
         window.removeEventListener(eventName, handleRefresh);
       }
       unregisterWindowRefresh();
+      unregisterPollingRefresh();
     };
   }, [agentId, sessionId]);
 
