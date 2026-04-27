@@ -159,9 +159,15 @@ export async function listChatSessionsByAgent(agentId: string): Promise<ChatSess
   return records.map(mapChatSessionRecord);
 }
 
-export async function listChatMessagesBySession(sessionId: string): Promise<ChatMessage[]> {
+export async function listChatMessagesBySession(agentId: string, sessionId: string): Promise<ChatMessage[]> {
   const records = await prisma.chatMessage.findMany({
-    where: { sessionId },
+    where: {
+      sessionId,
+      session: {
+        agentId,
+        deletedAt: null,
+      },
+    },
     orderBy: { timestamp: "asc" },
   });
 

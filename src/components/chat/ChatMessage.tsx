@@ -9,6 +9,7 @@ import { TextTypingEffect } from '@/components/ui/text-typing-effect';
 import { motion } from 'motion/react';
 import { saveMessageFeedback } from '@/app/actions/feedback';
 import { useToast } from '@/hooks/use-toast';
+import { notifyAgentFeedbackChanged } from '@/hooks/use-agent-domain';
 
 interface ChatMessageProps {
   message: Message;
@@ -59,6 +60,7 @@ export function ChatMessage({
         setFeedbackSent(false);
         setSelectedFeedback(null);
     } else {
+        notifyAgentFeedbackChanged(agentId);
         toast({ title: 'Feedback received!', description: 'Thanks for helping us improve.' });
     }
   };

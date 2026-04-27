@@ -12,6 +12,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "backfill:agents": "tsx scripts/backfill-agents-to-postgres.ts",
+    "backfill:chat": "tsx scripts/backfill-chat-to-postgres.ts",
     "server:dev": "tsx watch src/server/index.ts",
     "server:start": "tsx src/server/index.ts"
   },

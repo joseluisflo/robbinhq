@@ -6,7 +6,7 @@ import { ConversationList } from '@/components/chat-logs/ConversationList';
 import { ConversationView } from '@/components/chat-logs/ConversationView';
 import type { ChatSession, EmailSession } from '@/lib/types';
 
-type CombinedSession = (ChatSession | EmailSession) & { type: 'chat' | 'email' };
+type CombinedSession = (ChatSession | EmailSession) & { type: 'chat' | 'email'; agentId?: string };
 
 export default function ChatLogsPage() {
     const [selectedSession, setSelectedSession] = useState<CombinedSession | null>(null);

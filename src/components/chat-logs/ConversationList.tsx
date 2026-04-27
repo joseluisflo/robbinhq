@@ -1,16 +1,15 @@
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
-import { useUser, useFirestore, query, collection, orderBy, useCollection } from '@/firebase';
 import type { ChatSession, EmailSession, MessageFeedback } from '@/lib/types';
-import { Timestamp } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { Loader2, MessageSquare, Mail, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { AlertCircle, Loader2, MessageSquare, Mail, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { useActiveAgent } from '@/app/(main)/layout';
+import { useAgentChatSessions, useAgentFeedback } from '@/hooks/use-agent-domain';
 
 type CombinedSession = (ChatSession | EmailSession) & { type: 'chat' | 'email'; agentId?: string };
 
@@ -20,34 +19,18 @@ interface ConversationListProps {
 }
 
 export function ConversationList({ onSessionSelect, selectedSessionId }: ConversationListProps) {
-    const { user } = useUser();
-    const firestore = useFirestore();
     const { activeAgent } = useActiveAgent();
     const [searchTerm, setSearchTerm] = useState('');
-
-    const sessionsQuery = useMemo(() => {
-        if (!user || !activeAgent?.id) return null;
-        return query(
-            collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'sessions'),
-            orderBy('lastActivity', 'desc')
-        );
-    }, [user, firestore, activeAgent?.id]);
-    const { data: chatSessions, loading: chatSessionsLoading } = useCollection<ChatSession>(sessionsQuery);
-
-    const emailSessionsQuery = useMemo(() => {
-        if (!user || !activeAgent?.id) return null;
-        return query(
-            collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'emailSessions'),
-            orderBy('lastActivity', 'desc')
-        );
-    }, [user, firestore, activeAgent?.id]);
-    const { data: emailSessions, loading: emailSessionsLoading } = useCollection<EmailSession>(emailSessionsQuery);
-    
-    const feedbackQuery = useMemo(() => {
-        if (!user || !activeAgent?.id) return null;
-        return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'feedback'));
-    }, [user, firestore, activeAgent?.id]);
-    const { data: feedbacks, loading: feedbacksLoading } = useCollection<MessageFeedback>(feedbackQuery);
+    const {
+        sessions: chatSessions,
+        loading: chatSessionsLoading,
+        error: chatSessionsError,
+    } = useAgentChatSessions(activeAgent?.id);
+    const {
+        feedback: feedbacks,
+        loading: feedbacksLoading,
+        error: feedbackError,
+    } = useAgentFeedback(activeAgent?.id);
 
     const feedbackBySession = useMemo(() => {
         if (!feedbacks) return {};
@@ -64,14 +47,14 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
         if (!activeAgent?.id) return [];
         
         const chatsWithType: CombinedSession[] = (chatSessions || []).map(s => ({ ...s, type: 'chat', agentId: activeAgent.id }));
-        const emailsWithType: CombinedSession[] = (emailSessions || []).map(s => ({ ...s, type: 'email', agentId: activeAgent.id }));
+        const emailsWithType: CombinedSession[] = [];
         
         const allSessions = [...chatsWithType, ...emailsWithType];
         
         allSessions.sort((a, b) => {
-            const timeA = (a.lastActivity as Timestamp)?.toDate() || 0;
-            const timeB = (b.lastActivity as Timestamp)?.toDate() || 0;
-            return (timeB as any) - (timeA as any);
+            const timeA = a.lastActivity ? new Date(a.lastActivity as any).getTime() : 0;
+            const timeB = b.lastActivity ? new Date(b.lastActivity as any).getTime() : 0;
+            return timeB - timeA;
         });
         
         if (!searchTerm) {
@@ -85,7 +68,7 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
             return title.toLowerCase().includes(lowercasedTerm) || snippet.toLowerCase().includes(lowercasedTerm);
         });
 
-    }, [chatSessions, emailSessions, activeAgent?.id, searchTerm]);
+    }, [chatSessions, activeAgent?.id, searchTerm]);
 
     useEffect(() => {
         if (filteredSessions.length > 0 && !selectedSessionId) {
@@ -130,9 +113,14 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
             </div>
             
             <div className="flex-1 overflow-y-auto">
-                {(chatSessionsLoading || emailSessionsLoading || feedbacksLoading) ? (
+                {(chatSessionsLoading || feedbacksLoading) ? (
                     <div className="flex items-center justify-center h-full">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                ) : (chatSessionsError || feedbackError) ? (
+                    <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
+                        <AlertCircle className="h-6 w-6" />
+                        <p>{chatSessionsError || feedbackError}</p>
                     </div>
                 ) : filteredSessions.length > 0 ? (
                     filteredSessions.map((session) => (
@@ -150,7 +138,7 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
                                 <p className="font-semibold truncate pr-4">{(session as ChatSession).title || (session as EmailSession).subject}</p>
                             </div>
                             <p className="text-xs text-muted-foreground whitespace-nowrap">
-                                {session.lastActivity ? formatDistanceToNow((session.lastActivity as Timestamp).toDate(), { addSuffix: true }) : 'N/A'}
+                                {session.lastActivity ? formatDistanceToNow(new Date(session.lastActivity as any), { addSuffix: true }) : 'N/A'}
                             </p>
                         </div>
                         <div className="flex items-center justify-between">

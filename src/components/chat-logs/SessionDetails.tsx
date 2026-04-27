@@ -4,9 +4,25 @@ import type { ChatSession, EmailSession, CombinedMessage } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Info, Globe, Monitor, Smartphone } from 'lucide-react';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 
 type CombinedSession = (ChatSession | EmailSession) & { type: 'chat' | 'email' };
+
+function toDate(value: unknown): Date | null {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === 'string' || typeof value === 'number') {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    if (typeof value === 'object' && value && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
+        try {
+            return (value as { toDate: () => Date }).toDate();
+        } catch {
+            return null;
+        }
+    }
+    return null;
+}
 
 const DetailRow = ({ label, value }: { label: string; value: string | number | undefined | null }) => {
     if (value === undefined || value === null || value === '') return null;
@@ -26,8 +42,8 @@ interface SessionDetailsProps {
 export function SessionDetails({ session, messages }: SessionDetailsProps) {
     const visitorInfo = (session as ChatSession)?.visitorInfo;
     const DeviceIcon = visitorInfo?.device?.type === 'mobile' ? Smartphone : Monitor;
-    const createdAt = (session.createdAt as Timestamp)?.toDate();
-    const lastActivity = (session.lastActivity as Timestamp)?.toDate();
+    const createdAt = toDate(session.createdAt);
+    const lastActivity = toDate(session.lastActivity);
 
     return (
         <div className="p-6 space-y-6">

@@ -1,7 +1,6 @@
 'use client';
 
 import type { CombinedMessage } from '@/lib/types';
-import { Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
@@ -12,6 +11,23 @@ interface MessageListProps {
 }
 
 const agentEmailDomain = process.env.NEXT_PUBLIC_AGENT_EMAIL_DOMAIN || process.env.NEXT_PUBLIC_EMAIL_INGEST_DOMAIN || 'your-domain.com';
+
+function toDate(value: unknown): Date | null {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === 'string' || typeof value === 'number') {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    if (typeof value === 'object' && value && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
+        try {
+            return (value as { toDate: () => Date }).toDate();
+        } catch {
+            return null;
+        }
+    }
+    return null;
+}
 
 export function MessageList({ messages, loading }: MessageListProps) {
 
@@ -40,36 +56,41 @@ export function MessageList({ messages, loading }: MessageListProps) {
 
     return (
         <div className="p-6 space-y-6">
-            {messages.map((msg, index) => (
-                <div
-                    key={index}
-                    className={cn(
-                        'flex items-end gap-3',
-                        isUserMessage(msg.sender) ? 'flex-row-reverse' : 'flex-row'
-                    )}
-                >
+            {messages.map((msg, index) => {
+                const userMessage = isUserMessage(msg.sender);
+                const messageDate = toDate(msg.timestamp);
+
+                return (
                     <div
+                        key={index}
                         className={cn(
-                            'max-w-[70%] rounded-lg p-3 text-sm',
-                           isUserMessage(msg.sender)
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted'
+                            'flex items-end gap-3',
+                            userMessage ? 'flex-row-reverse' : 'flex-row'
                         )}
                     >
-                        <p className="whitespace-pre-wrap">{msg.text}</p>
-                        <p
+                        <div
                             className={cn(
-                                'text-xs mt-2 text-right',
-                                isUserMessage(msg.sender)
-                                ? 'text-primary-foreground/70'
-                                : 'text-muted-foreground'
+                                'max-w-[70%] rounded-lg p-3 text-sm',
+                                userMessage
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted'
                             )}
                         >
-                            {msg.timestamp ? format((msg.timestamp as Timestamp).toDate(), 'p') : ''}
-                        </p>
+                            <p className="whitespace-pre-wrap">{msg.text}</p>
+                            <p
+                                className={cn(
+                                    'text-xs mt-2 text-right',
+                                    userMessage
+                                        ? 'text-primary-foreground/70'
+                                        : 'text-muted-foreground'
+                                )}
+                            >
+                                {messageDate ? format(messageDate, 'p') : ''}
+                            </p>
+                        </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
         </div>
     );
 }
