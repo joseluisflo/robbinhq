@@ -111,6 +111,11 @@ type ChatStreamClientEvent =
       sessionId: string;
       messageId: string;
       timestamp: string;
+    }
+  | {
+      type: 'stream_error';
+      agentId: string;
+      timestamp: string;
     };
 
 type ChatStreamListener = (event: ChatStreamClientEvent) => void;
@@ -156,7 +161,11 @@ function subscribeToAgentChatStream(agentId: string, listener: ChatStreamListene
     register('feedback_created');
 
     source.onerror = () => {
-      // EventSource handles reconnection on its own. We keep the stream alive here.
+      broadcast({
+        type: 'stream_error',
+        agentId,
+        timestamp: new Date().toISOString(),
+      });
     };
 
     entry = { source, listeners };
@@ -495,11 +504,35 @@ export function useAgentChatSessions(agentId: string | undefined) {
     let unregisterWindowRefresh = () => {};
     let unregisterPollingRefresh = () => {};
     let unsubscribeFromStream = () => {};
+    let pollingActive = false;
+    const startPolling = () => {
+      if (!pollingActive) {
+        unregisterPollingRefresh = registerPollingRefresh(() => {
+          void load({ background: true });
+        }, 5000);
+        pollingActive = true;
+      }
+    };
+    const stopPolling = () => {
+      if (pollingActive) {
+        unregisterPollingRefresh();
+        unregisterPollingRefresh = () => {};
+        pollingActive = false;
+      }
+    };
     if (typeof window !== 'undefined') {
       window.addEventListener(eventName, handleRefresh);
       unregisterWindowRefresh = registerWindowRefresh(load);
-      unregisterPollingRefresh = registerPollingRefresh(load, 15000);
+      startPolling();
       unsubscribeFromStream = subscribeToAgentChatStream(agentId, (event) => {
+        if (event.type === 'ready') {
+          stopPolling();
+          return;
+        }
+        if (event.type === 'stream_error') {
+          startPolling();
+          return;
+        }
         if (event.type === 'session_created' || event.type === 'message_created') {
           void load({ background: true });
         }
@@ -512,7 +545,7 @@ export function useAgentChatSessions(agentId: string | undefined) {
         window.removeEventListener(eventName, handleRefresh);
       }
       unregisterWindowRefresh();
-      unregisterPollingRefresh();
+      stopPolling();
       unsubscribeFromStream();
     };
   }, [agentId]);
@@ -571,11 +604,35 @@ export function useAgentSessionMessages(agentId: string | undefined, sessionId: 
     let unregisterWindowRefresh = () => {};
     let unregisterPollingRefresh = () => {};
     let unsubscribeFromStream = () => {};
+    let pollingActive = false;
+    const startPolling = () => {
+      if (!pollingActive) {
+        unregisterPollingRefresh = registerPollingRefresh(() => {
+          void load({ background: true });
+        }, 5000);
+        pollingActive = true;
+      }
+    };
+    const stopPolling = () => {
+      if (pollingActive) {
+        unregisterPollingRefresh();
+        unregisterPollingRefresh = () => {};
+        pollingActive = false;
+      }
+    };
     if (typeof window !== 'undefined') {
       window.addEventListener(eventName, handleRefresh);
       unregisterWindowRefresh = registerWindowRefresh(load);
-      unregisterPollingRefresh = registerPollingRefresh(load, 15000);
+      startPolling();
       unsubscribeFromStream = subscribeToAgentChatStream(agentId, (event) => {
+        if (event.type === 'ready') {
+          stopPolling();
+          return;
+        }
+        if (event.type === 'stream_error') {
+          startPolling();
+          return;
+        }
         if (event.type === 'message_created' && event.sessionId === sessionId) {
           void load({ background: true });
         }
@@ -588,7 +645,7 @@ export function useAgentSessionMessages(agentId: string | undefined, sessionId: 
         window.removeEventListener(eventName, handleRefresh);
       }
       unregisterWindowRefresh();
-      unregisterPollingRefresh();
+      stopPolling();
       unsubscribeFromStream();
     };
   }, [agentId, sessionId]);
