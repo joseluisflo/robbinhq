@@ -5,6 +5,11 @@ import type { Agent, Message, WorkflowBlock } from '@/lib/types';
 import { useUser } from '@/firebase';
 import { getAgentResponse } from '@/app/actions/agents';
 import { useSearchParams, useParams, usePathname } from 'next/navigation';
+import {
+  notifyAgentChatSessionsChanged,
+  notifyAgentDashboardChanged,
+  notifyAgentSessionMessagesChanged,
+} from '@/hooks/use-agent-domain';
 
 // Define the shape of the data the hook will manage and return
 export interface UseChatManagerProps {
@@ -139,6 +144,12 @@ export function useChatManager({ agent, workflowOverride }: UseChatManagerProps)
       
       if (agentMessage) {
         setMessages(prev => [...prev, agentMessage!]);
+      }
+
+      if (agentId && sessionId) {
+        notifyAgentChatSessionsChanged(agentId);
+        notifyAgentSessionMessagesChanged(agentId, sessionId);
+        notifyAgentDashboardChanged(agentId);
       }
     });
   };

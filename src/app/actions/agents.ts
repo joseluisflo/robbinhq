@@ -376,6 +376,33 @@ function coerceDateLike(value: unknown): Date | undefined {
   return undefined;
 }
 
+async function ensureMirroredChatSession(input: {
+  sessionId: string;
+  agentId: string;
+  ownerUserId: string;
+  legacyOwnerId: string;
+  title: string;
+  lastMessageSnippet: string;
+  createdAt?: string | Date;
+  lastActivity?: string | Date;
+  lastLeadAnalysisAt?: string | Date | null;
+  visitorInfo?: ChatSession['visitorInfo'];
+}) {
+  await upsertChatSessionRecord({
+    id: input.sessionId,
+    agentId: input.agentId,
+    ownerUserId: input.ownerUserId,
+    legacyOwnerId: input.legacyOwnerId,
+    title: input.title,
+    lastMessageSnippet: input.lastMessageSnippet,
+    createdAt: input.createdAt,
+    lastActivity: input.lastActivity,
+    lastLeadAnalysisAt: input.lastLeadAnalysisAt,
+    visitorInfo: input.visitorInfo,
+    source: 'chat',
+  });
+}
+
 
 export async function getAgentResponse(input: AgentResponseInput): Promise<AgentResponse> {
   const { userId, agentId, message, runId, sessionId, currentWorkflowId, currentWorkflowBlocks } = input;
@@ -415,14 +442,6 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
 
     const sessionRef = agentRef.collection('sessions').doc(sessionId);
     const messagesPath = sessionRef.collection('messages').path;
-
-    const userMessageId = await saveMessage(firestore, messagesPath, { sender: 'user', text: message });
-    await mirrorChatMessage({
-      messageId: userMessageId,
-      sessionId,
-      sender: 'user',
-      text: message,
-    });
 
     // --- LOGGING ---
     const logTitle = `Conversation with Visitor`; // Simplified title
@@ -496,7 +515,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
             visitorInfo,
         };
         await sessionRef.set(newSession);
-        await mirrorChatSession({
+        await ensureMirroredChatSession({
           sessionId,
           agentId,
           ownerUserId: agentOwnerAuthUserId,
@@ -513,7 +532,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
             lastActivity: FieldValue.serverTimestamp(),
             lastMessageSnippet: message,
         });
-        await mirrorChatSession({
+        await ensureMirroredChatSession({
           sessionId,
           agentId,
           ownerUserId: agentOwnerAuthUserId,
@@ -526,6 +545,14 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
           lastLeadAnalysisAt: coerceDateLike(existingSession?.lastLeadAnalysisAt),
         });
     }
+
+    const userMessageId = await saveMessage(firestore, messagesPath, { sender: 'user', text: message });
+    await mirrorChatMessage({
+      messageId: userMessageId,
+      sessionId,
+      sender: 'user',
+      text: message,
+    });
 
     let selectedWorkflowId: string | null = null;
     
