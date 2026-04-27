@@ -24,7 +24,8 @@ interface ChatWidgetPublicProps {
 export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicProps) {
   // If we are in an iframe, we are open by default.
   // The parent window (widget.js) will be responsible for hiding/showing the iframe itself.
-  const [isWidgetOpen, setIsWidgetOpen] = useState(typeof window !== 'undefined' && window.self !== window.top);
+  const [isEmbedded, setIsEmbedded] = useState(false);
+  const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<'chat' | 'in-call'>('chat');
   
   const searchParams = useSearchParams();
@@ -44,19 +45,29 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
 
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.self === window.top) {
-      setIsWidgetOpen(true);
-    } else {
-      window.parent.postMessage({ type: 'AV_WIDGET_READY' }, '*');
-
-      const handleMessage = (event: MessageEvent) => {
-        if (event.data?.type === 'AV_WIDGET_OPEN') {
-          setIsWidgetOpen(true);
-        }
-      };
-      window.addEventListener('message', handleMessage);
-      return () => window.removeEventListener('message', handleMessage);
+    if (typeof window === 'undefined') {
+      return;
     }
+
+    const embedded = window.self !== window.top;
+    setIsEmbedded(embedded);
+
+    if (!embedded) {
+      setIsWidgetOpen(true);
+      return;
+    }
+
+    setIsWidgetOpen(true);
+    window.parent.postMessage({ type: 'AV_WIDGET_READY' }, '*');
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'AV_WIDGET_OPEN') {
+        setIsWidgetOpen(true);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
   const { 
@@ -114,7 +125,7 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
   return (
     <div className={cn(
       "h-full w-full flex flex-col bg-card overflow-hidden",
-      window.self !== window.top && "rounded-2xl shadow-2xl"
+      isEmbedded && "rounded-2xl shadow-2xl"
     )}>
       <ChatHeader 
         agentName={agentName}
