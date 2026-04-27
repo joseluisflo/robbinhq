@@ -20,6 +20,7 @@ model User {
   agents              Agent[]
   chatSessions        ChatSession[]
   messageFeedback     MessageFeedback[]
+  leads               Lead[]
 
   @@map("user")
 }
@@ -119,6 +120,7 @@ model Agent {
   files                   AgentFile[]
   chatSessions            ChatSession[]
   messageFeedback         MessageFeedback[]
+  leads                   Lead[]
 
   @@index([ownerUserId, updatedAt])
   @@index([legacyOwnerId])
@@ -210,4 +212,27 @@ model MessageFeedback {
   @@index([ownerUserId, createdAt])
   @@index([legacyOwnerId])
   @@map("message_feedback")
+}
+
+model Lead {
+  id            String    @id
+  agentId        String
+  ownerUserId    String
+  legacyOwnerId  String?
+  sessionId      String?
+  name           String?
+  email          String?
+  phone          String?
+  summary        String?
+  source         String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  agent          Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  owner          User      @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, createdAt])
+  @@index([ownerUserId, createdAt])
+  @@index([legacyOwnerId])
+  @@index([sessionId])
+  @@map("lead")
 }

@@ -1,62 +1,20 @@
 
 'use client';
 
-import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, useCollection, collection, query } from '@/firebase';
 import { useActiveAgent } from '@/app/(main)/layout';
-import type { Lead } from '@/lib/types';
-import { Timestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAgentDashboardStats } from '@/hooks/use-agent-domain';
 
 
 export function LeadsOverview() {
-  const { user } = useUser();
   const { activeAgent } = useActiveAgent();
-  const firestore = useFirestore();
-
-  const leadsQuery = useMemo(() => {
-    if (!user || !activeAgent?.id) return null;
-    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'leads'));
-  }, [user, firestore, activeAgent?.id]);
-  
-  const { data: leads, loading } = useCollection<Lead>(leadsQuery);
-
-  const leadsData = useMemo(() => {
-    if (!leads) return null;
-
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const thirtyDaysAgoTimestamp = Timestamp.fromDate(thirtyDaysAgo);
-
-    const newLeadsCount = leads.filter(lead => lead.createdAt && (lead.createdAt as Timestamp) > thirtyDaysAgoTimestamp).length;
-    const totalLeads = leads.length;
-    const returningLeadsCount = totalLeads - newLeadsCount;
-
-    const newPercent = totalLeads > 0 ? (newLeadsCount / totalLeads) * 100 : 0;
-    const returningPercent = totalLeads > 0 ? (returningLeadsCount / totalLeads) * 100 : 0;
-    
-    const sourceCounts = leads.reduce((acc, lead) => {
-        const source = lead.source || 'Unknown';
-        acc[source] = (acc[source] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
-
-    const topSource = Object.keys(sourceCounts).reduce((a, b) => sourceCounts[a] > sourceCounts[b] ? a : b, 'N/A');
-
-    return {
-        newLeads: newLeadsCount,
-        returningLeads: returningLeadsCount,
-        newPercent: newPercent,
-        returningPercent: returningPercent,
-        topSource: topSource,
-    };
-  }, [leads]);
+  const { stats, loading } = useAgentDashboardStats(activeAgent?.id, '30d');
+  const leadsData = stats?.leadsOverview;
 
   if (loading || !leadsData) {
     return (

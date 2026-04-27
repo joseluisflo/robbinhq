@@ -9,6 +9,7 @@ import { analyzeSessionsForLeads } from '@/app/actions/leads';
 import { exportAgentData } from '@/app/actions/export';
 import { Loader2, Sparkles, Download } from 'lucide-react';
 import type { Lead } from '@/lib/types';
+import { notifyAgentDashboardChanged, notifyAgentLeadsChanged } from '@/hooks/use-agent-domain';
 
 
 interface LeadsHeaderProps {
@@ -29,6 +30,8 @@ export function LeadsHeader({ leads }: LeadsHeaderProps) {
             toast({ title: 'Starting analysis...', description: 'Searching for new leads in your chat logs.' });
             const result = await analyzeSessionsForLeads(user.uid, activeAgent.id!);
             if (result.success) {
+                notifyAgentLeadsChanged(activeAgent.id!);
+                notifyAgentDashboardChanged(activeAgent.id!);
                 toast({ title: 'Analysis Complete!', description: `${result.leadsFound} new lead(s) found.` });
             } else {
                 toast({ title: 'Analysis Failed', description: result.error, variant: 'destructive' });

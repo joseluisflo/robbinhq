@@ -18,7 +18,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -40,6 +39,22 @@ import {
 import type { Lead } from '@/lib/types';
 import { LeadsPagination } from './LeadsPagination';
 
+function toDate(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  if (typeof value === 'object' && value && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
+    try {
+      return (value as { toDate: () => Date }).toDate();
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
 
 const columns: ColumnDef<Lead>[] = [
   {
@@ -90,7 +105,8 @@ const columns: ColumnDef<Lead>[] = [
      cell: ({ row }) => {
       const createdAt = row.getValue('createdAt');
       if (!createdAt) return 'N/A';
-      const date = (createdAt as Timestamp).toDate();
+      const date = toDate(createdAt);
+      if (!date) return 'N/A';
       return format(date, 'MMM d, yyyy');
     },
   },

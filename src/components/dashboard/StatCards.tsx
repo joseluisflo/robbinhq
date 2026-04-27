@@ -1,39 +1,23 @@
 
 'use client';
 
-import { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowUpRight, MessageSquare, Clock, Zap } from 'lucide-react';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useUser, useFirestore, useCollection, collection, query } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { ChatSession, EmailSession } from '@/lib/types';
+import { useAgentDashboardStats } from '@/hooks/use-agent-domain';
 
 
 export function StatCards() {
-  const { user } = useUser();
   const { activeAgent } = useActiveAgent();
-  const firestore = useFirestore();
-  
-  // Query for chat sessions
-  const chatSessionsQuery = useMemo(() => {
-    if (!user || !activeAgent?.id) return null;
-    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'sessions'));
-  }, [user, firestore, activeAgent?.id]);
-  const { data: chatSessions, loading: chatLoading } = useCollection<ChatSession>(chatSessionsQuery);
-
-  // Query for email sessions
-  const emailSessionsQuery = useMemo(() => {
-    if (!user || !activeAgent?.id) return null;
-    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'emailSessions'));
-  }, [user, firestore, activeAgent?.id]);
-  const { data: emailSessions, loading: emailLoading } = useCollection<EmailSession>(emailSessionsQuery);
-  
-  const loading = chatLoading || emailLoading;
-  
-  const totalInteractions = (chatSessions?.length || 0) + (emailSessions?.length || 0);
-  const timeSavedInHours = Math.round((totalInteractions * 3) / 60);
+  const { stats, loading } = useAgentDashboardStats(activeAgent?.id, '30d');
+  const totalInteractions = stats?.statCards.totalInteractions ?? 0;
+  const timeSavedInHours = stats?.statCards.timeSavedInHours ?? 0;
+  const interactionDelta = Math.round(stats?.statCards.interactionDelta ?? 0);
+  const timeSavedDelta = stats?.statCards.timeSavedDelta ?? 0;
+  const immediateResponsesPercent = stats?.statCards.immediateResponsesPercent ?? 98;
+  const immediateResponsesDelta = stats?.statCards.immediateResponsesDelta ?? 2;
 
   const cards = [
     {
@@ -44,11 +28,11 @@ export function StatCards() {
         color: 'bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400',
         icon: ArrowUpRight,
         iconColor: 'text-green-500',
-        text: '+15%',
+        text: `${interactionDelta >= 0 ? '+' : ''}${interactionDelta}%`,
       },
       subtext: (
         <span className="text-green-600 font-medium">
-          +32 <span className="text-muted-foreground font-normal">vs prev. 30 days</span>
+          {interactionDelta >= 0 ? '+' : ''}{interactionDelta}% <span className="text-muted-foreground font-normal">vs prev. 30 days</span>
         </span>
       ),
       icon: MessageSquare,
@@ -61,11 +45,11 @@ export function StatCards() {
         color: 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
         icon: ArrowUpRight,
         iconColor: 'text-blue-500',
-        text: '+15%',
+        text: `${timeSavedDelta >= 0 ? '+' : ''}${timeSavedDelta}h`,
       },
       subtext: (
         <span className="text-blue-600 font-medium">
-          +1.5 hours <span className="text-muted-foreground font-normal">vs prev. 30 days</span>
+          {timeSavedDelta >= 0 ? '+' : ''}{timeSavedDelta} hours <span className="text-muted-foreground font-normal">vs prev. 30 days</span>
         </span>
       ),
       icon: Clock,
@@ -73,12 +57,12 @@ export function StatCards() {
     {
       title: 'Immediate Responses',
       subtitle: 'Last 30 days',
-      value: '98%',
+      value: `${immediateResponsesPercent}%`,
       badge: {
         color: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-950 dark:text-yellow-400',
         icon: ArrowUpRight,
         iconColor: 'text-yellow-500',
-        text: '+2%',
+        text: `+${immediateResponsesDelta}%`,
       },
       subtext: (
         <span className="text-muted-foreground font-medium">

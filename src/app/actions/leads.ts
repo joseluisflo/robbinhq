@@ -1,85 +1,52 @@
 'use server';
 
-import { firebaseAdmin } from '@/firebase/admin';
-import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { extractLeadFromConversation } from '@/ai/flows/lead-extraction-flow';
-import type { ChatMessage, ChatSession } from '@/lib/types';
-
-async function deleteCollection(collectionRef: FirebaseFirestore.CollectionReference, batchSize: number) {
-    const query = collectionRef.limit(batchSize);
-
-    return new Promise((resolve, reject) => {
-        deleteQueryBatch(query, resolve).catch(reject);
-    });
-
-    async function deleteQueryBatch(query: FirebaseFirestore.Query, resolve: (value: unknown) => void) {
-        const snapshot = await query.get();
-
-        if (snapshot.size === 0) {
-            resolve(true);
-            return;
-        }
-
-        const batch = collectionRef.firestore.batch();
-        snapshot.docs.forEach((doc) => {
-            batch.delete(doc.ref);
-        });
-        await batch.commit();
-
-        process.nextTick(() => {
-            deleteQueryBatch(query, resolve);
-        });
-    }
-}
+import { requireAgentOwner } from '@/lib/permissions';
+import { listChatMessagesBySession, listChatSessionsByAgent } from '@/lib/data/chat';
+import { createLeadRecord, deleteLeadsByAgent } from '@/lib/data/leads';
+import prisma from '@/lib/prisma';
 
 
 export async function analyzeSessionsForLeads(userId: string, agentId: string): Promise<{ success: boolean, leadsFound: number } | { error: string }> {
-  if (!userId || !agentId) {
+  if (!agentId) {
     return { error: 'User ID and Agent ID are required.' };
   }
-
-  const firestore = firebaseAdmin.firestore();
-  const agentRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId);
   
   let leadsFound = 0;
-  const analysisTime = FieldValue.serverTimestamp();
+  const analysisTime = new Date();
 
   try {
-    const sessionsSnapshot = await agentRef.collection('sessions').get();
+    const { authUserId, legacyUserId } = await requireAgentOwner(agentId);
+    const sessions = await listChatSessionsByAgent(agentId);
 
-    if (sessionsSnapshot.empty) {
+    if (sessions.length === 0) {
       return { success: true, leadsFound: 0 };
     }
     
-    const sessionsToAnalyze: FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>[] = [];
-    
-    sessionsSnapshot.forEach(doc => {
-      const session = doc.data() as ChatSession;
-      const lastActivity = (session.lastActivity as Timestamp)?.toDate();
-      const lastAnalysis = (session.lastLeadAnalysisAt as Timestamp)?.toDate();
+    const sessionsToAnalyze = sessions.filter((session) => {
+      const lastActivity = session.lastActivity ? new Date(session.lastActivity as any) : null;
+      const lastAnalysis = session.lastLeadAnalysisAt ? new Date(session.lastLeadAnalysisAt as any) : null;
 
-      // Analyze if it's never been analyzed OR if there's new activity since the last analysis.
-      if (!lastAnalysis || (lastActivity && lastActivity > lastAnalysis)) {
-        sessionsToAnalyze.push(doc);
-      }
+      return !lastAnalysis || (lastActivity && lastActivity > lastAnalysis);
     });
 
     if (sessionsToAnalyze.length === 0) {
       return { success: true, leadsFound: 0 };
     }
 
-    const analysisPromises = sessionsToAnalyze.map(async (sessionDoc) => {
-      const sessionRef = sessionDoc.ref;
-      const messagesSnapshot = await sessionRef.collection('messages').orderBy('timestamp', 'asc').get();
-      
-      if (messagesSnapshot.empty) {
-        await sessionRef.update({ lastLeadAnalysisAt: analysisTime });
+    const analysisPromises = sessionsToAnalyze.map(async (session) => {
+      const messages = await listChatMessagesBySession(agentId, session.id!);
+
+      if (messages.length === 0) {
+        await prisma.chatSession.update({
+          where: { id: session.id! },
+          data: { lastLeadAnalysisAt: analysisTime },
+        });
         return;
       }
 
-      const chatHistory = messagesSnapshot.docs
-        .map(doc => {
-          const msg = doc.data() as ChatMessage;
+      const chatHistory = messages
+        .map((msg) => {
           return `${msg.sender === 'user' ? 'User' : 'Agent'}: ${msg.text}`;
         })
         .join('\n');
@@ -87,20 +54,26 @@ export async function analyzeSessionsForLeads(userId: string, agentId: string): 
       const extractionResult = await extractLeadFromConversation({ chatHistory });
 
       if (extractionResult.isLead) {
-        const leadsCollection = agentRef.collection('leads');
-        await leadsCollection.add({
+        await createLeadRecord({
+          id: crypto.randomUUID(),
+          agentId,
+          ownerUserId: authUserId,
+          legacyOwnerId: legacyUserId,
           name: extractionResult.name,
           email: extractionResult.email,
           phone: extractionResult.phone,
           summary: extractionResult.summary,
-          sessionId: sessionDoc.id,
-          createdAt: FieldValue.serverTimestamp(),
+          sessionId: session.id!,
+          createdAt: analysisTime,
           source: 'Widget',
         });
         leadsFound++;
       }
 
-      await sessionRef.update({ lastLeadAnalysisAt: analysisTime });
+      await prisma.chatSession.update({
+        where: { id: session.id! },
+        data: { lastLeadAnalysisAt: analysisTime },
+      });
     });
 
     await Promise.all(analysisPromises);
@@ -114,15 +87,13 @@ export async function analyzeSessionsForLeads(userId: string, agentId: string): 
 }
 
 export async function deleteAgentLeads(userId: string, agentId: string): Promise<{ success: boolean } | { error: string }> {
-    if (!userId || !agentId) {
+    if (!agentId) {
         return { error: 'User ID and Agent ID are required.' };
     }
 
-    const firestore = firebaseAdmin.firestore();
-    const leadsCollection = firestore.collection('users').doc(userId).collection('agents').doc(agentId).collection('leads');
-
     try {
-        await deleteCollection(leadsCollection, 50);
+        await requireAgentOwner(agentId);
+        await deleteLeadsByAgent(agentId);
         return { success: true };
     } catch (e: any) {
         console.error('Failed to delete leads:', e);

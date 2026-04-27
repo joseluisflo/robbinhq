@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Agent, AgentFile, ChatMessage, ChatSession, MessageFeedback, TextSource } from '@/lib/types';
+import type { Agent, AgentFile, ChatMessage, ChatSession, Lead, MessageFeedback, TextSource } from '@/lib/types';
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, {
@@ -39,6 +39,43 @@ function agentFeedbackChangedEvent(agentId: string) {
   return `agent-domain:feedback-changed:${agentId}`;
 }
 
+function agentLeadsChangedEvent(agentId: string) {
+  return `agent-domain:leads-changed:${agentId}`;
+}
+
+function agentDashboardChangedEvent(agentId: string) {
+  return `agent-domain:dashboard-changed:${agentId}`;
+}
+
+export type DashboardTimeRange = '7d' | '30d' | '90d';
+
+export type AgentDashboardStats = {
+  range: DashboardTimeRange;
+  statCards: {
+    totalInteractions: number;
+    interactionDelta: number;
+    timeSavedInHours: number;
+    timeSavedDelta: number;
+    immediateResponsesPercent: number;
+    immediateResponsesDelta: number;
+  };
+  leadsOverview: {
+    totalLeads: number;
+    newLeads: number;
+    returningLeads: number;
+    newPercent: number;
+    returningPercent: number;
+    topSource: string;
+  };
+  interactionSeries: Array<{
+    date: string;
+    total: number;
+    widget: number;
+    email: number;
+    phone: number;
+  }>;
+};
+
 export function notifyAgentsChanged() {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
@@ -72,6 +109,18 @@ export function notifyAgentSessionMessagesChanged(agentId: string, sessionId: st
 export function notifyAgentFeedbackChanged(agentId: string) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event(agentFeedbackChangedEvent(agentId)));
+  }
+}
+
+export function notifyAgentLeadsChanged(agentId: string) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(agentLeadsChangedEvent(agentId)));
+  }
+}
+
+export function notifyAgentDashboardChanged(agentId: string) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(agentDashboardChangedEvent(agentId)));
   }
 }
 
@@ -397,4 +446,114 @@ export function useAgentFeedback(agentId: string | undefined) {
   }, [agentId]);
 
   return { feedback, setFeedback, loading, error };
+}
+
+export function useAgentLeads(agentId: string | undefined) {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!agentId) {
+      setLeads([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchJson<{ leads: Lead[] }>(`/api/agents/${agentId}/leads`);
+        if (!cancelled) {
+          setLeads(data.leads || []);
+          setError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load leads.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+    const eventName = agentLeadsChangedEvent(agentId);
+    const handleRefresh = () => {
+      void load();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener(eventName, handleRefresh);
+    }
+
+    return () => {
+      cancelled = true;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener(eventName, handleRefresh);
+      }
+    };
+  }, [agentId]);
+
+  return { leads, setLeads, loading, error };
+}
+
+export function useAgentDashboardStats(agentId: string | undefined, range: DashboardTimeRange) {
+  const [stats, setStats] = useState<AgentDashboardStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!agentId) {
+      setStats(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchJson<AgentDashboardStats>(`/api/agents/${agentId}/dashboard?range=${range}`);
+        if (!cancelled) {
+          setStats(data);
+          setError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load dashboard stats.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+    const eventName = agentDashboardChangedEvent(agentId);
+    const handleRefresh = () => {
+      void load();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener(eventName, handleRefresh);
+    }
+
+    return () => {
+      cancelled = true;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener(eventName, handleRefresh);
+      }
+    };
+  }, [agentId, range]);
+
+  return { stats, setStats, loading, error };
 }
