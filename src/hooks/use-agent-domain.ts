@@ -17,6 +17,30 @@ async function fetchJson<T>(url: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function registerWindowRefresh(load: () => void) {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+
+  const handleFocus = () => {
+    void load();
+  };
+
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      void load();
+    }
+  };
+
+  window.addEventListener('focus', handleFocus);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  return () => {
+    window.removeEventListener('focus', handleFocus);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  };
+}
+
 const AGENTS_CHANGED_EVENT = 'agent-domain:agents-changed';
 
 function agentTextsChangedEvent(agentId: string) {
@@ -211,8 +235,10 @@ export function useAgentTexts(agentId: string | undefined) {
       void load();
     };
 
+    let unregisterWindowRefresh = () => {};
     if (typeof window !== 'undefined') {
       window.addEventListener(eventName, handleRefresh);
+      unregisterWindowRefresh = registerWindowRefresh(load);
     }
 
     return () => {
@@ -220,6 +246,7 @@ export function useAgentTexts(agentId: string | undefined) {
       if (typeof window !== 'undefined') {
         window.removeEventListener(eventName, handleRefresh);
       }
+      unregisterWindowRefresh();
     };
   }, [agentId]);
 
@@ -321,8 +348,10 @@ export function useAgentChatSessions(agentId: string | undefined) {
       void load();
     };
 
+    let unregisterWindowRefresh = () => {};
     if (typeof window !== 'undefined') {
       window.addEventListener(eventName, handleRefresh);
+      unregisterWindowRefresh = registerWindowRefresh(load);
     }
 
     return () => {
@@ -330,6 +359,7 @@ export function useAgentChatSessions(agentId: string | undefined) {
       if (typeof window !== 'undefined') {
         window.removeEventListener(eventName, handleRefresh);
       }
+      unregisterWindowRefresh();
     };
   }, [agentId]);
 
@@ -378,8 +408,10 @@ export function useAgentSessionMessages(agentId: string | undefined, sessionId: 
       void load();
     };
 
+    let unregisterWindowRefresh = () => {};
     if (typeof window !== 'undefined') {
       window.addEventListener(eventName, handleRefresh);
+      unregisterWindowRefresh = registerWindowRefresh(load);
     }
 
     return () => {
@@ -387,6 +419,7 @@ export function useAgentSessionMessages(agentId: string | undefined, sessionId: 
       if (typeof window !== 'undefined') {
         window.removeEventListener(eventName, handleRefresh);
       }
+      unregisterWindowRefresh();
     };
   }, [agentId, sessionId]);
 

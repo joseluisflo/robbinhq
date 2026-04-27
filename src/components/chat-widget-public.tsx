@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { Agent, Message, WorkflowBlock } from '@/lib/types';
 import { useChatManager } from '@/hooks/use-chat-manager';
 import { useLiveAgent } from '@/hooks/use-live-agent';
@@ -9,8 +9,6 @@ import { ChatMessages } from '@/components/chat/ChatMessages';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { InCallView } from '@/components/chat/InCallView';
 import { cn } from '@/lib/utils';
-import { v4 as uuidv4 } from 'uuid';
-import { useSearchParams, usePathname } from 'next/navigation';
 
 
 interface ChatWidgetPublicProps {
@@ -28,22 +26,6 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
   const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<'chat' | 'in-call'>('chat');
   
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-
-  const sessionId = useMemo(() => {
-    let currentSessionId = searchParams.get('sessionId');
-    if (!currentSessionId) {
-      currentSessionId = uuidv4();
-      if (typeof window !== 'undefined') {
-        const newUrl = `${pathname}?sessionId=${currentSessionId}`;
-        window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
-      }
-    }
-    return currentSessionId;
-  }, [pathname, searchParams]);
-
-
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -79,7 +61,8 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
     handleSendMessage,
     handleOptionClick,
     userId,
-    agentId
+    agentId,
+    sessionId,
   } = useChatManager({ agent, workflowOverride });
 
   const { 
