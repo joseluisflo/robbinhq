@@ -5,12 +5,13 @@ import { AppHeader } from '@/components/layout/app-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useUser, useCollection, useFirestore, collection, query, doc, useDoc } from '@/firebase';
+import { useUser, useFirestore, doc, useDoc } from '@/firebase';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { CreateAgentDialog } from '@/components/create-agent-dialog';
 import type { Agent, userProfile, WorkflowBlock } from '@/lib/types';
 import { WorkflowTestWidget } from '@/components/workflow-editor/WorkflowTestWidget';
+import { useAgents } from '@/hooks/use-agent-domain';
 
 // 1. Create a context to hold the active agent state
 interface ActiveAgentContextType {
@@ -46,20 +47,13 @@ export default function AppLayout({
   const router = useRouter();
   const { user, loading: userLoading } = useUser();
   const firestore = useFirestore();
+  const { agents, loading: agentsLoading } = useAgents();
 
   const [activeAgent, setActiveAgent] = useState<Agent | null>(null);
   const [workflowName, setWorkflowName] = useState<string | null>(null);
   const [needsAgent, setNeedsAgent] = useState(false);
   const [isTestWidgetOpen, setTestWidgetOpen] = useState(false);
   const [currentTestBlocks, setCurrentTestBlocks] = useState<WorkflowBlock[] | null>(null);
-
-
-  const agentsQuery = useMemo(() => {
-    if (!user) return null;
-    return query(collection(firestore, 'users', user.uid, 'agents'));
-  }, [firestore, user]);
-
-  const { data: agents, loading: agentsLoading } = useCollection<Agent>(agentsQuery);
 
   const userProfileRef = useMemo(() => {
     if (!user) return null;

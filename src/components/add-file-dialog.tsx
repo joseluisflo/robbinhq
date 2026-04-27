@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useTransition, type DragEvent, useMemo } from 'react';
+import { useState, useRef, useTransition, type DragEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -18,9 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useActiveAgent } from '@/app/(main)/layout';
 import { useUser } from '@/firebase';
 import { useKnowledgeUsage } from '@/hooks/use-knowledge-usage';
-import { collection, query } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
-import type { TextSource, AgentFile } from '@/lib/types';
+import { notifyAgentFilesChanged, useAgentFiles, useAgentTexts } from '@/hooks/use-agent-domain';
 
 function formatBytes(bytes: number, decimals = 2) {
   if (!+bytes) return '0 Bytes';
@@ -51,18 +49,10 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const { activeAgent, userProfile } = useActiveAgent();
   const { user } = useUser();
-  const firestore = useFirestore();
 
   // --- Knowledge Usage ---
-  const textsQuery = useMemo(() => 
-    user && activeAgent?.id ? query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'texts')) : null,
-  [user, activeAgent, firestore]);
-  const { data: textSources } = useCollection<TextSource>(textsQuery);
-
-  const filesQuery = useMemo(() =>
-    user && activeAgent?.id ? query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'files')) : null,
-  [user, activeAgent, firestore]);
-  const { data: fileSources } = useCollection<AgentFile>(filesQuery);
+  const { texts: textSources } = useAgentTexts(activeAgent?.id);
+  const { files: fileSources } = useAgentFiles(activeAgent?.id);
 
   const { currentUsageKB, usageLimitKB } = useKnowledgeUsage(textSources, fileSources, userProfile);
   // --- End Knowledge Usage ---
@@ -196,6 +186,7 @@ export function AddFileDialog({ children }: { children: React.ReactNode }) {
 
           if (response.ok) {
             successCount++;
+            notifyAgentFilesChanged(activeAgent.id!);
             // Don't wait for processing to finish, just trigger it.
             triggerFileProcessing(result.fileId, activeAgent.id!);
           } else {

@@ -16,10 +16,23 @@ function parseServiceAccountFromEnv() {
   }
 
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") {
+      return parsed;
+    }
+    if (typeof parsed === "string") {
+      return JSON.parse(parsed);
+    }
   } catch {
-    return JSON.parse(JSON.parse(raw));
+    // Fall through to normalization below.
   }
+
+  const normalized = raw
+    .replace(/^"|"$/g, "")
+    .replace(/\\"/g, '"')
+    .replace(/\\n/g, "\n");
+
+  return JSON.parse(normalized);
 }
 
 function toDate(value: unknown): Date | undefined {

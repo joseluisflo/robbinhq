@@ -20,6 +20,7 @@ import Image from 'next/image';
 import { createAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
+import { notifyAgentsChanged } from '@/hooks/use-agent-domain';
 
 export function CreateAgentDialog({
   children,
@@ -66,6 +67,7 @@ export function CreateAgentDialog({
       if ('error' in result) {
         toast({ title: 'Failed to create agent', description: result.error, variant: 'destructive' });
       } else {
+        notifyAgentsChanged();
         toast({ title: 'Agent Created!', description: `"${name}" is ready.` });
         if (onAgentCreated) {
           onAgentCreated();

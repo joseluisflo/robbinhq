@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useMemo } from 'react';
+import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,15 +16,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser } from '@/firebase';
 import { addAgentText } from '@/app/actions/texts';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useKnowledgeUsage } from '@/hooks/use-knowledge-usage';
-import { collection, query } from 'firebase/firestore';
-import type { TextSource, AgentFile } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { notifyAgentTextsChanged, useAgentFiles, useAgentTexts } from '@/hooks/use-agent-domain';
 
 export function AddTextDialog({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,18 +34,10 @@ export function AddTextDialog({ children }: { children: React.ReactNode }) {
   const { activeAgent, userProfile } = useActiveAgent();
   const { user } = useUser();
   const { toast } = useToast();
-  const firestore = useFirestore();
 
   // --- Knowledge Usage ---
-  const textsQuery = useMemo(() => 
-    user && activeAgent?.id ? query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'texts')) : null,
-  [user, activeAgent, firestore]);
-  const { data: textSources } = useCollection<TextSource>(textsQuery);
-  
-  const filesQuery = useMemo(() =>
-    user && activeAgent?.id ? query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'files')) : null,
-  [user, activeAgent, firestore]);
-  const { data: fileSources } = useCollection<AgentFile>(filesQuery);
+  const { texts: textSources } = useAgentTexts(activeAgent?.id);
+  const { files: fileSources } = useAgentFiles(activeAgent?.id);
 
   const { currentUsageKB, usageLimitKB, isLimitReached } = useKnowledgeUsage(textSources, fileSources, userProfile);
   // --- End Knowledge Usage ---
@@ -70,6 +61,7 @@ export function AddTextDialog({ children }: { children: React.ReactNode }) {
         if ('error' in result) {
             toast({ title: 'Failed to add text', description: result.error, variant: 'destructive' });
         } else {
+            notifyAgentTextsChanged(activeAgent.id!);
             toast({ title: 'Text added successfully!' });
             setIsOpen(false);
         }

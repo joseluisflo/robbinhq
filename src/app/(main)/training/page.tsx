@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useTransition, useMemo } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   ResizableHandle,
@@ -13,22 +13,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
 import { ChatWidgetPreview } from '@/components/chat-widget-preview';
 import { useActiveAgent } from '../layout';
-import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { updateAgent } from '@/app/actions/agents';
-import type { Agent, TextSource, AgentFile } from '@/lib/types';
+import type { Agent } from '@/lib/types';
 import { deleteAgentText } from '@/app/actions/texts';
 import { deleteAgentFile } from '@/app/actions/files';
 import { InstructionSettings } from '@/components/training/InstructionSettings';
 import { KnowledgeSources } from '@/components/training/KnowledgeSources';
 import { SecuritySettings } from '@/components/training/SecuritySettings';
 import { useKnowledgeUsage } from '@/hooks/use-knowledge-usage';
+import { notifyAgentFilesChanged, notifyAgentTextsChanged, useAgentFiles, useAgentTexts } from '@/hooks/use-agent-domain';
 
 
 export default function TrainingPage() {
   const { activeAgent, setActiveAgent, userProfile } = useActiveAgent();
   const { user } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
 
   const [instructions, setInstructions] = useState('');
@@ -40,21 +40,8 @@ export default function TrainingPage() {
 
   const [isSaving, startSavingTransition] = useTransition();
 
-  // Firestore query for agent texts
-  const textsQuery = useMemo(() => {
-    if (!user || !activeAgent?.id) return null;
-    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'texts'));
-  }, [user, activeAgent, firestore]);
-
-  const { data: textSources, loading: textsLoading } = useCollection<TextSource>(textsQuery);
-
-  // Firestore query for agent files
-  const filesQuery = useMemo(() => {
-    if (!user || !activeAgent?.id) return null;
-    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'files'));
-  }, [user, activeAgent, firestore]);
-
-  const { data: fileSources, loading: filesLoading } = useCollection<AgentFile>(filesQuery);
+  const { texts: textSources, setTexts: setTextSources, loading: textsLoading } = useAgentTexts(activeAgent?.id);
+  const { files: fileSources, setFiles: setFileSources, loading: filesLoading } = useAgentFiles(activeAgent?.id);
   
   const { isLimitReached, currentUsageKB, usageLimitKB } = useKnowledgeUsage(textSources, fileSources, userProfile);
 
@@ -131,6 +118,8 @@ export default function TrainingPage() {
     if ('error' in result) {
       toast({ title: 'Failed to delete text', description: result.error, variant: 'destructive' });
     } else {
+      setTextSources((prev) => prev.filter((text) => text.id !== textId));
+      notifyAgentTextsChanged(activeAgent.id);
       toast({ title: 'Text deleted successfully.' });
     }
   }
@@ -141,6 +130,8 @@ export default function TrainingPage() {
     if ('error' in result) {
       toast({ title: 'Failed to delete file', description: result.error, variant: 'destructive' });
     } else {
+      setFileSources((prev) => prev.filter((file) => file.id !== fileId));
+      notifyAgentFilesChanged(activeAgent.id);
       toast({ title: 'File deleted successfully.' });
     }
   }
