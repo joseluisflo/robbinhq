@@ -86,6 +86,99 @@ function registerPollingRefresh(load: () => void, intervalMs = 4000) {
   };
 }
 
+type ChatStreamClientEvent =
+  | {
+      type: 'ready';
+      agentId: string;
+      timestamp: string;
+    }
+  | {
+      type: 'session_created';
+      agentId: string;
+      sessionId: string;
+      timestamp: string;
+    }
+  | {
+      type: 'message_created';
+      agentId: string;
+      sessionId: string;
+      messageId: string;
+      timestamp: string;
+    }
+  | {
+      type: 'feedback_created';
+      agentId: string;
+      sessionId: string;
+      messageId: string;
+      timestamp: string;
+    };
+
+type ChatStreamListener = (event: ChatStreamClientEvent) => void;
+
+const agentChatStreamRegistry = new Map<
+  string,
+  {
+    source: EventSource;
+    listeners: Set<ChatStreamListener>;
+  }
+>();
+
+function subscribeToAgentChatStream(agentId: string, listener: ChatStreamListener) {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+
+  let entry = agentChatStreamRegistry.get(agentId);
+  if (!entry) {
+    const source = new EventSource(`/api/agents/${agentId}/chat-stream`);
+    const listeners = new Set<ChatStreamListener>();
+
+    const broadcast = (event: ChatStreamClientEvent) => {
+      listeners.forEach((currentListener) => {
+        currentListener(event);
+      });
+    };
+
+    const register = (eventName: ChatStreamClientEvent['type']) => {
+      source.addEventListener(eventName, (event) => {
+        try {
+          const payload = JSON.parse((event as MessageEvent).data) as ChatStreamClientEvent;
+          broadcast(payload);
+        } catch (error) {
+          console.error(`Failed to parse SSE payload for ${eventName}:`, error);
+        }
+      });
+    };
+
+    register('ready');
+    register('session_created');
+    register('message_created');
+    register('feedback_created');
+
+    source.onerror = () => {
+      // EventSource handles reconnection on its own. We keep the stream alive here.
+    };
+
+    entry = { source, listeners };
+    agentChatStreamRegistry.set(agentId, entry);
+  }
+
+  entry.listeners.add(listener);
+
+  return () => {
+    const currentEntry = agentChatStreamRegistry.get(agentId);
+    if (!currentEntry) {
+      return;
+    }
+
+    currentEntry.listeners.delete(listener);
+    if (currentEntry.listeners.size === 0) {
+      currentEntry.source.close();
+      agentChatStreamRegistry.delete(agentId);
+    }
+  };
+}
+
 const AGENTS_CHANGED_EVENT = 'agent-domain:agents-changed';
 
 function agentTextsChangedEvent(agentId: string) {
@@ -395,10 +488,16 @@ export function useAgentChatSessions(agentId: string | undefined) {
 
     let unregisterWindowRefresh = () => {};
     let unregisterPollingRefresh = () => {};
+    let unsubscribeFromStream = () => {};
     if (typeof window !== 'undefined') {
       window.addEventListener(eventName, handleRefresh);
       unregisterWindowRefresh = registerWindowRefresh(load);
-      unregisterPollingRefresh = registerPollingRefresh(load, 3000);
+      unregisterPollingRefresh = registerPollingRefresh(load, 15000);
+      unsubscribeFromStream = subscribeToAgentChatStream(agentId, (event) => {
+        if (event.type === 'session_created' || event.type === 'message_created') {
+          void load();
+        }
+      });
     }
 
     return () => {
@@ -408,6 +507,7 @@ export function useAgentChatSessions(agentId: string | undefined) {
       }
       unregisterWindowRefresh();
       unregisterPollingRefresh();
+      unsubscribeFromStream();
     };
   }, [agentId]);
 
@@ -458,10 +558,16 @@ export function useAgentSessionMessages(agentId: string | undefined, sessionId: 
 
     let unregisterWindowRefresh = () => {};
     let unregisterPollingRefresh = () => {};
+    let unsubscribeFromStream = () => {};
     if (typeof window !== 'undefined') {
       window.addEventListener(eventName, handleRefresh);
       unregisterWindowRefresh = registerWindowRefresh(load);
-      unregisterPollingRefresh = registerPollingRefresh(load, 3000);
+      unregisterPollingRefresh = registerPollingRefresh(load, 15000);
+      unsubscribeFromStream = subscribeToAgentChatStream(agentId, (event) => {
+        if (event.type === 'message_created' && event.sessionId === sessionId) {
+          void load();
+        }
+      });
     }
 
     return () => {
@@ -471,6 +577,7 @@ export function useAgentSessionMessages(agentId: string | undefined, sessionId: 
       }
       unregisterWindowRefresh();
       unregisterPollingRefresh();
+      unsubscribeFromStream();
     };
   }, [agentId, sessionId]);
 
@@ -517,8 +624,14 @@ export function useAgentFeedback(agentId: string | undefined) {
       void load();
     };
 
+    let unsubscribeFromStream = () => {};
     if (typeof window !== 'undefined') {
       window.addEventListener(eventName, handleRefresh);
+      unsubscribeFromStream = subscribeToAgentChatStream(agentId, (event) => {
+        if (event.type === 'feedback_created') {
+          void load();
+        }
+      });
     }
 
     return () => {
@@ -526,6 +639,7 @@ export function useAgentFeedback(agentId: string | undefined) {
       if (typeof window !== 'undefined') {
         window.removeEventListener(eventName, handleRefresh);
       }
+      unsubscribeFromStream();
     };
   }, [agentId]);
 

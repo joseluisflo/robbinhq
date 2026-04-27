@@ -4,6 +4,7 @@ import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import prisma from '@/lib/prisma';
 import { createMessageFeedbackRecord } from '@/lib/data/chat';
+import { publishChatEvent } from '@/lib/realtime/chat-events';
 
 interface SaveFeedbackParams {
   userId: string;
@@ -50,6 +51,13 @@ export async function saveMessageFeedback(params: SaveFeedbackParams): Promise<{
           messageId,
           rating,
           comment,
+        });
+        await publishChatEvent({
+          type: 'feedback_created',
+          agentId,
+          sessionId,
+          messageId,
+          timestamp: new Date().toISOString(),
         });
       }
     } catch (mirrorError) {

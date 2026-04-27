@@ -21,6 +21,7 @@ import {
 import { listAgentFiles } from '@/lib/data/agent-files';
 import { listAgentTexts } from '@/lib/data/agent-texts';
 import prisma from '@/lib/prisma';
+import { publishChatEvent } from '@/lib/realtime/chat-events';
 
 export async function createAgent(userId: string, name: string, description: string): Promise<{ id: string } | { error: string }> {
   if (!name || !description) {
@@ -306,6 +307,7 @@ async function resolveAuthUserIdFromLegacyUserId(legacyUserId: string) {
 }
 
 async function mirrorChatMessage(input: {
+  agentId: string;
   messageId: string;
   sessionId: string;
   sender: 'user' | 'agent';
@@ -314,7 +316,21 @@ async function mirrorChatMessage(input: {
   options?: string[];
 }) {
   try {
-    await createChatMessageRecord(input);
+    await createChatMessageRecord({
+      id: input.messageId,
+      sessionId: input.sessionId,
+      sender: input.sender,
+      text: input.text,
+      timestamp: input.timestamp,
+      options: input.options,
+    });
+    await publishChatEvent({
+      type: 'message_created',
+      agentId: input.agentId,
+      sessionId: input.sessionId,
+      messageId: input.messageId,
+      timestamp: new Date(input.timestamp ?? Date.now()).toISOString(),
+    });
   } catch (mirrorError) {
     console.error('Failed to mirror chat message to Postgres:', mirrorError);
   }
@@ -387,6 +403,7 @@ async function ensureMirroredChatSession(input: {
   lastActivity?: string | Date;
   lastLeadAnalysisAt?: string | Date | null;
   visitorInfo?: ChatSession['visitorInfo'];
+  isNewSession?: boolean;
 }) {
   await upsertChatSessionRecord({
     id: input.sessionId,
@@ -401,6 +418,15 @@ async function ensureMirroredChatSession(input: {
     visitorInfo: input.visitorInfo,
     source: 'chat',
   });
+
+  if (input.isNewSession) {
+    await publishChatEvent({
+      type: 'session_created',
+      agentId: input.agentId,
+      sessionId: input.sessionId,
+      timestamp: new Date(input.createdAt ?? Date.now()).toISOString(),
+    });
+  }
 }
 
 
@@ -525,6 +551,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
           lastActivity: new Date(),
           lastMessageSnippet: message,
           visitorInfo,
+          isNewSession: true,
         });
     } else {
         const existingSession = sessionDoc.data() as ChatSession | undefined;
@@ -548,6 +575,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
 
     const userMessageId = await saveMessage(firestore, messagesPath, { sender: 'user', text: message });
     await mirrorChatMessage({
+      agentId,
       messageId: userMessageId,
       sessionId,
       sender: 'user',
@@ -602,6 +630,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       if ('error' in workflowResult) {
         const errorMessageId = await saveMessage(firestore, messagesPath, { sender: 'agent', text: workflowResult.error });
         await mirrorChatMessage({
+          agentId,
           messageId: errorMessageId,
           sessionId,
           sender: 'agent',
@@ -615,6 +644,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       if (responseText) {
         const agentWorkflowMessageId = await saveMessage(firestore, messagesPath, { sender: 'agent', text: responseText });
         await mirrorChatMessage({
+          agentId,
           messageId: agentWorkflowMessageId,
           sessionId,
           sender: 'agent',
@@ -693,6 +723,7 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
 
       const agentMessageId = await saveMessage(firestore, messagesPath, { sender: 'agent', text: chatResult.response });
       await mirrorChatMessage({
+        agentId,
         messageId: agentMessageId,
         sessionId,
         sender: 'agent',
