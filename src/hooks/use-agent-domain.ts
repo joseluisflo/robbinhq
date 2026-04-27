@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Agent, AgentFile, ChatMessage, ChatSession, Lead, MessageFeedback, TextSource } from '@/lib/types';
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -450,31 +450,37 @@ export function useAgentChatSessions(agentId: string | undefined) {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     if (!agentId) {
       setSessions([]);
       setLoading(false);
       setError(null);
+      hasLoadedRef.current = false;
       return;
     }
 
     let cancelled = false;
 
-    const load = async () => {
+    const load = async (options?: { background?: boolean }) => {
+      const isBackgroundRefresh = options?.background ?? false;
       try {
-        setLoading(true);
+        if (!isBackgroundRefresh || !hasLoadedRef.current) {
+          setLoading(true);
+        }
         const data = await fetchJson<{ sessions: ChatSession[] }>(`/api/agents/${agentId}/chat-sessions`);
         if (!cancelled) {
           setSessions(data.sessions || []);
           setError(null);
+          hasLoadedRef.current = true;
         }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load chat sessions.');
         }
       } finally {
-        if (!cancelled) {
+        if (!cancelled && (!isBackgroundRefresh || !hasLoadedRef.current)) {
           setLoading(false);
         }
       }
@@ -483,7 +489,7 @@ export function useAgentChatSessions(agentId: string | undefined) {
     load();
     const eventName = agentChatSessionsChangedEvent(agentId);
     const handleRefresh = () => {
-      void load();
+      void load({ background: true });
     };
 
     let unregisterWindowRefresh = () => {};
@@ -495,7 +501,7 @@ export function useAgentChatSessions(agentId: string | undefined) {
       unregisterPollingRefresh = registerPollingRefresh(load, 15000);
       unsubscribeFromStream = subscribeToAgentChatStream(agentId, (event) => {
         if (event.type === 'session_created' || event.type === 'message_created') {
-          void load();
+          void load({ background: true });
         }
       });
     }
@@ -518,33 +524,39 @@ export function useAgentSessionMessages(agentId: string | undefined, sessionId: 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     if (!agentId || !sessionId) {
       setMessages([]);
       setLoading(false);
       setError(null);
+      hasLoadedRef.current = false;
       return;
     }
 
     let cancelled = false;
 
-    const load = async () => {
+    const load = async (options?: { background?: boolean }) => {
+      const isBackgroundRefresh = options?.background ?? false;
       try {
-        setLoading(true);
+        if (!isBackgroundRefresh || !hasLoadedRef.current) {
+          setLoading(true);
+        }
         const data = await fetchJson<{ messages: ChatMessage[] }>(
           `/api/agents/${agentId}/chat-sessions/${sessionId}/messages`
         );
         if (!cancelled) {
           setMessages(data.messages || []);
           setError(null);
+          hasLoadedRef.current = true;
         }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load messages.');
         }
       } finally {
-        if (!cancelled) {
+        if (!cancelled && (!isBackgroundRefresh || !hasLoadedRef.current)) {
           setLoading(false);
         }
       }
@@ -553,7 +565,7 @@ export function useAgentSessionMessages(agentId: string | undefined, sessionId: 
     load();
     const eventName = agentSessionMessagesChangedEvent(agentId, sessionId);
     const handleRefresh = () => {
-      void load();
+      void load({ background: true });
     };
 
     let unregisterWindowRefresh = () => {};
@@ -565,7 +577,7 @@ export function useAgentSessionMessages(agentId: string | undefined, sessionId: 
       unregisterPollingRefresh = registerPollingRefresh(load, 15000);
       unsubscribeFromStream = subscribeToAgentChatStream(agentId, (event) => {
         if (event.type === 'message_created' && event.sessionId === sessionId) {
-          void load();
+          void load({ background: true });
         }
       });
     }
@@ -588,31 +600,37 @@ export function useAgentFeedback(agentId: string | undefined) {
   const [feedback, setFeedback] = useState<MessageFeedback[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     if (!agentId) {
       setFeedback([]);
       setLoading(false);
       setError(null);
+      hasLoadedRef.current = false;
       return;
     }
 
     let cancelled = false;
 
-    const load = async () => {
+    const load = async (options?: { background?: boolean }) => {
+      const isBackgroundRefresh = options?.background ?? false;
       try {
-        setLoading(true);
+        if (!isBackgroundRefresh || !hasLoadedRef.current) {
+          setLoading(true);
+        }
         const data = await fetchJson<{ feedback: MessageFeedback[] }>(`/api/agents/${agentId}/feedback`);
         if (!cancelled) {
           setFeedback(data.feedback || []);
           setError(null);
+          hasLoadedRef.current = true;
         }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load feedback.');
         }
       } finally {
-        if (!cancelled) {
+        if (!cancelled && (!isBackgroundRefresh || !hasLoadedRef.current)) {
           setLoading(false);
         }
       }
@@ -621,7 +639,7 @@ export function useAgentFeedback(agentId: string | undefined) {
     load();
     const eventName = agentFeedbackChangedEvent(agentId);
     const handleRefresh = () => {
-      void load();
+      void load({ background: true });
     };
 
     let unsubscribeFromStream = () => {};
@@ -629,7 +647,7 @@ export function useAgentFeedback(agentId: string | undefined) {
       window.addEventListener(eventName, handleRefresh);
       unsubscribeFromStream = subscribeToAgentChatStream(agentId, (event) => {
         if (event.type === 'feedback_created') {
-          void load();
+          void load({ background: true });
         }
       });
     }
