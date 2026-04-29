@@ -21,6 +21,8 @@ model User {
   chatSessions        ChatSession[]
   messageFeedback     MessageFeedback[]
   leads               Lead[]
+  emailSessions       EmailSession[]
+  emailMessages       EmailMessage[]
 
   @@map("user")
 }
@@ -121,6 +123,7 @@ model Agent {
   chatSessions            ChatSession[]
   messageFeedback         MessageFeedback[]
   leads                   Lead[]
+  emailSessions           EmailSession[]
 
   @@index([ownerUserId, updatedAt])
   @@index([legacyOwnerId])
@@ -237,4 +240,51 @@ model Lead {
   @@index([legacyOwnerId])
   @@index([sessionId])
   @@map("lead")
+}
+
+model EmailSession {
+  id                 String         @id
+  agentId            String
+  ownerUserId        String
+  legacyOwnerId      String?
+  subject            String
+  participantEmail   String
+  participants       Json?
+  status             String         @default("open")
+  lastMessageSnippet String?
+  createdAt          DateTime       @default(now())
+  lastActivity       DateTime
+  deletedAt          DateTime?
+  agent              Agent          @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  owner              User           @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  messages           EmailMessage[]
+
+  @@index([agentId, lastActivity])
+  @@index([agentId, participantEmail, lastActivity])
+  @@index([ownerUserId, lastActivity])
+  @@index([legacyOwnerId])
+  @@map("email_session")
+}
+
+model EmailMessage {
+  id              String       @id
+  sessionId       String
+  ownerUserId     String
+  legacyOwnerId   String?
+  messageId       String?
+  sender          String
+  recipient       String?
+  text            String
+  direction       String
+  deliveryStatus  String?
+  providerPayload Json?
+  createdAt       DateTime     @default(now())
+  session         EmailSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  owner           User         @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@index([ownerUserId, createdAt])
+  @@index([legacyOwnerId])
+  @@index([messageId])
+  @@map("email_message")
 }
