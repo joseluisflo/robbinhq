@@ -1,15 +1,17 @@
 'use server';
 
-import { firebaseAdmin } from '@/firebase/admin';
+import { randomUUID } from 'crypto';
 import { agentChat } from '@/ai/flows/agent-chat';
-import type { Agent, AgentFile, TextSource, EmailMessage, EmailSession } from '@/lib/types';
+import type { AgentFile, TextSource, EmailMessage } from '@/lib/types';
 import { sendEmail } from '@/lib/email-service';
-import { FieldValue } from 'firebase-admin/firestore';
-import { deductCredits } from '@/lib/credit-service';
+import { deductCreditsByUserId } from '@/lib/data/credits';
 import { listAgentFiles } from '@/lib/data/agent-files';
 import { listAgentTexts } from '@/lib/data/agent-texts';
 import {
-  resolveAuthUserIdFromLegacyUserId,
+  findEmailMessageByMessageId,
+  findEmailSessionForParticipantSubject,
+  getEmailAgentById,
+  listEmailMessagesBySession,
   upsertEmailMessageRecord,
   upsertEmailSessionRecord,
 } from '@/lib/data/email';
@@ -106,55 +108,6 @@ function normalizeEmailSubject(subject: string): string {
     return subject.replace(/^(re|fw|fwd):\s*/i, '').trim() || subject.trim();
 }
 
-async function mirrorEmailToPostgres(taskName: string, task: () => Promise<unknown>) {
-    try {
-        await task();
-    } catch (error) {
-        console.error(`[ACTION] ⚠️ Postgres email mirror failed during ${taskName}:`, error);
-    }
-}
-
-async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId: string): Promise<{ agent: Agent, agentRef: FirebaseFirestore.DocumentReference, ownerId: string } | null> {
-    const indexRef = firestore.collection('agentIndex').doc(agentId);
-    const indexDoc = await indexRef.get();
-
-    if (indexDoc.exists) {
-        const { ownerId } = indexDoc.data() as { ownerId: string };
-        if (ownerId) {
-            const agentRef = firestore.collection('users').doc(ownerId).collection('agents').doc(agentId);
-            const agentDoc = await agentRef.get();
-            if (agentDoc.exists) {
-                console.log(`[ACTION] Agent ${agentId} found in index for owner ${ownerId}.`);
-                return {
-                    agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
-                    agentRef: agentRef,
-                    ownerId: ownerId,
-                };
-            }
-        }
-    }
-    
-    console.warn(`[ACTION] Agent ${agentId} not found in index. Falling back to collection group query.`);
-    const usersSnapshot = await firestore.collection('users').get();
-    for (const userDoc of usersSnapshot.docs) {
-        const agentRef = firestore.collection('users').doc(userDoc.id).collection('agents').doc(agentId);
-        const agentDoc = await agentRef.get();
-        if (agentDoc.exists) {
-            console.log(`[ACTION] Agent ${agentId} found via fallback for owner ${userDoc.id}.`);
-            await firestore.collection('agentIndex').doc(agentId).set({ ownerId: userDoc.id });
-            console.log(`[ACTION] Created index entry for agent ${agentId}.`);
-            return {
-                agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
-                agentRef,
-                ownerId: userDoc.id,
-            };
-        }
-    }
-
-    console.error(`[ACTION] Agent with ID ${agentId} not found.`);
-    return null;
-}
-
 export async function processInboundEmail(emailData: EmailData): Promise<{ success: boolean } | { error: string }> {
   console.log('[ACTION] 🚀 Step 1: processInboundEmail started.');
   const { from, to, subject, body, messageId, inReplyTo, references } = emailData;
@@ -173,57 +126,45 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
   console.log(`[ACTION] ℹ️ Agent ID parsed: ${agentId}`);
 
   try {
-    const firestore = firebaseAdmin.firestore();
-    const agentInfo = await findAgentAndOwner(firestore, agentId);
+    const agentInfo = await getEmailAgentById(agentId);
     
     if (!agentInfo) {
         console.error(`[ACTION] ❌ Agent with ID ${agentId} not found.`);
         return { error: `Agent with ID ${agentId} not found.` };
     }
 
-    const { agent, agentRef, ownerId } = agentInfo;
-    console.log(`[ACTION] 👤 Agent found. Owner ID: ${ownerId}`);
-    const ownerAuthUserId = await resolveAuthUserIdFromLegacyUserId(ownerId);
-    if (!ownerAuthUserId) {
-        console.warn(`[ACTION] ⚠️ No Better Auth user link found for legacy owner ${ownerId}. Email will continue, but Postgres mirror is skipped.`);
-    }
+    const { agent, ownerUserId, legacyOwnerId } = agentInfo;
+    console.log(`[ACTION] 👤 Agent found. Owner ID: ${ownerUserId}`);
     const sessionSubject = normalizeEmailSubject(subject);
     
-    const emailSessionsRef = agentRef.collection('emailSessions');
-    const existingMessageQuery = await emailSessionsRef
-      .where('messageIds', 'array-contains', messageId)
-      .limit(1)
-      .get();
-
-    if (!existingMessageQuery.empty) {
+    const existingMessage = await findEmailMessageByMessageId(messageId);
+    if (existingMessage) {
       console.log(`[ACTION] ♻️ Message ${messageId} was already processed. Skipping duplicate delivery.`);
       return { success: true };
     }
 
-    let sessionRef;
-    let messages: EmailMessage[] = [];
-    
-    const sessionQuery = await emailSessionsRef
-        .where('participants', 'array-contains', from)
-        .where('subject', '==', sessionSubject)
-        .limit(1)
-        .get();
+    let session = await findEmailSessionForParticipantSubject({
+      agentId,
+      participantEmail: from,
+      subject: sessionSubject,
+    });
 
-    if (!sessionQuery.empty) {
-        sessionRef = sessionQuery.docs[0].ref;
-        const messagesSnapshot = await sessionRef.collection('messages').orderBy('timestamp', 'asc').get();
-        messages = messagesSnapshot.docs.map(doc => doc.data() as EmailMessage);
-        console.log(`[ACTION] 📂 Found existing session with ${messages.length} previous messages.`);
-    } else {
-        sessionRef = emailSessionsRef.doc();
-        await sessionRef.set({
-            subject: sessionSubject,
-            participants: [from, to],
-            lastActivity: FieldValue.serverTimestamp(),
-            messageIds: [],
-        });
-        console.log('[ACTION] 📝 Created new email session.');
+    if (!session) {
+      session = await upsertEmailSessionRecord({
+        id: `email-${randomUUID()}`,
+        agentId,
+        ownerUserId,
+        legacyOwnerId,
+        subject: sessionSubject,
+        participantEmail: from,
+        participants: [from, to],
+        lastActivity: new Date(),
+      });
+      console.log('[ACTION] 📝 Created new email session in Postgres.');
     }
+
+    let messages: EmailMessage[] = await listEmailMessagesBySession(session.id!);
+    console.log(`[ACTION] 📂 Loaded session ${session.id} with ${messages.length} previous messages from Postgres.`);
     
     // Clean the incoming email body - AGGRESSIVELY remove quoted content
     let cleanedBody = cleanReplyText(body);
@@ -231,58 +172,48 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
     console.log(`[ACTION] 🧹 Cleaned user message. Original length: ${body.length}, Clean length: ${cleanedBody.length}`);
     console.log(`[ACTION] 📝 Preview of cleaned text: "${cleanedBody.substring(0, 100)}..."`);
 
+    const incomingMessageDocId = messageId || `no-id-${Date.now()}`;
+    const incomingMessageCreatedAt = new Date();
     const newUserMessage: EmailMessage = {
       messageId: messageId,
       sender: from,
       text: cleanedBody,
-      timestamp: FieldValue.serverTimestamp(),
+      timestamp: incomingMessageCreatedAt.toISOString(),
     };
 
-    const incomingMessageDocId = messageId || `no-id-${Date.now()}`;
-    const incomingMessageCreatedAt = new Date();
-    await sessionRef.collection('messages').doc(incomingMessageDocId).set(newUserMessage);
-    await sessionRef.set({
-      lastActivity: FieldValue.serverTimestamp(),
-      messageIds: FieldValue.arrayUnion(messageId),
-    }, { merge: true });
+    await upsertEmailSessionRecord({
+      id: session.id!,
+      agentId,
+      ownerUserId,
+      legacyOwnerId,
+      subject: sessionSubject,
+      participantEmail: from,
+      participants: [from, to],
+      lastMessageSnippet: cleanedBody,
+      lastActivity: incomingMessageCreatedAt,
+    });
+
+    await upsertEmailMessageRecord({
+      id: incomingMessageDocId,
+      sessionId: session.id!,
+      ownerUserId,
+      legacyOwnerId,
+      messageId,
+      sender: from,
+      recipient: to,
+      text: cleanedBody,
+      direction: 'inbound',
+      deliveryStatus: 'received',
+      createdAt: incomingMessageCreatedAt,
+      providerPayload: { inReplyTo, references },
+    });
     console.log(`[ACTION] 📩 Saved incoming message with ID: ${incomingMessageDocId}`);
-
-    if (ownerAuthUserId) {
-      await mirrorEmailToPostgres('incoming message', async () => {
-        await upsertEmailSessionRecord({
-          id: sessionRef.id,
-          agentId,
-          ownerUserId: ownerAuthUserId,
-          legacyOwnerId: ownerId,
-          subject: sessionSubject,
-          participantEmail: from,
-          participants: [from, to],
-          lastMessageSnippet: cleanedBody,
-          lastActivity: incomingMessageCreatedAt,
-        });
-
-        await upsertEmailMessageRecord({
-          id: incomingMessageDocId,
-          sessionId: sessionRef.id,
-          ownerUserId: ownerAuthUserId,
-          legacyOwnerId: ownerId,
-          messageId,
-          sender: from,
-          recipient: to,
-          text: cleanedBody,
-          direction: 'inbound',
-          deliveryStatus: 'received',
-          createdAt: incomingMessageCreatedAt,
-          providerPayload: { inReplyTo, references },
-        });
-      });
-    }
     
     messages.push(newUserMessage);
     console.log(`[ACTION] 📚 Total messages in conversation: ${messages.length}`);
 
-    console.log(`[ACTION] 💰 Attempting to deduct 2 credits from user ${ownerId}.`);
-    const creditResult = await deductCredits(ownerId, 2, 'Email Response');
+    console.log(`[ACTION] 💰 Attempting to deduct 2 credits from user ${ownerUserId}.`);
+    const creditResult = await deductCreditsByUserId(ownerUserId, 2, 'Email Response');
     
     if (!creditResult.success) {
       console.error(`[ACTION] ❌ Credit deduction failed: ${creditResult.error}`);
@@ -300,16 +231,7 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
       ]);
       console.log(`[ACTION] 🧠 Fetched ${textSources.length} texts and ${fileSources.length} files from Postgres.`);
     } catch (postgresKnowledgeError) {
-      console.error('[ACTION] ⚠️ Could not fetch knowledge from Postgres. Falling back to Firestore:', postgresKnowledgeError);
-    }
-
-    if (textSources.length === 0 && fileSources.length === 0) {
-      const textsSnapshot = await agentRef.collection('texts').get();
-      const filesSnapshot = await agentRef.collection('files').get();
-      console.log(`[ACTION] 🧠 Fetched ${textsSnapshot.size} texts and ${filesSnapshot.size} files from Firestore fallback.`);
-
-      textSources = textsSnapshot.docs.map(doc => doc.data() as TextSource);
-      fileSources = filesSnapshot.docs.map(doc => doc.data() as AgentFile);
+      console.error('[ACTION] ⚠️ Could not fetch knowledge from Postgres:', postgresKnowledgeError);
     }
 
     const knowledge = [
@@ -342,10 +264,23 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
       messageId: agentMessageId,
       sender: to, // El email del agente
       text: cleanAgentResponse, // SOLO el texto de la respuesta, sin firma
-      timestamp: FieldValue.serverTimestamp(),
+      timestamp: outboundMessageCreatedAt.toISOString(),
     };
 
-    await sessionRef.collection('messages').doc(agentMessageId).set(agentMessage);
+    await upsertEmailMessageRecord({
+      id: agentMessageId,
+      sessionId: session.id!,
+      ownerUserId,
+      legacyOwnerId,
+      messageId: agentMessageId,
+      sender: to,
+      recipient: from,
+      text: cleanAgentResponse,
+      direction: 'outbound',
+      deliveryStatus: 'queued',
+      createdAt: outboundMessageCreatedAt,
+      providerPayload: { inReplyTo: messageId, references },
+    });
     console.log(`[ACTION] 💾 Saved agent response to DB (without signature).`);
 
     // Preparar email CON firma para enviar
@@ -369,42 +304,32 @@ export async function processInboundEmail(emailData: EmailData): Promise<{ succe
 
     console.log(`[ACTION] ✅ Successfully sent response to ${from}`);
     
-    // Actualizar última actividad
-    await sessionRef.update({
-      lastActivity: FieldValue.serverTimestamp(),
-      messageIds: FieldValue.arrayUnion(agentMessageId),
+    await upsertEmailMessageRecord({
+      id: agentMessageId,
+      sessionId: session.id!,
+      ownerUserId,
+      legacyOwnerId,
+      messageId: agentMessageId,
+      sender: to,
+      recipient: from,
+      text: cleanAgentResponse,
+      direction: 'outbound',
+      deliveryStatus: 'sent',
+      createdAt: outboundMessageCreatedAt,
+      providerPayload: { inReplyTo: messageId, references: newReferences },
     });
 
-    if (ownerAuthUserId) {
-      await mirrorEmailToPostgres('outbound message', async () => {
-        await upsertEmailMessageRecord({
-          id: agentMessageId,
-          sessionId: sessionRef.id,
-          ownerUserId: ownerAuthUserId,
-          legacyOwnerId: ownerId,
-          messageId: agentMessageId,
-          sender: to,
-          recipient: from,
-          text: cleanAgentResponse,
-          direction: 'outbound',
-          deliveryStatus: 'sent',
-          createdAt: outboundMessageCreatedAt,
-          providerPayload: { inReplyTo: messageId, references: newReferences },
-        });
-
-        await upsertEmailSessionRecord({
-          id: sessionRef.id,
-          agentId,
-          ownerUserId: ownerAuthUserId,
-          legacyOwnerId: ownerId,
-          subject: sessionSubject,
-          participantEmail: from,
-          participants: [from, to],
-          lastMessageSnippet: cleanAgentResponse,
-          lastActivity: new Date(),
-        });
-      });
-    }
+    await upsertEmailSessionRecord({
+      id: session.id!,
+      agentId,
+      ownerUserId,
+      legacyOwnerId,
+      subject: sessionSubject,
+      participantEmail: from,
+      participants: [from, to],
+      lastMessageSnippet: cleanAgentResponse,
+      lastActivity: new Date(),
+    });
 
     return { success: true };
 

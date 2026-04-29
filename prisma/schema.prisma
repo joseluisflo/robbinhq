@@ -12,6 +12,13 @@ model User {
   email               String               @unique
   emailVerified       Boolean
   image               String?
+  planId              String               @default("free")
+  credits             Int                  @default(150)
+  creditResetDate     DateTime?
+  stripeCustomerId    String?
+  autoRechargeEnabled Boolean?
+  rechargeThreshold   Int?
+  rechargeAmount      Int?
   createdAt           DateTime
   updatedAt           DateTime
   sessions            Session[]
@@ -23,6 +30,7 @@ model User {
   leads               Lead[]
   emailSessions       EmailSession[]
   emailMessages       EmailMessage[]
+  creditTransactions  CreditTransaction[]
 
   @@map("user")
 }
@@ -287,4 +295,18 @@ model EmailMessage {
   @@index([legacyOwnerId])
   @@index([messageId])
   @@map("email_message")
+}
+
+model CreditTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  amount      Int
+  description String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("credit_transaction")
 }

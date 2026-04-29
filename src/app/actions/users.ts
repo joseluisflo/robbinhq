@@ -59,6 +59,18 @@ export async function createUserProfile(userId: string, name: string, email: str
         stripeCustomerId: customer.id,
     }, { merge: true }); 
 
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name,
+        email,
+        planId: initialPlanId,
+        credits: initialCredits,
+        creditResetDate: nextResetDate,
+        stripeCustomerId: customer.id,
+      },
+    });
+
     await prisma.legacyIdentityLink.upsert({
       where: {
         authUserId: userId,
@@ -93,6 +105,10 @@ export async function updateUserProfile(
 
   try {
     const { legacyUserId } = await requireLegacyUserContext();
+    if (!legacyUserId) {
+      return { error: 'User context is missing.' };
+    }
+
     const firestore = firebaseAdmin.firestore();
     const userRef = firestore.collection('users').doc(legacyUserId);
 

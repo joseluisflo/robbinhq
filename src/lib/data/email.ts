@@ -1,6 +1,7 @@
-import type { EmailMessage as AppEmailMessage, EmailSession as AppEmailSession } from "@/lib/types";
+import type { Agent, EmailMessage as AppEmailMessage, EmailSession as AppEmailSession } from "@/lib/types";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { mapAgentRecordToAgent } from "@/lib/data/agents";
 
 type EmailSessionRecord = {
   id: string;
@@ -57,6 +58,56 @@ export async function resolveAuthUserIdFromLegacyUserId(legacyUserId: string): P
   });
 
   return link?.authUserId ?? null;
+}
+
+export async function getEmailAgentById(agentId: string): Promise<{
+  agent: Agent;
+  ownerUserId: string;
+  legacyOwnerId: string | null;
+} | null> {
+  const record = await prisma.agent.findFirst({
+    where: {
+      id: agentId,
+      deletedAt: null,
+    },
+  });
+
+  if (!record) {
+    return null;
+  }
+
+  return {
+    agent: mapAgentRecordToAgent(record),
+    ownerUserId: record.ownerUserId,
+    legacyOwnerId: record.legacyOwnerId,
+  };
+}
+
+export async function findEmailMessageByMessageId(messageId: string): Promise<AppEmailMessage | null> {
+  const record = await prisma.emailMessage.findFirst({
+    where: { messageId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return record ? mapEmailMessage(record) : null;
+}
+
+export async function findEmailSessionForParticipantSubject(input: {
+  agentId: string;
+  participantEmail: string;
+  subject: string;
+}): Promise<AppEmailSession | null> {
+  const record = await prisma.emailSession.findFirst({
+    where: {
+      agentId: input.agentId,
+      participantEmail: input.participantEmail,
+      subject: input.subject,
+      deletedAt: null,
+    },
+    orderBy: { lastActivity: "desc" },
+  });
+
+  return record ? mapEmailSession(record) : null;
 }
 
 export async function upsertEmailSessionRecord(input: {
