@@ -1,81 +1,53 @@
-
 'use server';
 
 import Stripe from 'stripe';
-import { firebaseAdmin } from '@/firebase/admin';
-import type { userProfile } from '@/lib/types';
+import { ensureStripeCustomerForUser } from '@/lib/data/credits';
 import { requireLegacyUserContext } from '@/lib/permissions';
 
-// Initialize Stripe with the secret key from environment variables
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
 interface CreatePaymentIntentParams {
-  amount: number; // Amount in cents
+  amount: number;
 }
 
-/**
- * Creates a Payment Intent with Stripe.
- * This is the first step in processing a payment. It generates a client_secret
- * that the frontend uses to securely complete the payment with Stripe Elements.
- *
- * @param {CreatePaymentIntentParams} params - The user ID and the amount to be charged.
- * @returns {Promise<{ clientSecret: string } | { error: string }>} An object with the clientSecret or an error message.
- */
 export async function createPaymentIntent({
   amount,
 }: CreatePaymentIntentParams): Promise<{ clientSecret: string } | { error: string }> {
   if (!amount) {
     return { error: 'Amount is required.' };
   }
-  
-  if (amount < 500) { // Stripe's minimum is usually $0.50
-      return { error: 'Amount must be at least $5.00.' };
+
+  if (amount < 500) {
+    return { error: 'Amount must be at least $5.00.' };
   }
 
   try {
-    const { legacyUserId } = await requireLegacyUserContext();
-    const firestore = firebaseAdmin.firestore();
-    const userRef = firestore.collection('users').doc(legacyUserId);
-    const userDoc = await userRef.get();
-    if (!userDoc.exists) {
+    const { authUserId, legacyUserId } = await requireLegacyUserContext();
+    const stripeCustomerId = await ensureStripeCustomerForUser(authUserId);
+
+    if (!stripeCustomerId) {
       return { error: 'User not found.' };
     }
 
-    const userData = userDoc.data() as userProfile;
-    let stripeCustomerId = userData.stripeCustomerId;
-
-    // Create a Stripe customer if one doesn't exist
-    if (!stripeCustomerId) {
-        const customer = await stripe.customers.create({
-            email: userData.email,
-            name: userData.displayName,
-            metadata: {
-                firebaseUID: legacyUserId,
-            },
-        });
-        stripeCustomerId = customer.id;
-        await userRef.update({ stripeCustomerId });
-    }
-    
-    // Create a PaymentIntent with the order amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount,
+      amount,
       currency: 'usd',
       customer: stripeCustomerId,
       setup_future_usage: 'off_session',
       automatic_payment_methods: {
         enabled: true,
       },
-      // Add metadata to link the payment to the user and purchase type
       metadata: {
-        firebaseUID: legacyUserId,
+        authUserId,
+        firebaseUID: authUserId,
+        legacyUserId: legacyUserId ?? '',
         purchaseType: 'credits',
-        creditAmount: amount / 100, // Store amount in dollars for clarity
-      }
+        creditAmount: amount / 100,
+      },
     });
 
     if (!paymentIntent.client_secret) {
-        throw new Error('Failed to create Payment Intent.');
+      throw new Error('Failed to create Payment Intent.');
     }
 
     return {
@@ -86,4 +58,3 @@ export async function createPaymentIntent({
     return { error: e.message || 'An unknown error occurred.' };
   }
 }
-

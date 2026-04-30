@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { Agent, AgentFile, ChatMessage, ChatSession, Lead, MessageFeedback, TextSource } from '@/lib/types';
+import type { Agent, AgentFile, ChatMessage, ChatSession, CreditTransaction, Lead, MessageFeedback, TextSource, userProfile } from '@/lib/types';
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, {
@@ -46,7 +46,7 @@ function registerPollingRefresh(load: () => void, intervalMs = 4000) {
     return () => {};
   }
 
-  let intervalId: ReturnType<typeof window.setInterval> | null = null;
+  let intervalId: number | null = null;
 
   const start = () => {
     if (intervalId !== null) {
@@ -189,6 +189,7 @@ function subscribeToAgentChatStream(agentId: string, listener: ChatStreamListene
 }
 
 const AGENTS_CHANGED_EVENT = 'agent-domain:agents-changed';
+const USER_PROFILE_CHANGED_EVENT = 'agent-domain:user-profile-changed';
 
 function agentTextsChangedEvent(agentId: string) {
   return `agent-domain:texts-changed:${agentId}`;
@@ -250,6 +251,12 @@ export type AgentDashboardStats = {
 export function notifyAgentsChanged() {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
+  }
+}
+
+export function notifyUserProfileChanged() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(USER_PROFILE_CHANGED_EVENT));
   }
 }
 
@@ -340,6 +347,113 @@ export function useAgents() {
   }, []);
 
   return { agents, setAgents, loading, error };
+}
+
+export function useUserProfile(enabled = true) {
+  const [profile, setProfile] = useState<userProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!enabled) {
+      setProfile(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchJson<{ profile: userProfile }>('/api/user-profile');
+        if (!cancelled) {
+          setProfile(data.profile ?? null);
+          setError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load profile.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+    const handleRefresh = () => {
+      void load();
+    };
+
+    let unregisterWindowRefresh = () => {};
+    if (typeof window !== 'undefined') {
+      window.addEventListener(USER_PROFILE_CHANGED_EVENT, handleRefresh);
+      unregisterWindowRefresh = registerWindowRefresh(load);
+    }
+
+    return () => {
+      cancelled = true;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener(USER_PROFILE_CHANGED_EVENT, handleRefresh);
+      }
+      unregisterWindowRefresh();
+    };
+  }, [enabled]);
+
+  return { profile, setProfile, loading, error };
+}
+
+export function useCreditTransactions() {
+  const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchJson<{ transactions: CreditTransaction[] }>('/api/billing/transactions');
+        if (!cancelled) {
+          setTransactions(data.transactions || []);
+          setError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load transactions.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+    const handleRefresh = () => {
+      void load();
+    };
+
+    let unregisterWindowRefresh = () => {};
+    if (typeof window !== 'undefined') {
+      window.addEventListener(USER_PROFILE_CHANGED_EVENT, handleRefresh);
+      unregisterWindowRefresh = registerWindowRefresh(load);
+    }
+
+    return () => {
+      cancelled = true;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener(USER_PROFILE_CHANGED_EVENT, handleRefresh);
+      }
+      unregisterWindowRefresh();
+    };
+  }, []);
+
+  return { transactions, setTransactions, loading, error };
 }
 
 export function useAgentTexts(agentId: string | undefined) {

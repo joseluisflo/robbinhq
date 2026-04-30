@@ -13,6 +13,7 @@ import {
   DialogBody,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { notifyUserProfileChanged } from "@/hooks/use-agent-domain";
 
 interface CheckoutFormProps {
     onGoBack: () => void;
@@ -60,6 +61,7 @@ export function CheckoutForm({ onGoBack, plan, setPaymentStatus, setStep }: Chec
     } else {
       if (paymentIntent && paymentIntent.status === 'succeeded') {
         setPaymentStatus('succeeded');
+        window.setTimeout(() => notifyUserProfileChanged(), 1500);
       } else {
         setPaymentStatus(paymentIntent?.status || 'error');
       }

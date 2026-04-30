@@ -9,11 +9,8 @@ import { Download, Loader2 } from "lucide-react";
 import { ChangePlanDialog } from "./change-plan-dialog";
 import { useActiveAgent } from "@/app/(main)/layout";
 import { Skeleton } from "../ui/skeleton";
-import type { Timestamp } from "firebase/firestore";
 import { useKnowledgeUsage } from "@/hooks/use-knowledge-usage";
-import { useUser, useFirestore, useCollection, query, collection, orderBy } from '@/firebase';
-import type { TextSource, AgentFile, ChatSession, EmailSession, Lead, CreditTransaction } from '@/lib/types';
-import { useMemo } from 'react';
+import { useAgentFiles, useAgentTexts, useCreditTransactions } from "@/hooks/use-agent-domain";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +34,7 @@ const PLAN_DETAILS = {
     name: "Pro Plan", 
     price: "$29 per month", 
     credits: Infinity, 
+    agents: Infinity,
     knowledgeKB: 40 * 1024 // 40MB
   },
 };
@@ -62,37 +60,17 @@ function UsageMeter({ title, used, total, unit = '', current }: { title: string,
 }
 
 export function BillingSettings() {
-    const { user } = useUser();
-    const firestore = useFirestore();
     const { userProfile, agents, agentsLoading } = useActiveAgent();
     
     // --- Data fetching for usage meters ---
     const activeAgent = agents?.[0]; // Assume usage is for the primary/first agent for simplicity
-    const textsQuery = useMemo(() => user && activeAgent?.id ? query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'texts')) : null, [user, firestore, activeAgent?.id]);
-    const { data: textSources, loading: textsLoading } = useCollection<TextSource>(textsQuery);
-
-    const filesQuery = useMemo(() => user && activeAgent?.id ? query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'files')) : null, [user, firestore, activeAgent?.id]);
-    const { data: fileSources, loading: filesLoading } = useCollection<AgentFile>(filesQuery);
+    const { texts: textSources, loading: textsLoading } = useAgentTexts(activeAgent?.id);
+    const { files: fileSources, loading: filesLoading } = useAgentFiles(activeAgent?.id);
     
-    const { currentUsageKB, usageLimitKB } = useKnowledgeUsage(textSources, fileSources, userProfile);
-    
-    const chatSessionsQuery = useMemo(() => user && activeAgent?.id ? query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'sessions')) : null, [user, firestore, activeAgent?.id]);
-    const { data: chatSessions, loading: chatLoading } = useCollection<ChatSession>(chatSessionsQuery);
-    const emailSessionsQuery = useMemo(() => user && activeAgent?.id ? query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'emailSessions')) : null, [user, firestore, activeAgent?.id]);
-    const { data: emailSessions, loading: emailLoading } = useCollection<EmailSession>(emailSessionsQuery);
-    const leadsQuery = useMemo(() => user && activeAgent?.id ? query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'leads')) : null, [user, firestore, activeAgent?.id]);
-    const { data: leads, loading: leadsLoading } = useCollection<Lead>(leadsQuery);
+    const { currentUsageKB } = useKnowledgeUsage(textSources, fileSources, userProfile);
+    const { transactions, loading: transactionsLoading } = useCreditTransactions();
 
-    const transactionsQuery = useMemo(() => {
-        if (!user) return null;
-        return query(
-            collection(firestore, 'users', user.uid, 'creditTransactions'),
-            orderBy('timestamp', 'desc')
-        );
-    }, [user, firestore]);
-    const { data: transactions, loading: transactionsLoading } = useCollection<CreditTransaction>(transactionsQuery);
-
-    const loading = agentsLoading || textsLoading || filesLoading || chatLoading || emailLoading || leadsLoading || transactionsLoading;
+    const loading = agentsLoading || textsLoading || filesLoading || transactionsLoading;
     const planId = userProfile?.planId || 'free';
     const planDetails = PLAN_DETAILS[planId];
     
@@ -168,7 +146,7 @@ export function BillingSettings() {
                             transactions.map((tx) => (
                                 <TableRow key={tx.id}>
                                     <TableCell className="font-medium">
-                                        {tx.timestamp ? format((tx.timestamp as Timestamp).toDate(), 'MMM d, yyyy') : 'N/A'}
+                                        {tx.timestamp ? format(new Date(tx.timestamp), 'MMM d, yyyy') : 'N/A'}
                                     </TableCell>
                                     <TableCell>{tx.description}</TableCell>
                                     <TableCell className={cn("text-right font-semibold", 

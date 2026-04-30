@@ -303,6 +303,7 @@ model CreditTransaction {
   type        String
   amount      Int
   description String
+  stripePaymentIntentId String?  @unique
   metadata    Json?
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { updateUserProfile } from "@/app/actions/users";
+import { notifyUserProfileChanged } from "@/hooks/use-agent-domain";
 
 
 type CreditPackageId = '20' | '40' | 'custom';
@@ -108,9 +109,11 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
         };
         
         const updateResult = await updateUserProfile(settingsToUpdate);
-        if (updateResult.error) {
+        if ("error" in updateResult) {
             toast({ title: "Settings Error", description: `Could not save auto-recharge settings: ${updateResult.error}`, variant: "destructive" });
             // We can decide to stop here or continue with the payment. For now, let's continue.
+        } else {
+            notifyUserProfileChanged();
         }
 
         // Then, proceed with payment intent creation
@@ -129,7 +132,7 @@ export function ChangePlanDialog({ children }: { children: React.ReactNode }) {
         setFinalPackage(finalPkg); // Set the final package details
 
         const paymentResult = await createPaymentIntent({ amount: amountInCents });
-        if (paymentResult.error) {
+        if ("error" in paymentResult) {
             toast({ title: "Payment Error", description: paymentResult.error, variant: "destructive" });
         } else if (paymentResult.clientSecret) {
             setClientSecret(paymentResult.clientSecret);
