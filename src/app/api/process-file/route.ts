@@ -5,10 +5,9 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
-import { FieldValue } from 'firebase-admin/firestore';
-import { AuthorizationError, requireAgentOwnerFromHeaders } from '@/lib/permissions';
+import { AuthorizationError, requireAgentOwnerRecordFromHeaders } from '@/lib/permissions';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { updateAgentFileRecord } from '@/lib/data/agent-files';
+import { getAgentFileRecord, updateAgentFileRecord } from '@/lib/data/agent-files';
 
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
 const MAX_PROCESSABLE_FILE_SIZE = 10 * 1024 * 1024;
@@ -23,7 +22,7 @@ async function streamToBuffer(stream: Readable): Promise<Buffer> {
 }
 
 export async function POST(request: Request) {
-  let fileRef: FirebaseFirestore.DocumentReference | null = null;
+  let failedFile: { agentId: string; fileId: string } | null = null;
 
   try {
     const { fileId, agentId } = await request.json();
@@ -35,26 +34,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'R2 bucket name is not configured' }, { status: 500 });
     }
 
-    const owner = await requireAgentOwnerFromHeaders(agentId, request.headers);
-    const rateLimit = await checkRateLimit(`process-file:${owner.legacyUserId}`, 15, 60_000);
+    const owner = await requireAgentOwnerRecordFromHeaders(agentId, request.headers);
+    const rateLimit = await checkRateLimit(`process-file:${owner.authUserId}`, 15, 60_000);
     if (!rateLimit.allowed) {
       return NextResponse.json({ error: 'Too many file processing requests. Please wait a moment and try again.' }, { status: 429 });
     }
 
-    fileRef = owner.agentRef.collection('files').doc(fileId);
-    const fileDoc = await fileRef.get();
-    if (!fileDoc.exists) {
-      return NextResponse.json({ error: 'File not found in Firestore' }, { status: 404 });
+    failedFile = { agentId, fileId };
+    const fileData = await getAgentFileRecord(agentId, fileId);
+    if (!fileData) {
+      return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
-    const fileData = fileDoc.data();
-    const storagePath = fileData?.storagePath;
-    const fileType = fileData?.type;
-    const fileName = fileData?.name || 'Unknown File';
+    const storagePath = fileData.storagePath;
+    const fileType = fileData.type;
 
     if (!storagePath || !fileType) {
       return NextResponse.json({ error: 'File metadata incomplete' }, { status: 400 });
     }
-    if ((fileData?.size ?? 0) > MAX_PROCESSABLE_FILE_SIZE) {
+    if ((fileData.size ?? 0) > MAX_PROCESSABLE_FILE_SIZE) {
       return NextResponse.json({ error: 'File exceeds the processing size limit.' }, { status: 400 });
     }
 
@@ -91,27 +88,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true, message: 'File type not supported for text extraction.' });
     }
 
-    // 3. Update Firestore with extracted text
-    await fileRef.update({
+    await updateAgentFileRecord({
+      agentId,
+      fileId,
       extractedText: extractedText.trim(),
-    });
-
-    try {
-      await updateAgentFileRecord({
-        agentId,
-        fileId,
-        extractedText: extractedText.trim(),
-      });
-    } catch (mirrorError) {
-      console.error('Failed to mirror processed file metadata to Postgres:', mirrorError);
-    }
-
-    // 4. Create Configuration Log
-    await owner.agentRef.collection('configurationLogs').add({
-        title: 'Knowledge Base Updated',
-        description: `Added file source: "${fileName}"`,
-        timestamp: FieldValue.serverTimestamp(),
-        actor: owner.legacyUserId,
     });
 
     return NextResponse.json({ success: true, ...extractionInfo });
@@ -123,9 +103,13 @@ export async function POST(request: Request) {
     console.error('File processing error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     
-    // Optionally update Firestore to indicate a processing failure
-    if (fileRef) {
-      await fileRef.update({ extractedText: `[EXTRACTION_FAILED: ${errorMessage}]` }).catch(console.error);
+    // Mark the file record so the panel can surface extraction failures.
+    if (failedFile) {
+      await updateAgentFileRecord({
+        agentId: failedFile.agentId,
+        fileId: failedFile.fileId,
+        extractedText: `[EXTRACTION_FAILED: ${errorMessage}]`,
+      }).catch(console.error);
     }
     
     return NextResponse.json({ error: 'File processing failed', details: errorMessage }, { status: 500 });

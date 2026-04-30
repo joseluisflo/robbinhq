@@ -1,6 +1,6 @@
 import type { Agent, Task } from "@/lib/types";
 import prisma from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 type AgentRecord = Prisma.AgentGetPayload<object>;
 
@@ -60,7 +60,7 @@ export function mapAgentRecordToAgent(record: AgentRecord): Agent {
     temperature: record.temperature ?? undefined,
     lastModified: record.lastModified?.toISOString(),
     createdAt: record.createdAt.toISOString(),
-    rateLimiting: asObject<Agent["rateLimiting"]>(record.rateLimiting),
+    rateLimiting: asObject<NonNullable<Agent["rateLimiting"]>>(record.rateLimiting),
     welcomeMessage: record.welcomeMessage ?? undefined,
     inCallWelcomeMessage: record.inCallWelcomeMessage ?? undefined,
     isWelcomeMessageEnabled: record.isWelcomeMessageEnabled ?? undefined,
@@ -74,10 +74,10 @@ export function mapAgentRecordToAgent(record: AgentRecord): Agent {
     isBargeInEnabled: record.isBargeInEnabled ?? undefined,
     isBrandingEnabled: record.isBrandingEnabled ?? undefined,
     agentVoice: record.agentVoice ?? undefined,
-    orbColors: asObject<Agent["orbColors"]>(record.orbColors),
+    orbColors: asObject<NonNullable<Agent["orbColors"]>>(record.orbColors),
     emailSignature: record.emailSignature ?? undefined,
     handoffEmail: record.handoffEmail ?? undefined,
-    phoneConfig: asObject<Agent["phoneConfig"]>(record.phoneConfig),
+    phoneConfig: asObject<NonNullable<Agent["phoneConfig"]>>(record.phoneConfig),
   };
 }
 
@@ -191,6 +191,17 @@ export async function getAgentByLegacyOwnerId(legacyOwnerId: string, agentId: st
     where: {
       id: agentId,
       legacyOwnerId,
+      deletedAt: null,
+    },
+  });
+
+  return record ? mapAgentRecordToAgent(record) : null;
+}
+
+export async function getPublicAgentById(agentId: string): Promise<Agent | null> {
+  const record = await prisma.agent.findFirst({
+    where: {
+      id: agentId,
       deletedAt: null,
     },
   });

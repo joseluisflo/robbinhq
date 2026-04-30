@@ -3,8 +3,10 @@
 
 import { NextResponse } from 'next/server';
 import twilio, { twiml } from 'twilio';
-import { firebaseAdmin } from '@/firebase/admin';
-import type { Agent, AgentFile, TextSource } from '@/lib/types';
+import type { Agent } from '@/lib/types';
+import { getPublicAgentById } from '@/lib/data/agents';
+import { listAgentFiles } from '@/lib/data/agent-files';
+import { listAgentTexts } from '@/lib/data/agent-texts';
 
 function buildRequestValidationUrls(request: Request) {
     const requestUrl = new URL(request.url);
@@ -26,29 +28,23 @@ function buildRequestValidationUrls(request: Request) {
 }
 
 async function getAgentConfig(agentId: string): Promise<Agent | null> {
-    const firestore = firebaseAdmin.firestore();
     try {
-        const usersSnapshot = await firestore.collection('users').get();
-        for (const userDoc of usersSnapshot.docs) {
-            const agentRef = firestore.collection('users').doc(userDoc.id).collection('agents').doc(agentId);
-            const agentDoc = await agentRef.get();
-
-            if (agentDoc.exists) {
-                console.log(`[Vercel Webhook] Found agent ${agentId} for user ${userDoc.id}`);
-                const agentData = agentDoc.data() as Agent;
-
-                // Fetch subcollections for knowledge
-                const textsSnapshot = await agentRef.collection('texts').get();
-                const filesSnapshot = await agentRef.collection('files').get();
-
-                agentData.textSources = textsSnapshot.docs.map(doc => doc.data() as TextSource);
-                agentData.fileSources = filesSnapshot.docs.map(doc => doc.data() as AgentFile);
-                
-                return agentData;
-            }
+        const agent = await getPublicAgentById(agentId);
+        if (!agent) {
+          console.warn(`[Vercel Webhook] Agent with ID ${agentId} not found in Postgres.`);
+          return null;
         }
-        console.warn(`[Vercel Webhook] Agent with ID ${agentId} not found across all users.`);
-        return null;
+
+        const [textSources, fileSources] = await Promise.all([
+          listAgentTexts(agentId),
+          listAgentFiles(agentId),
+        ]);
+
+        return {
+          ...agent,
+          textSources,
+          fileSources,
+        };
     } catch (error) {
         console.error(`[Vercel Webhook] Error fetching agent config for ${agentId}:`, error);
         return null;
@@ -106,7 +102,7 @@ export async function POST(request: Request) {
     return new Response('Application is not configured for real-time calls.', { status: 500 });
   }
   
-  // Fetch agent configuration from Firestore
+  // Fetch agent configuration from Postgres
   const agentConfig = await getAgentConfig(agentId);
   if (!agentConfig) {
       return new Response(`Agent configuration for ${agentId} not found.`, { status: 404 });

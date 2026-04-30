@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { s3Client } from '@/lib/r2';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { FieldValue } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
-import { AuthorizationError, requireAgentOwnerFromHeaders } from '@/lib/permissions';
+import { AuthorizationError, requireAgentOwnerRecordFromHeaders } from '@/lib/permissions';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { createAgentFileRecord } from '@/lib/data/agent-files';
 
@@ -42,8 +41,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Upload type is required' }, { status: 400 });
     }
 
-    const owner = await requireAgentOwnerFromHeaders(agentId, request.headers);
-    const rateLimit = await checkRateLimit(`upload:${owner.legacyUserId}`, 20, 60_000);
+    const owner = await requireAgentOwnerRecordFromHeaders(agentId, request.headers);
+    const rateLimit = await checkRateLimit(`upload:${owner.authUserId}`, 20, 60_000);
     if (!rateLimit.allowed) {
       return NextResponse.json({ error: 'Too many upload requests. Please wait a moment and try again.' }, { status: 429 });
     }
@@ -70,11 +69,11 @@ export async function POST(request: Request) {
     
     if (isLogoUpload) {
       // For logos, use a predictable path to allow overwrites.
-      storagePath = `users/${owner.legacyUserId}/agents/${agentId}/logo.${fileExtension}`;
+      storagePath = `users/${owner.authUserId}/agents/${agentId}/logo.${fileExtension}`;
     } else {
       // For other files, use a unique ID to prevent collisions.
       const uniqueId = uuidv4();
-      storagePath = `users/${owner.legacyUserId}/agents/${agentId}/files/${uniqueId}.${fileExtension}`;
+      storagePath = `users/${owner.authUserId}/agents/${agentId}/files/${uniqueId}.${fileExtension}`;
     }
     
     // Upload to R2
@@ -94,35 +93,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, url: publicUrl }, { status: 200 });
     }
 
-    // Otherwise, create a record in the 'files' subcollection for a training file.
-    const fileRef = owner.agentRef.collection('files').doc();
-
-    const newFileData = {
+    const fileId = uuidv4();
+    await createAgentFileRecord({
+      id: fileId,
+      agentId,
       name: file.name,
       type: file.type,
       size: file.size,
       url: publicUrl,
       storagePath,
-      createdAt: FieldValue.serverTimestamp(),
-    };
+    });
 
-    await fileRef.set(newFileData);
-
-    try {
-      await createAgentFileRecord({
-        id: fileRef.id,
-        agentId,
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        url: publicUrl,
-        storagePath,
-      });
-    } catch (mirrorError) {
-      console.error('Failed to mirror uploaded file metadata to Postgres:', mirrorError);
-    }
-
-    return NextResponse.json({ success: true, fileId: fileRef.id, url: publicUrl }, { status: 201 });
+    return NextResponse.json({ success: true, fileId, url: publicUrl }, { status: 201 });
 
   } catch (error) {
     if (error instanceof AuthorizationError) {

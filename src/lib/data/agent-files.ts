@@ -32,6 +32,17 @@ export async function listAgentFiles(agentId: string): Promise<AgentFile[]> {
   return records.map(mapAgentFile);
 }
 
+export async function getAgentFileRecord(agentId: string, fileId: string): Promise<AgentFile | null> {
+  const record = await prisma.agentFile.findFirst({
+    where: {
+      id: fileId,
+      agentId,
+    },
+  });
+
+  return record ? mapAgentFile(record) : null;
+}
+
 export async function createAgentFileRecord(input: {
   id: string;
   agentId: string;

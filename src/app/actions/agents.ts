@@ -1,8 +1,8 @@
 'use server';
 
+import { randomUUID } from 'crypto';
 import { generateAgentInstructions } from '@/ai/flows/agent-instruction-generation';
 import { agentChat } from '@/ai/flows/agent-chat';
-import { firebaseAdmin } from '@/firebase/admin';
 import { FieldValue, FieldPath } from 'firebase-admin/firestore';
 import type { Agent, TextSource, AgentFile, Workflow, WorkflowRun } from '@/lib/types';
 import { runOrResumeWorkflow } from './workflow';
@@ -11,7 +11,8 @@ import { z } from 'genkit';
 import { headers } from 'next/headers';
 import UAParser from 'ua-parser-js';
 import { deductCredits, getUserCredits } from '@/lib/credit-service';
-import { requireAgentOwner, requireLegacyUserContext } from '@/lib/permissions';
+import { getViewerContext } from '@/lib/auth/session';
+import { requireAgentOwnerRecord } from '@/lib/permissions';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { createAgentRecord, softDeleteAgentRecord, updateAgentRecord } from '@/lib/data/agents';
 import {
@@ -29,8 +30,9 @@ export async function createAgent(userId: string, name: string, description: str
   }
 
   try {
-    const viewer = await requireLegacyUserContext();
+    const viewer = await getViewerContext();
     const nowIso = new Date().toISOString();
+    const agentId = randomUUID();
     let instructions = '';
     try {
       const instructionResult = await generateAgentInstructions({ description });
@@ -38,10 +40,7 @@ export async function createAgent(userId: string, name: string, description: str
     } catch (e) {
         console.error('Failed to generate agent instructions, saving agent without them.', e);
     }
-    
-    const firestore = firebaseAdmin.firestore();
-    const agentRef = firestore.collection('users').doc(viewer.legacyUserId).collection('agents').doc();
-    
+
     const newAgent: Omit<Agent, 'id'> = {
       name,
       description,
@@ -51,7 +50,7 @@ export async function createAgent(userId: string, name: string, description: str
       tasks: [],
       conversationStarters: [],
       temperature: 0.4,
-      createdAt: FieldValue.serverTimestamp(),
+      createdAt: nowIso,
       rateLimiting: {
         maxMessages: 20,
         timeframe: 240,
@@ -71,27 +70,14 @@ export async function createAgent(userId: string, name: string, description: str
       agentVoice: 'Zephyr',
     };
 
-    await agentRef.set(newAgent);
+    await createAgentRecord({
+      id: agentId,
+      ownerUserId: viewer.authUserId,
+      legacyOwnerId: viewer.legacyUserId,
+      agent: newAgent,
+    });
 
-    // Create a record in the top-level index for efficient lookups
-    const agentIndexRef = firestore.collection('agentIndex').doc(agentRef.id);
-    await agentIndexRef.set({ ownerId: viewer.legacyUserId });
-
-    try {
-      await createAgentRecord({
-        id: agentRef.id,
-        ownerUserId: viewer.authUserId,
-        legacyOwnerId: viewer.legacyUserId,
-        agent: {
-          ...newAgent,
-          createdAt: nowIso,
-        },
-      });
-    } catch (mirrorError) {
-      console.error('Failed to mirror agent creation to Postgres:', mirrorError);
-    }
-
-    return { id: agentRef.id };
+    return { id: agentId };
   } catch (e: any) {
     console.error('Failed to create agent:', e);
     return { error: e.message || 'Failed to create agent in database.' };
@@ -104,30 +90,18 @@ export async function updateAgent(userId: string, agentId: string, data: Partial
   }
 
   try {
-    const { agentRef, authUserId } = await requireAgentOwner(agentId);
-    
-    // Prepare data for update, ensuring we handle nullish values for deletion
-    const updateData: { [key: string]: any } = { ...data };
-    if (data.logoUrl === '') {
-        updateData.logoUrl = FieldValue.delete();
-    }
-    
-    await agentRef.update({
-      ...updateData,
-      lastModified: FieldValue.serverTimestamp(),
+    const { authUserId } = await requireAgentOwnerRecord(agentId);
+    const updatedAgent = await updateAgentRecord({
+      agentId,
+      ownerUserId: authUserId,
+      data: {
+        ...data,
+        lastModified: new Date().toISOString(),
+      },
     });
 
-    try {
-      await updateAgentRecord({
-        agentId,
-        ownerUserId: authUserId,
-        data: {
-          ...data,
-          lastModified: new Date().toISOString(),
-        },
-      });
-    } catch (mirrorError) {
-      console.error('Failed to mirror agent update to Postgres:', mirrorError);
+    if (!updatedAgent) {
+      return { error: 'Agent not found or not owned by current user.' };
     }
 
     return { success: true };
@@ -440,10 +414,11 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
   if (!agentId || !sessionId) {
     return { error: 'Sorry, I cannot respond without an agent context.' };
   }
-  
-  const firestore = firebaseAdmin.firestore();
+  let firestore: FirebaseFirestore.Firestore | null = null;
   
   try {
+    const { firebaseAdmin } = await import('@/firebase/admin');
+    firestore = firebaseAdmin.firestore();
     const agentInfo = await findAgentAndOwner(firestore, agentId);
 
     if (!agentInfo) {
@@ -763,6 +738,9 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
     console.error('Failed to get agent response:', e);
     // Log error to Firestore if possible
     try {
+        if (!firestore) {
+            throw new Error('Firestore was not initialized.');
+        }
         const agentRefQuery = await findAgentAndOwner(firestore, agentId);
         if(agentRefQuery) {
             const { agentRef } = agentRefQuery;
@@ -782,32 +760,11 @@ export async function deleteAgent(userId: string, agentId: string): Promise<{ su
         return { error: 'Agent ID is required.' };
     }
 
-    const { agentRef, authUserId } = await requireAgentOwner(agentId);
-    const firestore = firebaseAdmin.firestore();
-    const agentIndexRef = firestore.collection('agentIndex').doc(agentId);
-
     try {
-        const batch = firestore.batch();
-        
-        const collections = await agentRef.listCollections();
-        for (const collection of collections) {
-            const snapshot = await collection.get();
-            snapshot.docs.forEach(doc => {
-                batch.delete(doc.ref);
-            });
-        }
-        
-        batch.delete(agentRef);
-        
-        // Also delete from the index
-        batch.delete(agentIndexRef);
-        
-        await batch.commit();
-
-        try {
-            await softDeleteAgentRecord(agentId, authUserId);
-        } catch (mirrorError) {
-            console.error(`Failed to mirror agent deletion to Postgres for ${agentId}:`, mirrorError);
+        const { authUserId } = await requireAgentOwnerRecord(agentId);
+        const deleted = await softDeleteAgentRecord(agentId, authUserId);
+        if (!deleted) {
+            return { error: 'Agent not found or not owned by current user.' };
         }
 
         return { success: true };

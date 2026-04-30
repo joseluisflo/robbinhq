@@ -1,5 +1,5 @@
-import { firebaseAdmin } from "@/firebase/admin";
 import { getRequiredSession, getViewerContext, getViewerContextFromHeaders } from "@/lib/auth/session";
+import { getAgentById } from "@/lib/data/agents";
 
 export class AuthorizationError extends Error {
   constructor(message = "You do not have permission to perform this action.") {
@@ -22,14 +22,16 @@ export async function requireLegacyUserContextFromHeaders(inputHeaders: Headers)
   return requireLegacyViewerContext(viewer);
 }
 
-function requireLegacyViewerContext<T extends { legacyUserId: string | null }>(viewer: T) {
+function requireLegacyViewerContext<T extends { legacyUserId: string | null }>(
+  viewer: T
+): T & { legacyUserId: string } {
   if (!viewer.legacyUserId) {
     throw new AuthorizationError(
       "Authenticated user is not linked to a legacy workspace yet."
     );
   }
 
-  return viewer;
+  return viewer as T & { legacyUserId: string };
 }
 
 export async function requireAgentOwner(agentId: string) {
@@ -38,6 +40,7 @@ export async function requireAgentOwner(agentId: string) {
   }
 
   const viewer = await requireLegacyUserContext();
+  const { firebaseAdmin } = await import("@/firebase/admin");
   const firestore = firebaseAdmin.firestore();
   const agentRef = firestore
     .collection("users")
@@ -66,6 +69,7 @@ export async function requireAgentOwnerFromHeaders(agentId: string, inputHeaders
   }
 
   const viewer = await requireLegacyUserContextFromHeaders(inputHeaders);
+  const { firebaseAdmin } = await import("@/firebase/admin");
   const firestore = firebaseAdmin.firestore();
   const agentRef = firestore
     .collection("users")
@@ -85,6 +89,42 @@ export async function requireAgentOwnerFromHeaders(agentId: string, inputHeaders
       id: agentDoc.id,
       ...agentDoc.data(),
     },
+  };
+}
+
+export async function requireAgentOwnerRecord(agentId: string) {
+  if (!agentId) {
+    throw new AuthorizationError("Agent ID is required.");
+  }
+
+  const viewer = await getViewerContext();
+  const agent = await getAgentById(viewer.authUserId, agentId);
+
+  if (!agent) {
+    throw new AuthorizationError("Agent not found or not owned by current user.");
+  }
+
+  return {
+    ...viewer,
+    agent,
+  };
+}
+
+export async function requireAgentOwnerRecordFromHeaders(agentId: string, inputHeaders: Headers) {
+  if (!agentId) {
+    throw new AuthorizationError("Agent ID is required.");
+  }
+
+  const viewer = await getViewerContextFromHeaders(inputHeaders);
+  const agent = await getAgentById(viewer.authUserId, agentId);
+
+  if (!agent) {
+    throw new AuthorizationError("Agent not found or not owned by current user.");
+  }
+
+  return {
+    ...viewer,
+    agent,
   };
 }
 
