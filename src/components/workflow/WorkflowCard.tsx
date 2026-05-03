@@ -21,7 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import type { Workflow } from '@/lib/types';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { updateWorkflowStatus } from '@/app/actions/workflow';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
 import { updateAgent, deleteAgent } from '@/app/actions/agents';
 import { Loader2, Copy, Trash2, Info } from 'lucide-react';

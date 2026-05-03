@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import type { Agent } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { useActiveAgent } from '@/app/(main)/layout';
 import { updateAgent } from '@/app/actions/agents';
 

@@ -16,7 +16,7 @@ import { Upload, File as FileIcon, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { useKnowledgeUsage } from '@/hooks/use-knowledge-usage';
 import { notifyAgentFilesChanged, useAgentFiles, useAgentTexts } from '@/hooks/use-agent-domain';
 

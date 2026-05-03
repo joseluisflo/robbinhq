@@ -5,7 +5,7 @@ import { AppHeader } from '@/components/layout/app-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { CreateAgentDialog } from '@/components/create-agent-dialog';

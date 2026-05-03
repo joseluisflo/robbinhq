@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
 import type { Agent, Message, WorkflowBlock } from '@/lib/types';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { getAgentResponse } from '@/app/actions/agents';
 import { useSearchParams, useParams, usePathname } from 'next/navigation';
 import {

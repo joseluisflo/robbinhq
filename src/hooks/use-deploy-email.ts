@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
 import { updateAgent } from '@/app/actions/agents';
 import type { Agent } from '@/lib/types';

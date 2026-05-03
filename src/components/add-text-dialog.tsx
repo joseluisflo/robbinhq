@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { addAgentText } from '@/app/actions/texts';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';

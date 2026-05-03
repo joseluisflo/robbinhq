@@ -14,7 +14,7 @@ import {
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Link from 'next/link';
 import { User, Settings, LogOut } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
 import { signOut } from '@/lib/auth-client';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { WelcomeHeader } from '@/components/dashboard/WelcomeHeader';
 import { StatCards } from '@/components/dashboard/StatCards';
 import { LeadsOverview } from '@/components/dashboard/LeadsOverview';

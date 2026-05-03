@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { createAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { notifyAgentsChanged } from '@/hooks/use-agent-domain';
 
 export function CreateAgentDialog({

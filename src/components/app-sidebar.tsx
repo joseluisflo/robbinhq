@@ -25,7 +25,7 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { DashboardIcon, AiChemistryIcon, PenToolIcon, MotionIcon, RocketIcon, ChatSimpleIcon, UserGroupIcon } from '@/components/lo-icons';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { useActiveAgent } from '@/app/(main)/layout';
 import { CreditUsageCard } from './credit-usage-card';
 

@@ -3,7 +3,7 @@
 import { useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeSessionsForLeads } from '@/app/actions/leads';
 import { exportAgentData } from '@/app/actions/export';
