@@ -21,10 +21,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useActiveAgent } from "@/app/(main)/layout";
-import { useUser, useFirestore, useCollection, query, collection } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { updateAgent } from "@/app/actions/agents";
-import type { Agent, ChatSession } from "@/lib/types";
+import type { Agent } from "@/lib/types";
 import { deleteAgentChatLogs } from "@/app/actions/logs";
 import { deleteAgentLeads } from "@/app/actions/leads";
 import { exportAgentData } from "@/app/actions/export";
@@ -32,8 +31,6 @@ import { exportAgentData } from "@/app/actions/export";
 
 export function PrivacySettings() {
     const { activeAgent, setActiveAgent, userProfile } = useActiveAgent();
-    const { user } = useUser();
-    const firestore = useFirestore();
     const { toast } = useToast();
     
     const [retention, setRetention] = useState<'30' | '90' | '365' | 'forever'>("90");
@@ -55,7 +52,7 @@ export function PrivacySettings() {
     }, [activeAgent]);
 
     const handleSaveChanges = () => {
-        if (!user || !activeAgent || !isChanged) return;
+        if (!activeAgent || !isChanged) return;
 
         startSaving(async () => {
             const dataToUpdate: Partial<Agent> = {};
@@ -66,7 +63,7 @@ export function PrivacySettings() {
                 dataToUpdate.anonymizeData = anonymize;
             }
 
-            const result = await updateAgent(user.uid, activeAgent.id!, dataToUpdate);
+            const result = await updateAgent('', activeAgent.id!, dataToUpdate);
 
             if ('error' in result) {
                 toast({ title: 'Failed to save settings', description: result.error, variant: 'destructive' });
@@ -78,9 +75,9 @@ export function PrivacySettings() {
     };
 
     const handleDeleteLogs = () => {
-        if (!user || !activeAgent?.id) return;
+        if (!activeAgent?.id) return;
         startDeletingLogs(async () => {
-            const result = await deleteAgentChatLogs(user.uid, activeAgent.id!);
+            const result = await deleteAgentChatLogs('', activeAgent.id!);
             if ('error' in result) {
                 toast({ title: "Error", description: result.error, variant: "destructive" });
             } else {
@@ -90,9 +87,9 @@ export function PrivacySettings() {
     }
 
      const handleDeleteLeads = () => {
-        if (!user || !activeAgent?.id) return;
+        if (!activeAgent?.id) return;
         startDeletingLeads(async () => {
-            const result = await deleteAgentLeads(user.uid, activeAgent.id!);
+            const result = await deleteAgentLeads('', activeAgent.id!);
             if ('error' in result) {
                 toast({ title: "Error", description: result.error, variant: "destructive" });
             } else {
@@ -102,10 +99,10 @@ export function PrivacySettings() {
     }
     
      const handleExport = () => {
-        if (!user || !activeAgent?.id) return;
+        if (!activeAgent?.id) return;
         startExporting(async () => {
             toast({ title: "Exporting data...", description: "This may take a moment." });
-            const result = await exportAgentData(user.uid, activeAgent.id!);
+            const result = await exportAgentData('', activeAgent.id!);
             if (result.error) {
                 toast({ title: "Export Failed", description: result.error, variant: "destructive" });
             } else {
