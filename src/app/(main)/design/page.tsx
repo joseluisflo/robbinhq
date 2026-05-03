@@ -16,7 +16,6 @@ import type { Agent, AgentFile, TextSource } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { updateAgent } from '@/app/actions/agents';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useLiveAgent } from '@/hooks/use-live-agent';
 import { ChatDesignSettings } from '@/components/design/ChatDesignSettings';
@@ -25,10 +24,8 @@ import { InCallDesignSettings } from '@/components/design/InCallDesignSettings';
 
 export default function DesignPage() {
   const { activeAgent, setActiveAgent, userProfile } = useActiveAgent();
-  const { user } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
-  const { connectionState, toggleCall } = useLiveAgent();
+  const { toggleCall } = useLiveAgent();
   
   const [agentName, setAgentName] = useState('');
   const [isDisplayNameEnabled, setIsDisplayNameEnabled] = useState(true);
@@ -53,22 +50,23 @@ export default function DesignPage() {
 
 
   const [isSaving, startSaving] = useTransition();
+  const [textSources, setTextSources] = useState<TextSource[]>([]);
+  const [fileSources, setFileSources] = useState<AgentFile[]>([]);
 
-  // Firestore query for agent texts
-  const textsQuery = useMemo(() => {
-    if (!user || !activeAgent?.id) return null;
-    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'texts'));
-  }, [user, activeAgent, firestore]);
-
-  const { data: textSources } = useCollection<TextSource>(textsQuery);
-
-  // Firestore query for agent files
-  const filesQuery = useMemo(() => {
-    if (!user || !activeAgent?.id) return null;
-    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'files'));
-  }, [user, activeAgent, firestore]);
-
-  const { data: fileSources } = useCollection<AgentFile>(filesQuery);
+  useEffect(() => {
+    const agentId = activeAgent?.id;
+    if (!agentId) return;
+    let cancelled = false;
+    Promise.all([
+      fetch(`/api/agents/${agentId}/texts`).then(r => r.ok ? r.json() : { texts: [] }),
+      fetch(`/api/agents/${agentId}/files`).then(r => r.ok ? r.json() : { files: [] }),
+    ]).then(([textsData, filesData]) => {
+      if (cancelled) return;
+      setTextSources(textsData.texts ?? []);
+      setFileSources(filesData.files ?? []);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [activeAgent?.id]);
 
   const isChanged = 
     agentName !== (activeAgent?.name || '') ||
@@ -132,7 +130,7 @@ export default function DesignPage() {
   };
 
   const handleSaveChanges = () => {
-    if (!user || !activeAgent || !isChanged) return;
+    if (!activeAgent || !isChanged) return;
 
     startSaving(async () => {
       const dataToUpdate: Partial<Agent> = {};
@@ -181,7 +179,7 @@ export default function DesignPage() {
 
 
       if (Object.keys(dataToUpdate).length > 0 || logoFile) {
-        const result = await updateAgent(user.uid, activeAgent.id!, dataToUpdate);
+        const result = await updateAgent('', activeAgent.id!, dataToUpdate);
         if ('error' in result) {
           toast({ title: 'Failed to save changes', description: result.error, variant: 'destructive' });
         } else {
