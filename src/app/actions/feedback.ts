@@ -1,7 +1,5 @@
 'use server';
 
-import { firebaseAdmin } from '@/firebase/admin';
-import { FieldValue } from 'firebase-admin/firestore';
 import prisma from '@/lib/prisma';
 import { createMessageFeedbackRecord } from '@/lib/data/chat';
 import { publishChatEvent } from '@/lib/realtime/chat-events';
@@ -23,46 +21,32 @@ export async function saveMessageFeedback(params: SaveFeedbackParams): Promise<{
   }
 
   try {
-    const firestore = firebaseAdmin.firestore();
-    const feedbackRef = firestore.collection('users').doc(userId).collection('agents').doc(agentId).collection('feedback');
+    const link = await prisma.legacyIdentityLink.findUnique({
+      where: { legacyUserId: userId },
+      select: { authUserId: true },
+    });
 
-    const newFeedback = {
-      messageId,
-      sessionId,
-      rating,
-      comment: comment || null,
-      timestamp: FieldValue.serverTimestamp(),
-    };
-
-    await feedbackRef.add(newFeedback);
-
-    try {
-      const link = await prisma.legacyIdentityLink.findUnique({
-        where: { legacyUserId: userId },
-        select: { authUserId: true },
-      });
-
-      if (link?.authUserId) {
-        await createMessageFeedbackRecord({
-          agentId,
-          ownerUserId: link.authUserId,
-          legacyOwnerId: userId,
-          sessionId,
-          messageId,
-          rating,
-          comment,
-        });
-        await publishChatEvent({
-          type: 'feedback_created',
-          agentId,
-          sessionId,
-          messageId,
-          timestamp: new Date().toISOString(),
-        });
-      }
-    } catch (mirrorError) {
-      console.error('Failed to mirror message feedback to Postgres:', mirrorError);
+    if (!link?.authUserId) {
+      return { error: 'No linked auth user found for legacy user.' };
     }
+
+    await createMessageFeedbackRecord({
+      agentId,
+      ownerUserId: link.authUserId,
+      legacyOwnerId: userId,
+      sessionId,
+      messageId,
+      rating,
+      comment,
+    });
+
+    await publishChatEvent({
+      type: 'feedback_created',
+      agentId,
+      sessionId,
+      messageId,
+      timestamp: new Date().toISOString(),
+    });
 
     return { success: true };
   } catch (e: any) {

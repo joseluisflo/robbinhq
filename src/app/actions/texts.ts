@@ -1,10 +1,27 @@
-
 'use server';
 
-import { firebaseAdmin } from '@/firebase/admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { randomUUID } from 'node:crypto';
 import { requireAgentOwner } from '@/lib/permissions';
-import { createAgentTextRecord, deleteAgentTextRecord } from '@/lib/data/agent-texts';
+import {
+  createAgentTextRecord,
+  deleteAgentTextRecord,
+  getAgentTextById,
+} from '@/lib/data/agent-texts';
+import { createConfigurationLog } from '@/lib/data/logs';
+
+async function recordConfigurationLog(
+  agentId: string,
+  legacyUserId: string,
+  description: string,
+): Promise<void> {
+  await createConfigurationLog({
+    agentId,
+    title: 'Knowledge Base Updated',
+    description,
+    actor: legacyUserId,
+  });
+}
+
 
 export async function addAgentText(
   userId: string,
@@ -16,37 +33,27 @@ export async function addAgentText(
   }
 
   try {
-    const { agentRef, legacyUserId } = await requireAgentOwner(agentId);
-    const textRef = agentRef.collection('texts').doc();
+    const { legacyUserId } = await requireAgentOwner(agentId);
+    const textId = randomUUID();
 
-    const newText = {
-      ...data,
-      createdAt: FieldValue.serverTimestamp(),
-    };
-
-    await textRef.set(newText);
-    
-    // Create Configuration Log
-    await agentRef.collection('configurationLogs').add({
-        title: 'Knowledge Base Updated',
-        description: `Added text source: "${data.title}"`,
-        timestamp: FieldValue.serverTimestamp(),
-        actor: legacyUserId,
+    await createAgentTextRecord({
+      id: textId,
+      agentId,
+      title: data.title,
+      content: data.content,
     });
 
     try {
-      await createAgentTextRecord({
-        id: textRef.id,
+      await recordConfigurationLog(
         agentId,
-        title: data.title,
-        content: data.content,
-      });
-    } catch (mirrorError) {
-      console.error('Failed to mirror text source creation to Postgres:', mirrorError);
+        legacyUserId,
+        `Added text source: "${data.title}"`,
+      );
+    } catch (logError) {
+      console.error('Failed to write configuration log:', logError);
     }
 
-
-    return { id: textRef.id };
+    return { id: textId };
   } catch (e: any) {
     console.error('Failed to add text source:', e);
     return { error: e.message || 'Failed to add text source to database.' };
@@ -63,29 +70,23 @@ export async function deleteAgentText(
   }
 
   try {
-    const { agentRef, legacyUserId } = await requireAgentOwner(agentId);
-    const textRef = agentRef.collection('texts').doc(textId);
-    
-    const textDoc = await textRef.get();
-    if (!textDoc.exists) {
-        return { error: 'Text source not found.' };
-    }
-    const textTitle = textDoc.data()?.title || 'Unknown Text';
+    const { legacyUserId } = await requireAgentOwner(agentId);
 
-    await textRef.delete();
-    
-    // Create Configuration Log
-    await agentRef.collection('configurationLogs').add({
-        title: 'Knowledge Base Updated',
-        description: `Removed text source: "${textTitle}"`,
-        timestamp: FieldValue.serverTimestamp(),
-        actor: legacyUserId,
-    });
+    const existing = await getAgentTextById(agentId, textId);
+    if (!existing) {
+      return { error: 'Text source not found.' };
+    }
+
+    await deleteAgentTextRecord(agentId, textId);
 
     try {
-      await deleteAgentTextRecord(agentId, textId);
-    } catch (mirrorError) {
-      console.error('Failed to mirror text source deletion to Postgres:', mirrorError);
+      await recordConfigurationLog(
+        agentId,
+        legacyUserId,
+        `Removed text source: "${existing.title}"`,
+      );
+    } catch (logError) {
+      console.error('Failed to write configuration log:', logError);
     }
 
     return { success: true };

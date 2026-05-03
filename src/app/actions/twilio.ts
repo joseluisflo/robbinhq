@@ -2,6 +2,7 @@
 
 import twilio from 'twilio';
 import { requireAgentOwner, requireAuthenticatedUser } from '@/lib/permissions';
+import { updateAgentRecord } from '@/lib/data/agents';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -74,7 +75,7 @@ export async function purchaseAndConfigureNumber(
   }
 
   try {
-    const { agentRef, authUserId } = await requireAgentOwner(agentId);
+    const { authUserId } = await requireAgentOwner(agentId);
     const rateLimit = await checkRateLimit(`twilio-purchase:${authUserId}`, 3, 60_000);
     if (!rateLimit.allowed) {
       return { error: 'Too many purchase attempts. Please wait a moment and try again.' };
@@ -94,12 +95,16 @@ export async function purchaseAndConfigureNumber(
       voiceMethod: 'POST',
     });
 
-    // 3. Save to Firestore
-    await agentRef.update({
+    // 3. Save to Postgres
+    await updateAgentRecord({
+      agentId,
+      ownerUserId: authUserId,
+      data: {
         phoneConfig: {
-            phoneNumber: purchasedNumber.phoneNumber,
-            phoneSid: phoneSid,
-        }
+          phoneNumber: purchasedNumber.phoneNumber,
+          phoneSid: phoneSid,
+        },
+      },
     });
 
     return { success: true, purchasedNumber: purchasedNumber.phoneNumber };
