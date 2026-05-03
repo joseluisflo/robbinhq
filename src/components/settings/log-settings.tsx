@@ -1,14 +1,11 @@
-
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useUser, useFirestore, useCollection, query, collection, orderBy } from '@/firebase';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActiveAgent } from '@/app/(main)/layout';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CheckCircle, XCircle, Loader2, MessageSquare, Phone, Mail, FileCog } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { InteractionLog, LogStep, ConfigurationLog } from '@/lib/types';
-import { Timestamp } from 'firebase/firestore';
 import { format, formatDistanceToNow } from 'date-fns';
 
 const originIcons: Record<string, React.ElementType> = {
@@ -25,21 +22,46 @@ const statusInfo: Record<string, { icon: React.ElementType, color: string }> = {
     'in-progress': { icon: Loader2, color: 'text-blue-500' },
 };
 
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url, { credentials: 'include', cache: 'no-store' });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(payload?.error || `Request failed with status ${response.status}`);
+  }
+  return response.json() as Promise<T>;
+}
 
-function LogSteps({ logId }: { logId: string }) {
-    const { user } = useUser();
-    const firestore = useFirestore();
-    const { activeAgent } = useActiveAgent();
-    
-    const stepsQuery = useMemo(() => {
-        if (!user || !activeAgent?.id || !logId) return null;
-        return query(
-            collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'interactionLogs', logId, 'steps'),
-            orderBy('timestamp', 'asc')
-        );
-    }, [user, firestore, activeAgent?.id, logId]);
+function parseTimestamp(value: unknown): Date | null {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    const parsed = new Date(value as string);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
 
-    const { data: steps, loading } = useCollection<LogStep>(stepsQuery);
+function LogSteps({ agentId, logId }: { agentId: string; logId: string }) {
+    const [steps, setSteps] = useState<LogStep[] | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        setLoading(true);
+        fetchJson<{ steps: LogStep[] }>(`/api/agents/${agentId}/logs/${logId}/steps`)
+            .then((data) => {
+                if (!cancelled) {
+                    setSteps(data.steps);
+                    setLoading(false);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setSteps([]);
+                    setLoading(false);
+                }
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [agentId, logId]);
 
     if (loading) {
         return <div className="p-4 text-sm text-muted-foreground">Loading steps...</div>;
@@ -51,52 +73,94 @@ function LogSteps({ logId }: { logId: string }) {
 
     return (
         <ul className="space-y-2">
-            {steps.map(step => (
-                <li key={step.id} className="flex items-center justify-between">
-                    <span className="truncate pr-4">{step.description}</span>
-                    <span className="text-xs font-mono text-muted-foreground/80">
-                        {step.timestamp ? format((step.timestamp as Timestamp).toDate(), 'HH:mm:ss.SSS') : ''}
-                    </span>
-                </li>
-            ))}
+            {steps.map(step => {
+                const ts = parseTimestamp(step.timestamp);
+                return (
+                    <li key={step.id} className="flex items-center justify-between">
+                        <span className="truncate pr-4">{step.description}</span>
+                        <span className="text-xs font-mono text-muted-foreground/80">
+                            {ts ? format(ts, 'HH:mm:ss.SSS') : ''}
+                        </span>
+                    </li>
+                );
+            })}
         </ul>
     );
 }
 
+type LogsResponse = {
+    interactionLogs: InteractionLog[];
+    configurationLogs: ConfigurationLog[];
+};
 
 export function LogSettings() {
-  const { user } = useUser();
-  const firestore = useFirestore();
   const { activeAgent } = useActiveAgent();
+  const agentId = activeAgent?.id ?? null;
 
-  const interactionLogsQuery = useMemo(() => {
-    if (!user || !activeAgent?.id) return null;
-    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'interactionLogs'), orderBy('timestamp', 'desc'));
-  }, [user, firestore, activeAgent?.id]);
-  const { data: interactionLogs, loading: loadingInteractions } = useCollection<InteractionLog>(interactionLogsQuery);
+  const [interactionLogs, setInteractionLogs] = useState<InteractionLog[] | null>(null);
+  const [configLogs, setConfigLogs] = useState<ConfigurationLog[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const configLogsQuery = useMemo(() => {
-    if (!user || !activeAgent?.id) return null;
-    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'configurationLogs'), orderBy('timestamp', 'desc'));
-  }, [user, firestore, activeAgent?.id]);
-  const { data: configLogs, loading: loadingConfig } = useCollection<ConfigurationLog>(configLogsQuery);
+  const load = useCallback(async () => {
+    if (!agentId) {
+        setInteractionLogs([]);
+        setConfigLogs([]);
+        setLoading(false);
+        return;
+    }
+    try {
+        const data = await fetchJson<LogsResponse>(`/api/agents/${agentId}/logs`);
+        setInteractionLogs(data.interactionLogs ?? []);
+        setConfigLogs(data.configurationLogs ?? []);
+    } catch (e) {
+        console.error('Failed to load agent logs:', e);
+        setInteractionLogs([]);
+        setConfigLogs([]);
+    } finally {
+        setLoading(false);
+    }
+  }, [agentId]);
+
+  useEffect(() => {
+    setLoading(true);
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    if (!agentId) return;
+    const handleFocus = () => { void load(); };
+    const handleVisibility = () => {
+        if (document.visibilityState === 'visible') void load();
+    };
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+    const intervalId = window.setInterval(() => {
+        if (document.visibilityState === 'visible') void load();
+    }, 5000);
+    return () => {
+        window.removeEventListener('focus', handleFocus);
+        document.removeEventListener('visibilitychange', handleVisibility);
+        window.clearInterval(intervalId);
+    };
+  }, [agentId, load]);
 
   const combinedLogs = useMemo(() => {
     const interactions = (interactionLogs || []).map(log => ({ ...log, logType: 'interaction' as const }));
-    const configs = (configLogs || []).map(log => ({ ...log, logType: 'config' as const, origin: 'System' })); // Add origin for consistency
-    
-    const allLogs = [...interactions, ...configs];
-    
+    const configs = (configLogs || []).map(log => ({ ...log, logType: 'config' as const, origin: 'System', status: 'success' as const }));
+
+    const allLogs: Array<(InteractionLog | ConfigurationLog) & { logType: 'interaction' | 'config'; origin: string; status?: string }> = [
+      ...interactions,
+      ...configs,
+    ];
+
     allLogs.sort((a, b) => {
-      const timeA = (a.timestamp as Timestamp)?.toMillis() || 0;
-      const timeB = (b.timestamp as Timestamp)?.toMillis() || 0;
-      return timeB - timeA;
+      const ta = parseTimestamp(a.timestamp)?.getTime() ?? 0;
+      const tb = parseTimestamp(b.timestamp)?.getTime() ?? 0;
+      return tb - ta;
     });
 
     return allLogs;
   }, [interactionLogs, configLogs]);
-
-  const loading = loadingInteractions || loadingConfig;
 
   return (
     <div className="space-y-4">
@@ -118,6 +182,7 @@ export function LogSettings() {
             {combinedLogs.map((log) => {
                 const OriginIcon = originIcons[log.origin] || MessageSquare;
                 const StatusIcon = statusInfo[log.status || 'success']?.icon || CheckCircle;
+                const ts = parseTimestamp(log.timestamp);
 
                 return (
                     <AccordionItem key={log.id} value={log.id!} className="border rounded-lg bg-card">
@@ -132,21 +197,21 @@ export function LogSettings() {
                                 <span>{log.origin}</span>
                             </div>
                             <span className="text-muted-foreground ml-auto">
-                                {log.timestamp ? formatDistanceToNow((log.timestamp as Timestamp).toDate(), { addSuffix: true }) : 'N/A'}
+                                {ts ? formatDistanceToNow(ts, { addSuffix: true }) : 'N/A'}
                             </span>
                         </div>
                         </AccordionTrigger>
                         <AccordionContent className="border-t">
                             <div className="p-4 text-sm text-muted-foreground">
                                 {log.logType === 'interaction' ? (
-                                    <LogSteps logId={log.id!} />
+                                    agentId ? <LogSteps agentId={agentId} logId={log.id!} /> : null
                                 ) : (
                                     <p>{(log as ConfigurationLog).description}</p>
                                 )}
                             </div>
                         </AccordionContent>
                     </AccordionItem>
-                )
+                );
             })}
         </Accordion>
       )}

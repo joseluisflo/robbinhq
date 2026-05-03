@@ -211,6 +211,14 @@ export async function listChatMessagesBySession(agentId: string, sessionId: stri
   return records.map(mapChatMessageRecord);
 }
 
+export async function deleteChatSessionsByAgent(agentId: string): Promise<number> {
+  const result = await prisma.chatSession.deleteMany({
+    where: { agentId },
+  });
+
+  return result.count;
+}
+
 export async function listFeedbackByAgent(agentId: string): Promise<MessageFeedback[]> {
   const records = await prisma.messageFeedback.findMany({
     where: { agentId },

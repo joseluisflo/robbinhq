@@ -44,6 +44,14 @@ export async function createAgentTextRecord(input: {
   return mapAgentTextToSource(record);
 }
 
+export async function getAgentTextById(agentId: string, textId: string): Promise<TextSource | null> {
+  const record = await prisma.agentText.findFirst({
+    where: { id: textId, agentId },
+  });
+
+  return record ? mapAgentTextToSource(record) : null;
+}
+
 export async function deleteAgentTextRecord(agentId: string, textId: string): Promise<boolean> {
   const existing = await prisma.agentText.findFirst({
     where: {

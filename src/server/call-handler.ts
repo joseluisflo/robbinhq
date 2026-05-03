@@ -2,8 +2,8 @@
 import { WebSocket } from 'ws';
 import { GoogleGenAI, type LiveSession, Modality } from "@google/genai";
 import { Buffer } from "node:buffer";
-import { firebaseAdmin } from '@/firebase/admin';
 import type { Agent } from '@/lib/types';
+import { getAgentWithOwnerById } from '@/lib/data/agents';
 import { deductCredits } from '@/lib/credit-service';
 import { checkRateLimit } from '@/lib/rate-limit';
 import {
@@ -18,27 +18,20 @@ import {
 // HELPER FUNCTIONS
 // -------------------------------------------------------------------------
 
-async function findAgentAndOwner(firestore: FirebaseFirestore.Firestore, agentId: string): Promise<{ agent: Agent, ownerId: string } | null> {
+async function findAgentAndOwner(agentId: string): Promise<{ agent: Agent, ownerId: string } | null> {
     if (!agentId) return null;
-    const indexRef = firestore.collection('agentIndex').doc(agentId);
-    const indexDoc = await indexRef.get();
 
-    if (indexDoc.exists) {
-        const { ownerId } = indexDoc.data() as { ownerId: string };
-        if (ownerId) {
-            const agentRef = firestore.collection('users').doc(ownerId).collection('agents').doc(agentId);
-            const agentDoc = await agentRef.get();
-            if (agentDoc.exists) {
-                console.log(`[CallHandler] Agent ${agentId} found in index for owner ${ownerId}.`);
-                return {
-                    agent: { id: agentDoc.id, ...agentDoc.data() } as Agent,
-                    ownerId: ownerId,
-                };
-            }
-        }
+    const result = await getAgentWithOwnerById(agentId);
+    if (!result) {
+        console.error(`[CallHandler] Agent with ID ${agentId} not found in Postgres.`);
+        return null;
     }
-    console.error(`[CallHandler] Agent with ID ${agentId} not found in index.`);
-    return null;
+
+    console.log(`[CallHandler] Agent ${agentId} found for owner ${result.ownerUserId}.`);
+    return {
+        agent: result.agent,
+        ownerId: result.ownerUserId,
+    };
 }
 
 
@@ -171,7 +164,7 @@ export class CallHandler {
             return;
         }
 
-        const agentInfo = await findAgentAndOwner(firebaseAdmin.firestore(), this.agentId);
+        const agentInfo = await findAgentAndOwner(this.agentId);
         if (!agentInfo) {
             console.error(`[Handler] ❌ Agent ${this.agentId} not found. Closing connection.`);
             this.ws.close(1011, "Agent not found.");

@@ -3,7 +3,6 @@
 import { useTransition } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { MoreHorizontal, Play, Pause, Trash2, Edit } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -21,23 +20,19 @@ import {
 import { Badge } from '@/components/ui/badge';
 import type { Workflow } from '@/lib/types';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useUser } from '@/hooks/use-user';
 import { updateWorkflowStatus } from '@/app/actions/workflow';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 export function WorkflowCard({ workflow }: { workflow: Workflow }) {
-  const { user } = useUser();
   const { activeAgent } = useActiveAgent();
   const { toast } = useToast();
   const [isUpdating, startUpdateTransition] = useTransition();
 
-  const lastModifiedDate = workflow.lastModified instanceof Timestamp 
-    ? workflow.lastModified.toDate() 
-    : new Date();
+  const lastModifiedDate = workflow.lastModified ? new Date(workflow.lastModified) : new Date();
 
   const handleStatusChange = (status: 'enabled' | 'disabled') => {
-    if (!user || !activeAgent?.id || !workflow.id) return;
+    if (!activeAgent?.id || !workflow.id) return;
     startUpdateTransition(async () => {
       const result = await updateWorkflowStatus(activeAgent.id!, workflow.id!, status);
       if ('error' in result) {

@@ -209,6 +209,25 @@ export async function getPublicAgentById(agentId: string): Promise<Agent | null>
   return record ? mapAgentRecordToAgent(record) : null;
 }
 
+export async function getAgentWithOwnerById(
+  agentId: string
+): Promise<{ agent: Agent; ownerUserId: string; legacyOwnerId: string | null } | null> {
+  const record = await prisma.agent.findFirst({
+    where: {
+      id: agentId,
+      deletedAt: null,
+    },
+  });
+
+  if (!record) return null;
+
+  return {
+    agent: mapAgentRecordToAgent(record),
+    ownerUserId: record.ownerUserId,
+    legacyOwnerId: record.legacyOwnerId,
+  };
+}
+
 export async function createAgentRecord(input: {
   id: string;
   ownerUserId: string;

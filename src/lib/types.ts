@@ -107,6 +107,8 @@ export type Edge = {
   id: string;
   source: string;
   target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
 };
 
 
@@ -200,6 +202,8 @@ export type WorkflowRun = {
   context: Record<string, any> & { agent?: Partial<Agent> };
   currentStepIndex: number;
   promptForUser?: string;
+  currentBlockId?: string | null;
+  lastExecutedBlockId?: string | null;
 };
 
 

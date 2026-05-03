@@ -35,7 +35,7 @@ import { useRouter } from "next/navigation"
 import { SettingsDialog } from "./settings-dialog"
 import { ChangePlanDialog } from "./settings/change-plan-dialog"
 import { signOut } from "@/lib/auth-client"
-import type { AppUser } from "@/firebase/auth/use-user"
+import type { AppUser } from "@/hooks/use-user"
 
 export function NavUser({
   user,

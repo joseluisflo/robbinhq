@@ -40,26 +40,15 @@ export async function requireAgentOwner(agentId: string) {
   }
 
   const viewer = await requireLegacyUserContext();
-  const { firebaseAdmin } = await import("@/firebase/admin");
-  const firestore = firebaseAdmin.firestore();
-  const agentRef = firestore
-    .collection("users")
-    .doc(viewer.legacyUserId)
-    .collection("agents")
-    .doc(agentId);
+  const agent = await getAgentById(viewer.authUserId, agentId);
 
-  const agentDoc = await agentRef.get();
-  if (!agentDoc.exists) {
+  if (!agent) {
     throw new AuthorizationError("Agent not found or not owned by current user.");
   }
 
   return {
     ...viewer,
-    agentRef,
-    agent: {
-      id: agentDoc.id,
-      ...agentDoc.data(),
-    },
+    agent,
   };
 }
 
@@ -69,26 +58,15 @@ export async function requireAgentOwnerFromHeaders(agentId: string, inputHeaders
   }
 
   const viewer = await requireLegacyUserContextFromHeaders(inputHeaders);
-  const { firebaseAdmin } = await import("@/firebase/admin");
-  const firestore = firebaseAdmin.firestore();
-  const agentRef = firestore
-    .collection("users")
-    .doc(viewer.legacyUserId)
-    .collection("agents")
-    .doc(agentId);
+  const agent = await getAgentById(viewer.authUserId, agentId);
 
-  const agentDoc = await agentRef.get();
-  if (!agentDoc.exists) {
+  if (!agent) {
     throw new AuthorizationError("Agent not found or not owned by current user.");
   }
 
   return {
     ...viewer,
-    agentRef,
-    agent: {
-      id: agentDoc.id,
-      ...agentDoc.data(),
-    },
+    agent,
   };
 }
 
@@ -125,30 +103,5 @@ export async function requireAgentOwnerRecordFromHeaders(agentId: string, inputH
   return {
     ...viewer,
     agent,
-  };
-}
-
-export async function requireWorkflowOwner(agentId: string, workflowId: string) {
-  if (!workflowId) {
-    throw new AuthorizationError("Workflow ID is required.");
-  }
-
-  const owner = await requireAgentOwner(agentId);
-  const workflowRef = owner.agentRef.collection("workflows").doc(workflowId);
-  const workflowDoc = await workflowRef.get();
-
-  if (!workflowDoc.exists) {
-    throw new AuthorizationError(
-      "Workflow not found or not owned by current user."
-    );
-  }
-
-  return {
-    ...owner,
-    workflowRef,
-    workflow: {
-      id: workflowDoc.id,
-      ...workflowDoc.data(),
-    },
   };
 }

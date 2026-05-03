@@ -1,31 +1,67 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CreateWorkflowDialog } from '@/components/create-workflow-dialog';
 import type { Workflow } from '@/lib/types';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { useActiveAgent } from '../layout';
-import { useUser, useFirestore, useCollection, query, collection } from '@/firebase';
+import { listWorkflows } from '@/app/actions/workflow';
 import { WorkflowCard } from '@/components/workflow/WorkflowCard';
 
 
 export default function WorkflowPage() {
-  const { user } = useUser();
-  const firestore = useFirestore();
   const { activeAgent } = useActiveAgent();
+  const agentId = activeAgent?.id ?? null;
 
-  const workflowsQuery = useMemo(() => {
-    if (!user || !activeAgent?.id) return null;
-    return query(collection(firestore, 'users', user.uid, 'agents', activeAgent.id, 'workflows'));
-  }, [user, firestore, activeAgent?.id]);
-  
-  const { data: workflows, loading } = useCollection<Workflow>(workflowsQuery);
+  const [workflows, setWorkflows] = useState<Workflow[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    if (!agentId) {
+      setWorkflows([]);
+      setLoading(false);
+      return;
+    }
+    try {
+      const result = await listWorkflows(agentId);
+      if ('error' in result) {
+        console.error('Failed to load workflows:', result.error);
+        setWorkflows([]);
+      } else {
+        setWorkflows(result.workflows);
+      }
+    } catch (e) {
+      console.error('Failed to load workflows:', e);
+      setWorkflows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
+  useEffect(() => {
+    setLoading(true);
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    if (!agentId) return;
+    const handleFocus = () => { void load(); };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [agentId, load]);
 
   if (loading) {
      return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
-  
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
