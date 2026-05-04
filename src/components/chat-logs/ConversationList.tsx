@@ -1,17 +1,41 @@
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
-import type { ChatSession, EmailSession, MessageFeedback } from '@/lib/types';
+import type { ChatSession, EmailSession, MessageFeedback, PhoneCallSession } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { AlertCircle, Loader2, MessageSquare, Mail, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { AlertCircle, Loader2, MessageSquare, Mail, Phone, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { useActiveAgent } from '@/app/(main)/layout';
-import { useAgentChatSessions, useAgentFeedback } from '@/hooks/use-agent-domain';
+import { useAgentChatSessions, useAgentEmailSessions, useAgentFeedback, useAgentPhoneSessions } from '@/hooks/use-agent-domain';
 
-type CombinedSession = (ChatSession | EmailSession) & { type: 'chat' | 'email'; agentId?: string };
+type CombinedSession = (ChatSession | EmailSession | PhoneCallSession) & { type: 'chat' | 'email' | 'phone'; agentId?: string };
+
+function getSessionTitle(session: CombinedSession): string {
+    if (session.type === 'chat') {
+        return (session as ChatSession).title || 'Untitled Chat';
+    }
+    if (session.type === 'email') {
+        return (session as EmailSession).subject || 'Untitled Email';
+    }
+
+    const phone = session as PhoneCallSession;
+    return phone.fromNumber ? `Call from ${phone.fromNumber}` : 'Phone Call';
+}
+
+function getSessionSnippet(session: CombinedSession): string {
+    if (session.type === 'chat') {
+        return (session as ChatSession).lastMessageSnippet || '';
+    }
+    if (session.type === 'email') {
+        return (session as EmailSession).lastMessageSnippet || '';
+    }
+
+    const phone = session as PhoneCallSession;
+    return phone.transcriptSummary || phone.status || '';
+}
 
 interface ConversationListProps {
     onSessionSelect: (session: CombinedSession) => void;
@@ -26,6 +50,16 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
         loading: chatSessionsLoading,
         error: chatSessionsError,
     } = useAgentChatSessions(activeAgent?.id);
+    const {
+        sessions: emailSessions,
+        loading: emailSessionsLoading,
+        error: emailSessionsError,
+    } = useAgentEmailSessions(activeAgent?.id);
+    const {
+        sessions: phoneSessions,
+        loading: phoneSessionsLoading,
+        error: phoneSessionsError,
+    } = useAgentPhoneSessions(activeAgent?.id);
     const {
         feedback: feedbacks,
         loading: feedbacksLoading,
@@ -45,30 +79,31 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
 
     const filteredSessions = useMemo(() => {
         if (!activeAgent?.id) return [];
-        
+
         const chatsWithType: CombinedSession[] = (chatSessions || []).map(s => ({ ...s, type: 'chat', agentId: activeAgent.id }));
-        const emailsWithType: CombinedSession[] = [];
-        
-        const allSessions = [...chatsWithType, ...emailsWithType];
-        
+        const emailsWithType: CombinedSession[] = (emailSessions || []).map(s => ({ ...s, type: 'email', agentId: activeAgent.id }));
+        const phonesWithType: CombinedSession[] = (phoneSessions || []).map(s => ({ ...s, type: 'phone', agentId: activeAgent.id }));
+
+        const allSessions = [...chatsWithType, ...emailsWithType, ...phonesWithType];
+
         allSessions.sort((a, b) => {
             const timeA = a.lastActivity ? new Date(a.lastActivity as any).getTime() : 0;
             const timeB = b.lastActivity ? new Date(b.lastActivity as any).getTime() : 0;
             return timeB - timeA;
         });
-        
+
         if (!searchTerm) {
             return allSessions;
         }
 
         const lowercasedTerm = searchTerm.toLowerCase();
         return allSessions.filter(session => {
-            const title = (session.type === 'chat' ? (session as ChatSession).title : (session as EmailSession).subject) || '';
-            const snippet = (session as ChatSession).lastMessageSnippet || '';
+            const title = getSessionTitle(session);
+            const snippet = getSessionSnippet(session);
             return title.toLowerCase().includes(lowercasedTerm) || snippet.toLowerCase().includes(lowercasedTerm);
         });
 
-    }, [chatSessions, activeAgent?.id, searchTerm]);
+    }, [chatSessions, emailSessions, phoneSessions, activeAgent?.id, searchTerm]);
 
     useEffect(() => {
         if (filteredSessions.length > 0 && !selectedSessionId) {
@@ -105,22 +140,22 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
                         <Switch id="unreads" />
                     </div>
                 </div>
-                <Input 
+                <Input
                     placeholder="Type to search..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
-            
+
             <div className="flex-1 overflow-y-auto">
-                {(chatSessionsLoading || feedbacksLoading) ? (
+                {(chatSessionsLoading || emailSessionsLoading || phoneSessionsLoading || feedbacksLoading) ? (
                     <div className="flex items-center justify-center h-full">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
-                ) : (chatSessionsError || feedbackError) ? (
+                ) : (chatSessionsError || emailSessionsError || phoneSessionsError || feedbackError) ? (
                     <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
                         <AlertCircle className="h-6 w-6" />
-                        <p>{chatSessionsError || feedbackError}</p>
+                        <p>{chatSessionsError || emailSessionsError || phoneSessionsError || feedbackError}</p>
                     </div>
                 ) : filteredSessions.length > 0 ? (
                     filteredSessions.map((session) => (
@@ -134,8 +169,14 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
                     >
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2 overflow-hidden">
-                                {session.type === 'chat' ? <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" /> : <Mail className="h-4 w-4 text-muted-foreground shrink-0" />}
-                                <p className="font-semibold truncate pr-4">{(session as ChatSession).title || (session as EmailSession).subject}</p>
+                                {session.type === 'chat' ? (
+                                    <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
+                                ) : session.type === 'email' ? (
+                                    <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                                ) : (
+                                    <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
+                                )}
+                                <p className="font-semibold truncate pr-4">{getSessionTitle(session)}</p>
                             </div>
                             <p className="text-xs text-muted-foreground whitespace-nowrap">
                                 {session.lastActivity ? formatDistanceToNow(new Date(session.lastActivity as any), { addSuffix: true }) : 'N/A'}
@@ -143,7 +184,7 @@ export function ConversationList({ onSessionSelect, selectedSessionId }: Convers
                         </div>
                         <div className="flex items-center justify-between">
                             <p className="text-sm text-muted-foreground truncate pl-6">
-                            {(session as ChatSession).lastMessageSnippet || '...'}
+                            {getSessionSnippet(session) || '...'}
                             </p>
                             {session.id && getSessionFeedbackIndicator(session.id)}
                         </div>

@@ -194,6 +194,9 @@ export type ChatMessage = {
   options?: string[];
 };
 
+/** Alias kept for backwards compatibility with hooks and components that import `Message`. */
+export type Message = ChatMessage;
+
 
 export type WorkflowRun = {
   id: string;
@@ -211,6 +214,7 @@ export type EmailSession = {
   id?: string;
   subject: string;
   participants: string[];
+  lastMessageSnippet?: string | null;
   lastActivity: any;
   createdAt: any;
 };
@@ -223,7 +227,30 @@ export type EmailMessage = {
   timestamp: any;
 };
 
-export type CombinedMessage = ChatMessage | EmailMessage;
+export type PhoneCallSession = {
+  id: string;
+  twilioCallSid: string;
+  streamSid?: string | null;
+  fromNumber?: string | null;
+  toNumber?: string | null;
+  status: string;
+  transcriptSummary?: string | null;
+  metadata?: Record<string, any> | null;
+  createdAt: any;
+  startedAt: any;
+  endedAt?: any;
+  lastActivity: any;
+};
+
+export type PhoneCallMessage = {
+  id: string;
+  sender: 'caller' | 'agent' | 'system';
+  text: string;
+  timestamp: any;
+  metadata?: Record<string, any> | null;
+};
+
+export type CombinedMessage = ChatMessage | EmailMessage | PhoneCallMessage;
 
 
 export type InteractionLog = {

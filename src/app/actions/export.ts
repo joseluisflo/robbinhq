@@ -2,6 +2,7 @@
 
 import { listChatSessionsByAgent } from '@/lib/data/chat';
 import { listLeadsByAgent } from '@/lib/data/leads';
+import { requireAgentOwnerRecord } from '@/lib/permissions';
 import type { ChatSession } from '@/lib/types';
 
 function escapeCsvField(field: any): string {
@@ -27,6 +28,8 @@ export async function exportAgentData(userId: string, agentId: string): Promise<
   }
 
   try {
+    await requireAgentOwnerRecord(agentId);
+
     const [leads, sessions] = await Promise.all([
       listLeadsByAgent(agentId),
       listChatSessionsByAgent(agentId),

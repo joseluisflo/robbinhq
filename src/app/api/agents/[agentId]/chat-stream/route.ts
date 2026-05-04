@@ -1,5 +1,5 @@
 import { AuthenticationError } from "@/lib/auth/session";
-import { AuthorizationError, requireAgentOwnerFromHeaders } from "@/lib/permissions";
+import { AuthorizationError, requireAgentOwnerRecordFromHeaders } from "@/lib/permissions";
 import { subscribeToAgentChatEvents, type ChatStreamEvent } from "@/lib/realtime/chat-events";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ function serializeEvent(eventName: string, payload: unknown) {
 export async function GET(request: Request, context: RouteContext) {
   try {
     const { agentId } = await context.params;
-    await requireAgentOwnerFromHeaders(agentId, request.headers);
+    await requireAgentOwnerRecordFromHeaders(agentId, request.headers);
 
     const encoder = new TextEncoder();
     let closeStream: (() => Promise<void>) | null = null;

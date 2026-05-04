@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { AuthenticationError } from "@/lib/auth/session";
-import { AuthorizationError, requireAgentOwnerFromHeaders } from "@/lib/permissions";
+import { AuthorizationError, requireAgentOwnerRecordFromHeaders } from "@/lib/permissions";
 import {
   listConfigurationLogsByAgent,
   listInteractionLogsByAgent,
@@ -15,7 +15,7 @@ type RouteContext = {
 export async function GET(request: Request, context: RouteContext) {
   try {
     const { agentId } = await context.params;
-    await requireAgentOwnerFromHeaders(agentId, request.headers);
+    await requireAgentOwnerRecordFromHeaders(agentId, request.headers);
 
     const [interactionLogs, configurationLogs] = await Promise.all([
       listInteractionLogsByAgent(agentId),

@@ -1,8 +1,8 @@
 'use server';
 
-import prisma from '@/lib/prisma';
 import { createMessageFeedbackRecord } from '@/lib/data/chat';
 import { publishChatEvent } from '@/lib/realtime/chat-events';
+import { getAgentRuntimeById } from '@/lib/data/agents';
 
 interface SaveFeedbackParams {
   userId: string;
@@ -16,30 +16,25 @@ interface SaveFeedbackParams {
 export async function saveMessageFeedback(params: SaveFeedbackParams): Promise<{ success: boolean } | { error: string }> {
   const { userId, agentId, messageId, sessionId, rating, comment } = params;
 
-  if (!userId || !agentId || !messageId || !sessionId || !rating) {
+  if (!agentId || !messageId || !sessionId || !rating) {
     return { error: 'Missing required parameters for saving feedback.' };
   }
 
   try {
-    const link = await prisma.legacyIdentityLink.findUnique({
-      where: { legacyUserId: userId },
-      select: { authUserId: true },
-    });
-
-    if (!link?.authUserId) {
-      return { error: 'No linked auth user found for legacy user.' };
+    const agent = await getAgentRuntimeById(agentId);
+    if (!agent) {
+      return { error: 'Agent not found.' };
     }
 
     await createMessageFeedbackRecord({
       agentId,
-      ownerUserId: link.authUserId,
-      legacyOwnerId: userId,
+      ownerUserId: agent.ownerUserId,
+      legacyOwnerId: agent.legacyOwnerId ?? userId,
       sessionId,
       messageId,
       rating,
       comment,
     });
-
     await publishChatEvent({
       type: 'feedback_created',
       agentId,

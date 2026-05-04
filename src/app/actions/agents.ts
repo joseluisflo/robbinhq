@@ -3,7 +3,7 @@
 import { randomUUID } from 'crypto';
 import { generateAgentInstructions } from '@/ai/flows/agent-instruction-generation';
 import { agentChat } from '@/ai/flows/agent-chat';
-import type { Agent, TextSource, AgentFile, Workflow, WorkflowRun } from '@/lib/types';
+import type { Agent, TextSource, AgentFile, Workflow, WorkflowRun, ChatSession } from '@/lib/types';
 import { runOrResumeWorkflow } from './workflow';
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
@@ -13,21 +13,16 @@ import { deductCredits } from '@/lib/credit-service';
 import { getViewerContext } from '@/lib/auth/session';
 import { requireAgentOwnerRecord } from '@/lib/permissions';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { createAgentRecord, getAgentWithOwnerById, softDeleteAgentRecord, updateAgentRecord } from '@/lib/data/agents';
+import { createAgentRecord, getAgentRuntimeById, softDeleteAgentRecord, updateAgentRecord } from '@/lib/data/agents';
 import {
   createChatMessageRecord,
+  getChatSessionById,
   upsertChatSessionRecord,
 } from '@/lib/data/chat';
 import { listAgentFiles } from '@/lib/data/agent-files';
 import { listAgentTexts } from '@/lib/data/agent-texts';
-import {
-  addInteractionLogStep,
-  getOrCreateInteractionLogRecord,
-  updateInteractionLogStatus,
-} from '@/lib/data/logs';
-import { listWorkflowsByAgent } from '@/lib/data/workflows';
-import prisma from '@/lib/prisma';
 import { publishChatEvent } from '@/lib/realtime/chat-events';
+import { listEnabledWorkflowRecords } from '@/lib/data/workflows';
 
 export async function createAgent(userId: string, name: string, description: string): Promise<{ id: string } | { error: string }> {
   if (!name || !description) {
@@ -189,116 +184,174 @@ const titleGeneratorPrompt = ai.definePrompt({
   prompt: 'Generate a short, concise title (4-5 words max) for a conversation that starts with this message: "{{message}}"',
 });
 
-// Helper to manage interaction logs (Postgres-backed)
-async function getOrCreateInteractionLog(
-    agentId: string,
-    sessionId: string,
-    title: string,
-    source: 'Chat' | 'Email' | 'In-Call' | 'Phone',
-): Promise<string> {
-    const result = await getOrCreateInteractionLogRecord({
-        agentId,
-        sessionId,
-        title,
-        origin: source,
+async function mirrorChatMessage(input: {
+  agentId: string;
+  messageId: string;
+  sessionId: string;
+  sender: 'user' | 'agent';
+  text: string;
+  timestamp?: string | Date;
+  options?: string[];
+}) {
+  try {
+    await createChatMessageRecord({
+      id: input.messageId,
+      sessionId: input.sessionId,
+      sender: input.sender,
+      text: input.text,
+      timestamp: input.timestamp,
+      options: input.options,
     });
-    return result.id;
+    await publishChatEvent({
+      type: 'message_created',
+      agentId: input.agentId,
+      sessionId: input.sessionId,
+      messageId: input.messageId,
+      timestamp: new Date(input.timestamp ?? Date.now()).toISOString(),
+    });
+  } catch (mirrorError) {
+    console.error('Failed to mirror chat message to Postgres:', mirrorError);
+  }
 }
 
-async function addLogStep(logId: string, description: string, metadata: Record<string, any> = {}) {
-    await addInteractionLogStep({ logId, description, metadata });
+async function mirrorChatSession(input: {
+  sessionId: string;
+  agentId: string;
+  ownerUserId: string;
+  legacyOwnerId?: string | null;
+  visitorId?: string;
+  title: string;
+  lastMessageSnippet: string;
+  createdAt?: string | Date;
+  lastActivity?: string | Date;
+  lastLeadAnalysisAt?: string | Date | null;
+  visitorInfo?: ChatSession['visitorInfo'];
+}) {
+  try {
+    await upsertChatSessionRecord({
+      id: input.sessionId,
+      agentId: input.agentId,
+      ownerUserId: input.ownerUserId,
+      legacyOwnerId: input.legacyOwnerId,
+      visitorId: input.visitorId,
+      title: input.title,
+      lastMessageSnippet: input.lastMessageSnippet,
+      createdAt: input.createdAt,
+      lastActivity: input.lastActivity,
+      lastLeadAnalysisAt: input.lastLeadAnalysisAt,
+      visitorInfo: input.visitorInfo,
+      source: 'chat',
+    });
+  } catch (mirrorError) {
+    console.error('Failed to mirror chat session to Postgres:', mirrorError);
+  }
 }
 
-async function setLogStatus(logId: string, status: 'success' | 'error' | 'in-progress') {
-    await updateInteractionLogStatus(logId, status);
-}
-
-
-async function resolveAuthUserIdFromLegacyUserId(legacyUserId: string) {
-  const link = await prisma.legacyIdentityLink.findUnique({
-    where: { legacyUserId },
-    select: { authUserId: true },
+async function ensureMirroredChatSession(input: {
+  sessionId: string;
+  agentId: string;
+  ownerUserId: string;
+  legacyOwnerId?: string | null;
+  visitorId?: string;
+  title: string;
+  lastMessageSnippet: string;
+  createdAt?: string | Date;
+  lastActivity?: string | Date;
+  lastLeadAnalysisAt?: string | Date | null;
+  visitorInfo?: ChatSession['visitorInfo'];
+  isNewSession?: boolean;
+}) {
+  await upsertChatSessionRecord({
+    id: input.sessionId,
+    agentId: input.agentId,
+    ownerUserId: input.ownerUserId,
+    legacyOwnerId: input.legacyOwnerId,
+    visitorId: input.visitorId,
+    title: input.title,
+    lastMessageSnippet: input.lastMessageSnippet,
+    createdAt: input.createdAt,
+    lastActivity: input.lastActivity,
+    lastLeadAnalysisAt: input.lastLeadAnalysisAt,
+    visitorInfo: input.visitorInfo,
+    source: 'chat',
   });
 
-  if (!link?.authUserId) {
-    throw new Error(`No auth user linked to legacy owner ${legacyUserId}.`);
+  if (input.isNewSession) {
+    await publishChatEvent({
+      type: 'session_created',
+      agentId: input.agentId,
+      sessionId: input.sessionId,
+      timestamp: new Date(input.createdAt ?? Date.now()).toISOString(),
+    });
   }
-
-  return link.authUserId;
-}
-
-function coerceDateLike(value: unknown): Date | undefined {
-  if (!value) return undefined;
-  if (value instanceof Date) return value;
-  if (typeof value === 'string' || typeof value === 'number') {
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-  }
-  if (typeof value === 'object' && value && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
-    try { return (value as { toDate: () => Date }).toDate(); } catch { return undefined; }
-  }
-  return undefined;
 }
 
 
 export async function getAgentResponse(input: AgentResponseInput): Promise<AgentResponse> {
-  const { agentId, message, runId, sessionId, visitorId, currentWorkflowId, currentWorkflowBlocks } = input;
+  const { userId, agentId, message, runId, sessionId, visitorId, currentWorkflowId, currentWorkflowBlocks } = input;
   if (!agentId || !sessionId) {
     return { error: 'Sorry, I cannot respond without an agent context.' };
   }
 
   try {
-    const agentInfo = await getAgentWithOwnerById(agentId);
+    const agentInfo = await getAgentRuntimeById(agentId);
+
     if (!agentInfo) {
       return { error: 'Agent not found.' };
     }
 
     const { agent, ownerUserId: agentOwnerAuthUserId, legacyOwnerId: agentOwnerLegacyUserId } = agentInfo;
-    const agentOwnerLegacyId = agentOwnerLegacyUserId ?? agentOwnerAuthUserId;
-
     const rateLimitConfig = agent.rateLimiting;
     if (rateLimitConfig?.maxMessages && rateLimitConfig?.timeframe) {
       const rateLimitWindowMs = rateLimitConfig.timeframe * 1000;
       const rateLimitKey = `chat:${agentId}:${sessionId}`;
-      const rateLimitResult = await checkRateLimit(rateLimitKey, rateLimitConfig.maxMessages, rateLimitWindowMs);
+      const rateLimitResult = await checkRateLimit(
+        rateLimitKey,
+        rateLimitConfig.maxMessages,
+        rateLimitWindowMs
+      );
+
       if (!rateLimitResult.allowed) {
         return {
-          error: rateLimitConfig.limitExceededMessage || 'Too many messages in a row. Please wait a moment and try again.',
+          error:
+            rateLimitConfig.limitExceededMessage ||
+            'Too many messages in a row. Please wait a moment and try again.',
         };
       }
     }
 
-    // --- LOGGING ---
-    const logRef = await getOrCreateInteractionLog(agentId, sessionId, 'Conversation with Visitor', 'Chat');
-    await addLogStep(logRef, `User: "${message}"`);
-    // --- END LOGGING ---
-
-    // Resolve session from Postgres
-    const existingSession = await prisma.chatSession.findUnique({
-      where: { id: sessionId },
-      select: { id: true, title: true, visitorInfo: true, createdAt: true, lastActivity: true, lastLeadAnalysisAt: true },
-    });
-
-    let sessionTitle: string;
+    const existingSession = await getChatSessionById(agentId, sessionId);
+    let visitorInfo = existingSession?.visitorInfo;
+    let sessionTitle = existingSession?.title;
+    const isNewSession = !existingSession;
 
     if (!existingSession) {
-      const { output } = await titleGeneratorPrompt({ message });
-      sessionTitle = output?.title || message.substring(0, 40);
-
-      const headerList = await headers();
+      const [{ output }, headerList] = await Promise.all([
+        titleGeneratorPrompt({ message }),
+        headers(),
+      ]);
       const ip = headerList.get('x-forwarded-for')?.split(',')[0].trim() || 'Unknown';
       const userAgent = headerList.get('user-agent') || 'Unknown';
-      let visitorInfo: Record<string, any> = { ip, userAgent };
-      if (visitorId) visitorInfo.visitorId = visitorId;
+      visitorInfo = { ip, userAgent };
+      if (visitorId) {
+        visitorInfo.visitorId = visitorId;
+      }
 
       try {
         if (ip !== 'Unknown') {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 2000);
-          const geoResponse = await fetch(`https://get.geojs.io/v1/ip/geo/${ip}.json`, { signal: controller.signal });
+          const geoResponse = await fetch(`https://get.geojs.io/v1/ip/geo/${ip}.json`, {
+            signal: controller.signal,
+          });
           clearTimeout(timeoutId);
+
           const geoData = await geoResponse.json();
-          visitorInfo.location = { city: geoData.city || null, region: geoData.region || null, country: geoData.country || null };
+          visitorInfo.location = {
+            city: geoData.city || null,
+            region: geoData.region || null,
+            country: geoData.country || null,
+          };
         }
       } catch (e) {
         console.warn('Could not fetch geolocation for IP:', ip, e);
@@ -310,140 +363,139 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
           const browser = parser.getBrowser();
           const os = parser.getOS();
           const device = parser.getDevice();
-          visitorInfo.browser = { name: browser.name || null, version: browser.version || null };
-          visitorInfo.os = { name: os.name || null, version: os.version || null };
-          visitorInfo.device = { vendor: device.vendor || null, model: device.model || null, type: device.type || null };
+
+          visitorInfo.browser = {
+            name: browser.name || null,
+            version: browser.version || null,
+          };
+          visitorInfo.os = {
+            name: os.name || null,
+            version: os.version || null,
+          };
+          visitorInfo.device = {
+            vendor: device.vendor || null,
+            model: device.model || null,
+            type: device.type || null,
+          };
         }
       } catch (e) {
         console.warn('Could not parse User Agent:', userAgent, e);
       }
 
-      await upsertChatSessionRecord({
-        id: sessionId,
-        agentId,
-        ownerUserId: agentOwnerAuthUserId,
-        legacyOwnerId: agentOwnerLegacyId,
-        visitorId,
-        title: sessionTitle,
-        lastMessageSnippet: message,
-        createdAt: new Date(),
-        lastActivity: new Date(),
-        visitorInfo: visitorInfo as any,
-        source: 'chat',
-      });
-      await publishChatEvent({ type: 'session_created', agentId, sessionId, timestamp: new Date().toISOString() });
-    } else {
-      const info = existingSession.visitorInfo as any;
-      sessionTitle = (info?.title as string | undefined) ?? message.substring(0, 40);
-      await upsertChatSessionRecord({
-        id: sessionId,
-        agentId,
-        ownerUserId: agentOwnerAuthUserId,
-        legacyOwnerId: agentOwnerLegacyId,
-        visitorId: info?.visitorId || visitorId,
-        title: existingSession.title,
-        lastMessageSnippet: message,
-        createdAt: existingSession.createdAt,
-        lastActivity: new Date(),
-        lastLeadAnalysisAt: coerceDateLike(existingSession.lastLeadAnalysisAt),
-        visitorInfo: existingSession.visitorInfo as any,
-        source: 'chat',
-      });
+      sessionTitle = output?.title || message.substring(0, 40);
     }
 
+    await ensureMirroredChatSession({
+      sessionId,
+      agentId,
+      ownerUserId: agentOwnerAuthUserId,
+      legacyOwnerId: agentOwnerLegacyUserId,
+      visitorId: existingSession?.visitorInfo?.visitorId || visitorId,
+      title: sessionTitle || message.substring(0, 40),
+      createdAt: existingSession?.createdAt,
+      lastActivity: new Date(),
+      lastMessageSnippet: message,
+      visitorInfo,
+      lastLeadAnalysisAt: existingSession?.lastLeadAnalysisAt,
+      isNewSession,
+    });
+
     const userMessageId = randomUUID();
-    await createChatMessageRecord({ id: userMessageId, sessionId, sender: 'user', text: message, timestamp: new Date() });
-    await publishChatEvent({ type: 'message_created', agentId, sessionId, messageId: userMessageId, timestamp: new Date().toISOString() });
+    await mirrorChatMessage({
+      agentId,
+      messageId: userMessageId,
+      sessionId,
+      sender: 'user',
+      text: message,
+    });
 
     let selectedWorkflowId: string | null = null;
 
     if (currentWorkflowId) {
-      selectedWorkflowId = currentWorkflowId;
+        selectedWorkflowId = currentWorkflowId;
     } else {
-      const allWorkflows = await listWorkflowsByAgent(agentId);
-      const enabledWorkflows = allWorkflows.filter((w: Workflow) => w.status === 'enabled');
+        const enabledWorkflows = await listEnabledWorkflowRecords(agentId);
 
-      if (enabledWorkflows.length > 0) {
-        const plainWorkflows = enabledWorkflows.map((w: Workflow) => ({
-          id: w.id!,
-          triggerDescription: w.blocks?.[0]?.params.description || '',
-        }));
+        if (enabledWorkflows.length > 0) {
+            const plainWorkflows = enabledWorkflows.map((w: Workflow) => ({
+                id: w.id!,
+                triggerDescription: w.blocks?.[0]?.params.description || ''
+            }));
 
-        const { output } = await workflowSelectorPrompt({ userInput: message, workflows: plainWorkflows })
-          .catch(err => { console.error('Workflow selector prompt failed:', err); return { output: null }; });
+            const { output } = await workflowSelectorPrompt({ userInput: message, workflows: plainWorkflows })
+                .catch(err => {
+                    console.error('Workflow selector prompt failed:', err);
+                    return { output: null };
+                });
 
-        selectedWorkflowId = output?.workflowId ?? null;
-        if (selectedWorkflowId === 'null') selectedWorkflowId = null;
-      }
+            selectedWorkflowId = output?.workflowId ?? null;
+
+            if (selectedWorkflowId === 'null') {
+                selectedWorkflowId = null;
+            }
+        }
     }
 
     if (selectedWorkflowId) {
-      await addLogStep(logRef, `Triggering workflow: "${selectedWorkflowId}"`);
       const workflowResult = await runOrResumeWorkflow({
-        userId: agentOwnerLegacyId,
+        userId: agentOwnerAuthUserId,
         agentId,
         workflowId: selectedWorkflowId,
         runId,
         userInput: message,
-        logRef,
         liveBlocks: currentWorkflowBlocks,
       });
 
       if ('error' in workflowResult) {
-        const errMsgId = randomUUID();
-        await createChatMessageRecord({ id: errMsgId, sessionId, sender: 'agent', text: workflowResult.error, timestamp: new Date() });
-        await publishChatEvent({ type: 'message_created', agentId, sessionId, messageId: errMsgId, timestamp: new Date().toISOString() });
-        await setLogStatus(logRef, 'error');
+        const errorMessageId = randomUUID();
+        await mirrorChatMessage({
+          agentId,
+          messageId: errorMessageId,
+          sessionId,
+          sender: 'agent',
+          text: workflowResult.error,
+        });
         return { error: `Workflow error: ${workflowResult.error}` };
       }
 
       const responseText = workflowResult.promptForUser || workflowResult.context?.finalResult;
       if (responseText) {
-        const agentMsgId = randomUUID();
-        const optionsList = workflowResult.context?.options;
-        await createChatMessageRecord({
-          id: agentMsgId,
+        const agentWorkflowMessageId = randomUUID();
+        await mirrorChatMessage({
+          agentId,
+          messageId: agentWorkflowMessageId,
           sessionId,
           sender: 'agent',
           text: responseText,
-          timestamp: new Date(),
-          options: Array.isArray(optionsList) ? optionsList : undefined,
+          options: workflowResult.context?.options,
         });
-        await publishChatEvent({ type: 'message_created', agentId, sessionId, messageId: agentMsgId, timestamp: new Date().toISOString() });
-        await addLogStep(logRef, `Agent: "${responseText}"`);
-        await upsertChatSessionRecord({
-          id: sessionId,
+        await mirrorChatSession({
+          sessionId,
           agentId,
           ownerUserId: agentOwnerAuthUserId,
-          legacyOwnerId: agentOwnerLegacyId,
-          title: sessionTitle,
-          lastMessageSnippet: responseText,
+          legacyOwnerId: agentOwnerLegacyUserId,
+          visitorId: existingSession?.visitorInfo?.visitorId || visitorId,
+          title: sessionTitle || message.substring(0, 40),
           lastActivity: new Date(),
-          source: 'chat',
+          lastMessageSnippet: responseText,
+          visitorInfo,
+          lastLeadAnalysisAt: existingSession?.lastLeadAnalysisAt,
         });
-      }
-
-      if (workflowResult.status === 'completed') {
-        await setLogStatus(logRef, 'success');
       }
 
       return {
         type: 'workflow',
         runId: workflowResult.id ?? null,
-        status: workflowResult.status!,
+        status: workflowResult.status ?? 'failed',
         promptForUser: workflowResult.promptForUser,
         options: workflowResult.context?.options,
         finalResult: workflowResult.context?.finalResult,
       };
     } else {
-      const creditResult = await deductCredits(agentOwnerLegacyId, 1, 'Chat Response');
+      const creditResult = await deductCredits(agentOwnerAuthUserId, 1, 'Chat Response');
       if (!creditResult.success) {
-        await addLogStep(logRef, `Credit deduction failed: ${creditResult.error}`);
-        await setLogStatus(logRef, 'error');
         return { error: "Oops! It seems I'm having a little trouble on my end. Please try again in a moment." };
       }
-
-      await addLogStep(logRef, 'Answering with standard chat (cost: 1 credit).');
 
       const [textSources, fileSources] = await Promise.all([
         listAgentTexts(agentId),
@@ -451,8 +503,8 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
       ]);
 
       const knowledge = [
-        ...textSources.map((t: TextSource) => `Title: ${t.title}\nContent: ${t.content}`),
-        ...fileSources.map((f: AgentFile) => `File: ${f.name}\nContent: ${f.extractedText || ''}`),
+          ...textSources.map((t: TextSource) => `Title: ${t.title}\nContent: ${t.content}`),
+          ...fileSources.map((f: AgentFile) => `File: ${f.name}\nContent: ${f.extractedText || ''}`)
       ].join('\n\n---\n\n');
 
       const chatResult = await agentChat({
@@ -461,20 +513,25 @@ export async function getAgentResponse(input: AgentResponseInput): Promise<Agent
         knowledge,
       });
 
-      const agentMsgId = randomUUID();
-      await createChatMessageRecord({ id: agentMsgId, sessionId, sender: 'agent', text: chatResult.response, timestamp: new Date() });
-      await publishChatEvent({ type: 'message_created', agentId, sessionId, messageId: agentMsgId, timestamp: new Date().toISOString() });
-      await addLogStep(logRef, `Agent: "${chatResult.response}"`);
-      await setLogStatus(logRef, 'success');
-      await upsertChatSessionRecord({
-        id: sessionId,
+      const agentMessageId = randomUUID();
+      await mirrorChatMessage({
+        agentId,
+        messageId: agentMessageId,
+        sessionId,
+        sender: 'agent',
+        text: chatResult.response,
+      });
+      await mirrorChatSession({
+        sessionId,
         agentId,
         ownerUserId: agentOwnerAuthUserId,
-        legacyOwnerId: agentOwnerLegacyId,
-        title: sessionTitle,
-        lastMessageSnippet: chatResult.response,
+        legacyOwnerId: agentOwnerLegacyUserId,
+        visitorId: existingSession?.visitorInfo?.visitorId || visitorId,
+        title: sessionTitle || message.substring(0, 40),
         lastActivity: new Date(),
-        source: 'chat',
+        lastMessageSnippet: chatResult.response,
+        visitorInfo,
+        lastLeadAnalysisAt: existingSession?.lastLeadAnalysisAt,
       });
 
       return { type: 'chat', response: chatResult.response };

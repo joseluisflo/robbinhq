@@ -209,6 +209,20 @@ export async function listEmailSessionsByAgent(agentId: string): Promise<AppEmai
   return records.map(mapEmailSession);
 }
 
+export async function softDeleteEmailSessionsByAgent(agentId: string): Promise<number> {
+  const result = await prisma.emailSession.updateMany({
+    where: {
+      agentId,
+      deletedAt: null,
+    },
+    data: {
+      deletedAt: new Date(),
+    },
+  });
+
+  return result.count;
+}
+
 export async function listEmailMessagesBySession(sessionId: string): Promise<AppEmailMessage[]> {
   const records = await prisma.emailMessage.findMany({
     where: { sessionId },

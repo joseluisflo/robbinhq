@@ -15,8 +15,8 @@ import {
 import type { Workflow, WorkflowRun, WorkflowBlock, Edge, Node } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { deductCredits } from '@/lib/credit-service';
-import { AuthorizationError, requireAgentOwner } from '@/lib/permissions';
-import { getAgentWithOwnerById } from '@/lib/data/agents';
+import { AuthorizationError, requireAgentOwnerRecord } from '@/lib/permissions';
+import { getAgentRuntimeById } from '@/lib/data/agents';
 import {
   createWorkflowRecord,
   getWorkflowById,
@@ -33,7 +33,7 @@ interface RunWorkflowParams {
   workflowId: string;
   runId: string | null;
   userInput: any;
-  logRef: string;
+  logRef?: string;
   liveBlocks?: WorkflowBlock[] | null;
   liveEdges?: Edge[] | null;
 }
@@ -125,7 +125,8 @@ function processParams(params: Record<string, any>, context: Record<string, any>
     return processedParams;
 }
 
-async function addLogStep(logId: string, description: string, metadata: Record<string, any> = {}) {
+async function addLogStep(logId: string | undefined, description: string, metadata: Record<string, any> = {}) {
+    if (!logId) return;
     const { addInteractionLogStep } = await import('@/lib/data/logs');
     await addInteractionLogStep({
         logId,
@@ -147,7 +148,7 @@ export async function runOrResumeWorkflow(
 
   // Load the agent and workflow definition from Postgres
   const [agentInfo, workflow] = await Promise.all([
-    getAgentWithOwnerById(agentId),
+    getAgentRuntimeById(agentId),
     getWorkflowById(agentId, workflowId),
   ]);
 
@@ -345,7 +346,7 @@ export async function updateWorkflowStatus(
   }
 
   try {
-    await requireAgentOwner(agentId);
+    await requireAgentOwnerRecord(agentId);
 
     const updated = await updateWorkflowStatusRecord({ agentId, workflowId, status });
     if (!updated) {
@@ -368,7 +369,7 @@ export async function createWorkflow(
   }
 
   try {
-    await requireAgentOwner(agentId);
+    await requireAgentOwnerRecord(agentId);
 
     const triggerBlock: WorkflowBlock = {
       id: Math.random().toString(36).substring(2, 6),
@@ -397,7 +398,7 @@ export async function listWorkflows(agentId: string): Promise<{ workflows: Workf
   }
 
   try {
-    await requireAgentOwner(agentId);
+    await requireAgentOwnerRecord(agentId);
     const workflows = await listWorkflowsByAgent(agentId);
     return { workflows };
   } catch (e: any) {
@@ -415,7 +416,7 @@ export async function getWorkflow(
   }
 
   try {
-    await requireAgentOwner(agentId);
+    await requireAgentOwnerRecord(agentId);
     const workflow = await getWorkflowById(agentId, workflowId);
     if (!workflow) {
       return { error: 'Workflow not found.' };
@@ -437,7 +438,7 @@ export async function updateWorkflowDefinition(
   }
 
   try {
-    await requireAgentOwner(agentId);
+    await requireAgentOwnerRecord(agentId);
     const workflow = await updateWorkflowDefinitionRecord({
       agentId,
       workflowId,

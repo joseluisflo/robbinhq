@@ -2,7 +2,7 @@
 
 import Stripe from 'stripe';
 import { ensureStripeCustomerForUser } from '@/lib/data/credits';
-import { requireLegacyUserContext } from '@/lib/permissions';
+import { getViewerContext } from '@/lib/auth/session';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
@@ -22,7 +22,7 @@ export async function createPaymentIntent({
   }
 
   try {
-    const { authUserId, legacyUserId } = await requireLegacyUserContext();
+    const { authUserId, legacyUserId } = await getViewerContext();
     const stripeCustomerId = await ensureStripeCustomerForUser(authUserId);
 
     if (!stripeCustomerId) {

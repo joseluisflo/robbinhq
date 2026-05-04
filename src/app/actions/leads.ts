@@ -1,7 +1,7 @@
 'use server';
 
 import { extractLeadFromConversation } from '@/ai/flows/lead-extraction-flow';
-import { requireAgentOwner } from '@/lib/permissions';
+import { requireAgentOwnerRecord } from '@/lib/permissions';
 import { listChatMessagesBySession, listChatSessionsByAgent } from '@/lib/data/chat';
 import { createLeadRecord, deleteLeadsByAgent } from '@/lib/data/leads';
 import prisma from '@/lib/prisma';
@@ -16,7 +16,7 @@ export async function analyzeSessionsForLeads(userId: string, agentId: string): 
   const analysisTime = new Date();
 
   try {
-    const { authUserId, legacyUserId } = await requireAgentOwner(agentId);
+    const { authUserId, legacyUserId } = await requireAgentOwnerRecord(agentId);
     const sessions = await listChatSessionsByAgent(agentId);
 
     if (sessions.length === 0) {
@@ -92,7 +92,7 @@ export async function deleteAgentLeads(userId: string, agentId: string): Promise
     }
 
     try {
-        await requireAgentOwner(agentId);
+        await requireAgentOwnerRecord(agentId);
         await deleteLeadsByAgent(agentId);
         return { success: true };
     } catch (e: any) {

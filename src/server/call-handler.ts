@@ -2,37 +2,20 @@
 import { WebSocket } from 'ws';
 import { GoogleGenAI, type LiveSession, Modality } from "@google/genai";
 import { Buffer } from "node:buffer";
-import type { Agent } from '@/lib/types';
-import { getAgentWithOwnerById } from '@/lib/data/agents';
+import { randomUUID } from "node:crypto";
 import { deductCredits } from '@/lib/credit-service';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getAgentRuntimeById } from '@/lib/data/agents';
+import {
+  createPhoneCallMessageRecord,
+  upsertPhoneCallSessionRecord,
+} from '@/lib/data/phone-calls';
 import {
   acquireCallLock,
   refreshCallLock,
   releaseCallLock,
   setCallState,
 } from '@/lib/realtime-state';
-
-
-// -------------------------------------------------------------------------
-// HELPER FUNCTIONS
-// -------------------------------------------------------------------------
-
-async function findAgentAndOwner(agentId: string): Promise<{ agent: Agent, ownerId: string } | null> {
-    if (!agentId) return null;
-
-    const result = await getAgentWithOwnerById(agentId);
-    if (!result) {
-        console.error(`[CallHandler] Agent with ID ${agentId} not found in Postgres.`);
-        return null;
-    }
-
-    console.log(`[CallHandler] Agent ${agentId} found for owner ${result.ownerUserId}.`);
-    return {
-        agent: result.agent,
-        ownerId: result.ownerUserId,
-    };
-}
 
 
 // -------------------------------------------------------------------------
@@ -70,7 +53,7 @@ function downsampleBuffer(buffer: Buffer, inputRate: number, outputRate: number)
   const ratio = inputRate / outputRate;
   const newLength = Math.floor(buffer.length / 2 / ratio) * 2;
   const result = Buffer.alloc(newLength);
-  
+
   for (let i = 0; i < newLength / 2; i++) {
     const originalIndex = Math.floor(i * ratio) * 2;
     if (originalIndex < buffer.length - 1) {
@@ -87,9 +70,9 @@ function linear16ToMuLaw(pcmBuffer: Buffer): Buffer {
     let sample = pcmBuffer.readInt16LE(i);
     const sign = sample < 0 ? 0x80 : 0;
     if (sample < 0) sample = -sample;
-    
+
     sample = Math.min(sample + 0x84, 0x7fff);
-    
+
     let exponent = 7;
     for (let exp = 0; exp < 8; exp++) {
         if (sample < (0x84 << (exp + 1))) {
@@ -97,11 +80,11 @@ function linear16ToMuLaw(pcmBuffer: Buffer): Buffer {
             break;
         }
     }
-    
+
     let mantissa = (sample >> (exponent + 3)) & 0x0f;
-    
+
     let mu = ~(sign | (exponent << 4) | mantissa);
-    mu &= 0xFF; 
+    mu &= 0xFF;
 
     muBuffer.writeUInt8(mu, i / 2);
   }
@@ -126,9 +109,12 @@ export class CallHandler {
   private googleAISession: MinimalLiveSession | null = null;
   private twilioStreamSid: string | null = null;
   private callSid: string | null = null;
-  
+
   private agentId: string | null = null;
   private ownerId: string | null = null;
+  private legacyOwnerId: string | null = null;
+  private fromNumber: string | null = null;
+  private toNumber: string | null = null;
   private minuteInterval: NodeJS.Timeout | null = null;
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private lockOwnerToken: string;
@@ -149,8 +135,11 @@ export class CallHandler {
 
       if (twilioMessage.event === "start") {
         this.twilioStreamSid = twilioMessage.start.streamSid;
-        this.agentId = twilioMessage.start.customParameters?.agentId || null;
-        this.callSid = twilioMessage.start.customParameters?.callSid || null;
+        const params = twilioMessage.start.customParameters || {};
+        this.agentId = params.agentId || null;
+        this.callSid = params.callSid || null;
+        this.fromNumber = params.from || null;
+        this.toNumber = params.to || null;
         console.log(`[Handler] 🎬 Stream started: ${this.twilioStreamSid} for Agent: ${this.agentId}, CallSid: ${this.callSid}`);
 
         if (!this.agentId) {
@@ -164,13 +153,14 @@ export class CallHandler {
             return;
         }
 
-        const agentInfo = await findAgentAndOwner(this.agentId);
+        const agentInfo = await getAgentRuntimeById(this.agentId);
         if (!agentInfo) {
             console.error(`[Handler] ❌ Agent ${this.agentId} not found. Closing connection.`);
             this.ws.close(1011, "Agent not found.");
             return;
         }
-        this.ownerId = agentInfo.ownerId;
+        this.ownerId = agentInfo.ownerUserId;
+        this.legacyOwnerId = agentInfo.legacyOwnerId;
         console.log(`[Handler] 👤 Agent owner identified: ${this.ownerId}`);
 
         const acquiredLock = await acquireCallLock(
@@ -192,15 +182,17 @@ export class CallHandler {
         }
 
         await this.persistCallState("starting");
+        await this.recordPhoneMessage("system", "Call connected to realtime handler.", {
+          status: "starting",
+          streamSid: this.twilioStreamSid,
+        });
         this.startHeartbeat();
 
         // Start billing timer
         this.startBilling();
 
-
-        const params = twilioMessage.start.customParameters || {};
-        const systemInstruction = params.systemInstruction 
-            ? Buffer.from(params.systemInstruction, 'base64').toString('utf-8') 
+        const systemInstruction = params.systemInstruction
+            ? Buffer.from(params.systemInstruction, 'base64').toString('utf-8')
             : "You are a helpful voice assistant.";
         const agentVoice = params.agentVoice || 'Zephyr';
 
@@ -209,15 +201,16 @@ export class CallHandler {
 
       } else if (twilioMessage.event === 'media') {
         if (!this.googleAISession) return;
-        
+
         const audioBuffer = Buffer.from(twilioMessage.media.payload, 'base64');
         const pcm8k = muLawToLinear16(audioBuffer);
         const pcm16k = upsample8kTo16k(pcm8k);
-        
+
         this.sendAudioToGoogle(pcm16k.toString('base64'));
 
       } else if (twilioMessage.event === 'stop') {
         console.log(`[Handler] 🛑 Twilio stream stopped for call ${this.callSid}.`);
+        await this.recordPhoneMessage("system", "Twilio media stream stopped.", { status: "stopping" });
         this.onClose();
       }
     } catch (e) {
@@ -237,11 +230,14 @@ export class CallHandler {
         if (!result.success) {
           console.warn(`[Handler] ⚠️ Insufficient credits for user ${this.ownerId}. Terminating call.`);
           await this.persistCallState("insufficient-credits");
+          await this.recordPhoneMessage("system", "Call ended because the account has insufficient credits.", {
+            status: "insufficient-credits",
+          });
           this.ws.close(4002, "Insufficient credits"); // This will trigger the onClose event
         }
       }
     };
-    
+
     // Deduct initial credit for the first minute
     deductAndCheck(10);
 
@@ -286,13 +282,62 @@ export class CallHandler {
       },
       CallHandler.CALL_STATE_TTL_SECONDS
     );
+
+    if (this.agentId && this.ownerId) {
+      const isTerminalStatus = ["closed", "connection-failed", "socket-error"].includes(status);
+      await upsertPhoneCallSessionRecord({
+        id: `phone-${this.callSid}`,
+        agentId: this.agentId,
+        ownerUserId: this.ownerId,
+        legacyOwnerId: this.legacyOwnerId,
+        twilioCallSid: this.callSid,
+        streamSid: this.twilioStreamSid,
+        fromNumber: this.fromNumber,
+        toNumber: this.toNumber,
+        status,
+        lastActivity: new Date(),
+        endedAt: isTerminalStatus ? new Date() : undefined,
+        metadata: {
+          streamSid: this.twilioStreamSid,
+        },
+      });
+    }
+  }
+
+  private async recordPhoneMessage(
+    sender: "caller" | "agent" | "system",
+    text: string,
+    metadata?: Record<string, any>
+  ) {
+    if (!this.callSid || !this.ownerId) {
+      return;
+    }
+
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    try {
+      await createPhoneCallMessageRecord({
+        id: randomUUID(),
+        callSessionId: `phone-${this.callSid}`,
+        ownerUserId: this.ownerId,
+        legacyOwnerId: this.legacyOwnerId,
+        sender,
+        text: trimmed,
+        metadata,
+      });
+    } catch (error) {
+      console.error("[Handler] ❌ Failed to persist phone call message:", error);
+    }
   }
 
   private sendAudioToGoogle(base64Payload: string) {
     if (!this.googleAISession) return;
     try {
       this.googleAISession.sendRealtimeInput({
-        audio: { 
+        audio: {
           data: base64Payload,
           mimeType: `audio/pcm;rate=16000`
         }
@@ -318,7 +363,7 @@ export class CallHandler {
       this.ws.close(1011, "AI service not configured.");
       return;
     }
-    
+
     console.log("[Handler] 🔌 Connecting to Google AI...");
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
@@ -347,6 +392,7 @@ export class CallHandler {
           onopen: () => {
             console.log("[Handler] ✅ Connected to Google AI");
             void this.persistCallState("connected");
+            void this.recordPhoneMessage("system", "Connected to Google Live API.", { status: "connected" });
             setTimeout(() => {
                 this.googleAISession?.sendRealtimeInput({ text: "Hello" });
             }, 200);
@@ -361,18 +407,31 @@ export class CallHandler {
               }
 
               const audioData = serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
-              
+              const inputTranscript =
+                (message as any).serverContent?.inputTranscription?.text ||
+                (message as any).serverContent?.inputTranscription?.transcript;
+              const outputTranscript =
+                (message as any).serverContent?.outputTranscription?.text ||
+                (message as any).serverContent?.outputTranscription?.transcript;
+
+              if (typeof inputTranscript === "string") {
+                void this.recordPhoneMessage("caller", inputTranscript, { source: "google-live-transcription" });
+              }
+              if (typeof outputTranscript === "string") {
+                void this.recordPhoneMessage("agent", outputTranscript, { source: "google-live-transcription" });
+              }
+
               if (audioData && this.twilioStreamSid) {
                 const pcm24kBuffer = Buffer.from(audioData, 'base64');
                 const pcm8kBuffer = downsampleBuffer(pcm24kBuffer, 24000, 8000);
                 const muLawBuffer = linear16ToMuLaw(pcm8kBuffer);
-                
+
                 const twilioResponse = {
                   event: "media",
                   streamSid: this.twilioStreamSid,
                   media: { payload: muLawBuffer.toString('base64') },
                 };
-                
+
                 if (this.ws.readyState === WebSocket.OPEN) {
                   this.ws.send(JSON.stringify(twilioResponse));
                 }
@@ -384,16 +443,25 @@ export class CallHandler {
           onerror: (e) => {
             console.error("[Handler] ❌ Google AI Error:", e);
             void this.persistCallState("ai-error");
+            void this.recordPhoneMessage("system", "Google Live API returned an error.", {
+              status: "ai-error",
+              error: String(e),
+            });
           },
           onclose: () => {
             console.log("[Handler] 🔌 Google AI session closed.");
             void this.persistCallState("ai-closed");
+            void this.recordPhoneMessage("system", "Google Live API session closed.", { status: "ai-closed" });
           },
         },
       })) as MinimalLiveSession;
     } catch (error) {
       console.error("[Handler] ❌ Connection failed:", error);
       await this.persistCallState("connection-failed");
+      await this.recordPhoneMessage("system", "Could not connect call to Google Live API.", {
+        status: "connection-failed",
+        error: error instanceof Error ? error.message : String(error),
+      });
       this.ws.close(1011, "Connection failed.");
     }
   }
@@ -420,6 +488,7 @@ export class CallHandler {
     }
     if (this.callSid) {
       await this.persistCallState("closed");
+      await this.recordPhoneMessage("system", "Call closed.", { status: "closed" });
       await releaseCallLock(this.callSid);
     }
   }
@@ -427,6 +496,10 @@ export class CallHandler {
   private onError(err: Error) {
     console.error(`[Handler] ❌ WebSocket error:`, err);
     void this.persistCallState("socket-error");
+    void this.recordPhoneMessage("system", "WebSocket error in phone call handler.", {
+      status: "socket-error",
+      error: err.message,
+    });
     void this.onClose();
   }
 }

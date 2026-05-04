@@ -1,7 +1,7 @@
 'use server';
 
 import { randomUUID } from 'node:crypto';
-import { requireAgentOwner } from '@/lib/permissions';
+import { requireAgentOwnerRecord } from '@/lib/permissions';
 import {
   createAgentTextRecord,
   deleteAgentTextRecord,
@@ -33,7 +33,7 @@ export async function addAgentText(
   }
 
   try {
-    const { legacyUserId } = await requireAgentOwner(agentId);
+    const { legacyUserId } = await requireAgentOwnerRecord(agentId);
     const textId = randomUUID();
 
     await createAgentTextRecord({
@@ -46,7 +46,7 @@ export async function addAgentText(
     try {
       await recordConfigurationLog(
         agentId,
-        legacyUserId,
+        legacyUserId ?? '',
         `Added text source: "${data.title}"`,
       );
     } catch (logError) {
@@ -70,7 +70,7 @@ export async function deleteAgentText(
   }
 
   try {
-    const { legacyUserId } = await requireAgentOwner(agentId);
+    const { legacyUserId } = await requireAgentOwnerRecord(agentId);
 
     const existing = await getAgentTextById(agentId, textId);
     if (!existing) {
@@ -82,7 +82,7 @@ export async function deleteAgentText(
     try {
       await recordConfigurationLog(
         agentId,
-        legacyUserId,
+        legacyUserId ?? '',
         `Removed text source: "${existing.title}"`,
       );
     } catch (logError) {

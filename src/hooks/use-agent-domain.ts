@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { Agent, AgentFile, ChatMessage, ChatSession, CreditTransaction, Lead, MessageFeedback, TextSource, userProfile } from '@/lib/types';
+import type { Agent, AgentFile, ChatMessage, ChatSession, CreditTransaction, EmailMessage, EmailSession, Lead, MessageFeedback, PhoneCallMessage, PhoneCallSession, TextSource, userProfile } from '@/lib/types';
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, {
@@ -761,6 +761,250 @@ export function useAgentSessionMessages(agentId: string | undefined, sessionId: 
       unregisterWindowRefresh();
       stopPolling();
       unsubscribeFromStream();
+    };
+  }, [agentId, sessionId]);
+
+  return { messages, setMessages, loading, error };
+}
+
+export function useAgentEmailSessions(agentId: string | undefined) {
+  const [sessions, setSessions] = useState<EmailSession[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!agentId) {
+      setSessions([]);
+      setLoading(false);
+      setError(null);
+      hasLoadedRef.current = false;
+      return;
+    }
+
+    let cancelled = false;
+
+    const load = async (options?: { background?: boolean }) => {
+      const isBackgroundRefresh = options?.background ?? false;
+      try {
+        if (!isBackgroundRefresh || !hasLoadedRef.current) {
+          setLoading(true);
+        }
+        const data = await fetchJson<{ sessions: EmailSession[] }>(`/api/agents/${agentId}/email-sessions`);
+        if (!cancelled) {
+          setSessions(data.sessions || []);
+          setError(null);
+          hasLoadedRef.current = true;
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load email sessions.');
+        }
+      } finally {
+        if (!cancelled && (!isBackgroundRefresh || !hasLoadedRef.current)) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+    let unregisterWindowRefresh = () => {};
+    let unregisterPollingRefresh = () => {};
+    if (typeof window !== 'undefined') {
+      unregisterWindowRefresh = registerWindowRefresh(load);
+      unregisterPollingRefresh = registerPollingRefresh(() => {
+        void load({ background: true });
+      }, 10000);
+    }
+
+    return () => {
+      cancelled = true;
+      unregisterWindowRefresh();
+      unregisterPollingRefresh();
+    };
+  }, [agentId]);
+
+  return { sessions, setSessions, loading, error };
+}
+
+export function useAgentEmailMessages(agentId: string | undefined, sessionId: string | undefined) {
+  const [messages, setMessages] = useState<EmailMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!agentId || !sessionId) {
+      setMessages([]);
+      setLoading(false);
+      setError(null);
+      hasLoadedRef.current = false;
+      return;
+    }
+
+    let cancelled = false;
+
+    const load = async (options?: { background?: boolean }) => {
+      const isBackgroundRefresh = options?.background ?? false;
+      try {
+        if (!isBackgroundRefresh || !hasLoadedRef.current) {
+          setLoading(true);
+        }
+        const data = await fetchJson<{ messages: EmailMessage[] }>(
+          `/api/agents/${agentId}/email-sessions/${sessionId}/messages`
+        );
+        if (!cancelled) {
+          setMessages(data.messages || []);
+          setError(null);
+          hasLoadedRef.current = true;
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load email messages.');
+        }
+      } finally {
+        if (!cancelled && (!isBackgroundRefresh || !hasLoadedRef.current)) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+    let unregisterWindowRefresh = () => {};
+    let unregisterPollingRefresh = () => {};
+    if (typeof window !== 'undefined') {
+      unregisterWindowRefresh = registerWindowRefresh(load);
+      unregisterPollingRefresh = registerPollingRefresh(() => {
+        void load({ background: true });
+      }, 10000);
+    }
+
+    return () => {
+      cancelled = true;
+      unregisterWindowRefresh();
+      unregisterPollingRefresh();
+    };
+  }, [agentId, sessionId]);
+
+  return { messages, setMessages, loading, error };
+}
+
+export function useAgentPhoneSessions(agentId: string | undefined) {
+  const [sessions, setSessions] = useState<PhoneCallSession[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!agentId) {
+      setSessions([]);
+      setLoading(false);
+      setError(null);
+      hasLoadedRef.current = false;
+      return;
+    }
+
+    let cancelled = false;
+
+    const load = async (options?: { background?: boolean }) => {
+      const isBackgroundRefresh = options?.background ?? false;
+      try {
+        if (!isBackgroundRefresh || !hasLoadedRef.current) {
+          setLoading(true);
+        }
+        const data = await fetchJson<{ sessions: PhoneCallSession[] }>(`/api/agents/${agentId}/phone-sessions`);
+        if (!cancelled) {
+          setSessions(data.sessions || []);
+          setError(null);
+          hasLoadedRef.current = true;
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load phone calls.');
+        }
+      } finally {
+        if (!cancelled && (!isBackgroundRefresh || !hasLoadedRef.current)) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+    let unregisterWindowRefresh = () => {};
+    let unregisterPollingRefresh = () => {};
+    if (typeof window !== 'undefined') {
+      unregisterWindowRefresh = registerWindowRefresh(load);
+      unregisterPollingRefresh = registerPollingRefresh(() => {
+        void load({ background: true });
+      }, 10000);
+    }
+
+    return () => {
+      cancelled = true;
+      unregisterWindowRefresh();
+      unregisterPollingRefresh();
+    };
+  }, [agentId]);
+
+  return { sessions, setSessions, loading, error };
+}
+
+export function useAgentPhoneMessages(agentId: string | undefined, sessionId: string | undefined) {
+  const [messages, setMessages] = useState<PhoneCallMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!agentId || !sessionId) {
+      setMessages([]);
+      setLoading(false);
+      setError(null);
+      hasLoadedRef.current = false;
+      return;
+    }
+
+    let cancelled = false;
+
+    const load = async (options?: { background?: boolean }) => {
+      const isBackgroundRefresh = options?.background ?? false;
+      try {
+        if (!isBackgroundRefresh || !hasLoadedRef.current) {
+          setLoading(true);
+        }
+        const data = await fetchJson<{ messages: PhoneCallMessage[] }>(
+          `/api/agents/${agentId}/phone-sessions/${sessionId}/messages`
+        );
+        if (!cancelled) {
+          setMessages(data.messages || []);
+          setError(null);
+          hasLoadedRef.current = true;
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load phone messages.');
+        }
+      } finally {
+        if (!cancelled && (!isBackgroundRefresh || !hasLoadedRef.current)) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+    let unregisterWindowRefresh = () => {};
+    let unregisterPollingRefresh = () => {};
+    if (typeof window !== 'undefined') {
+      unregisterWindowRefresh = registerWindowRefresh(load);
+      unregisterPollingRefresh = registerPollingRefresh(() => {
+        void load({ background: true });
+      }, 5000);
+    }
+
+    return () => {
+      cancelled = true;
+      unregisterWindowRefresh();
+      unregisterPollingRefresh();
     };
   }, [agentId, sessionId]);
 

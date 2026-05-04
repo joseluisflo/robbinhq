@@ -133,6 +133,19 @@ export async function findChatSessionForVisitor(
   return record ? mapChatSessionRecord(record) : null;
 }
 
+export async function getChatSessionById(agentId: string, sessionId: string): Promise<ChatSession | null> {
+  const record = await prisma.chatSession.findFirst({
+    where: {
+      id: sessionId,
+      agentId,
+      source: "chat",
+      deletedAt: null,
+    },
+  });
+
+  return record ? mapChatSessionRecord(record) : null;
+}
+
 export async function createChatMessageRecord(input: {
   id: string;
   sessionId: string;
@@ -211,9 +224,16 @@ export async function listChatMessagesBySession(agentId: string, sessionId: stri
   return records.map(mapChatMessageRecord);
 }
 
-export async function deleteChatSessionsByAgent(agentId: string): Promise<number> {
-  const result = await prisma.chatSession.deleteMany({
-    where: { agentId },
+export async function softDeleteChatSessionsByAgent(agentId: string): Promise<number> {
+  const result = await prisma.chatSession.updateMany({
+    where: {
+      agentId,
+      source: "chat",
+      deletedAt: null,
+    },
+    data: {
+      deletedAt: new Date(),
+    },
   });
 
   return result.count;

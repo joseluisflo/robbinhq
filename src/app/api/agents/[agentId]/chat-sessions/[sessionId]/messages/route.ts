@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { AuthenticationError } from "@/lib/auth/session";
-import { AuthorizationError, requireAgentOwnerFromHeaders } from "@/lib/permissions";
+import { AuthorizationError, requireAgentOwnerRecordFromHeaders } from "@/lib/permissions";
 import { listChatMessagesBySession } from "@/lib/data/chat";
 
 type RouteContext = {
@@ -13,7 +13,7 @@ type RouteContext = {
 export async function GET(request: Request, context: RouteContext) {
   try {
     const { agentId, sessionId } = await context.params;
-    await requireAgentOwnerFromHeaders(agentId, request.headers);
+    await requireAgentOwnerRecordFromHeaders(agentId, request.headers);
     const messages = await listChatMessagesBySession(agentId, sessionId);
     return NextResponse.json({ messages });
   } catch (error) {

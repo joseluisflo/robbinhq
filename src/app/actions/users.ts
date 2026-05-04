@@ -2,7 +2,7 @@
 
 import Stripe from 'stripe';
 import prisma from '@/lib/prisma';
-import { requireLegacyUserContext } from '@/lib/permissions';
+import { getViewerContext } from '@/lib/auth/session';
 import {
   addCreditsByUserId,
   PLAN_CREDITS,
@@ -87,7 +87,7 @@ export async function updateUserProfile(
   }
 
   try {
-    const { authUserId } = await requireLegacyUserContext();
+    const { authUserId } = await getViewerContext();
     const nextProfile = await updateUserBillingSettings(authUserId, data);
 
     if (!nextProfile) {

@@ -1,7 +1,7 @@
 'use server';
 
 import twilio from 'twilio';
-import { requireAgentOwner, requireAuthenticatedUser } from '@/lib/permissions';
+import { requireAgentOwnerRecord, requireAuthenticatedUser } from '@/lib/permissions';
 import { updateAgentRecord } from '@/lib/data/agents';
 import { checkRateLimit } from '@/lib/rate-limit';
 
@@ -75,7 +75,7 @@ export async function purchaseAndConfigureNumber(
   }
 
   try {
-    const { authUserId } = await requireAgentOwner(agentId);
+    const { authUserId } = await requireAgentOwnerRecord(agentId);
     const rateLimit = await checkRateLimit(`twilio-purchase:${authUserId}`, 3, 60_000);
     if (!rateLimit.allowed) {
       return { error: 'Too many purchase attempts. Please wait a moment and try again.' };

@@ -10,7 +10,6 @@ import { ChatInput } from '@/components/chat/ChatInput';
 import { InCallView } from '@/components/chat/InCallView';
 import { cn } from '@/lib/utils';
 import { v4 as uuidv4 } from 'uuid';
-import { usePathname, useSearchParams } from 'next/navigation';
 
 
 interface ChatWidgetPublicProps {
@@ -31,9 +30,6 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
   const [resolvedSessionId, setResolvedSessionId] = useState<string | null>(null);
   const [initialMessages, setInitialMessages] = useState<Message[]>([]);
   const [historyResolved, setHistoryResolved] = useState(false);
-
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (typeof document === 'undefined') {
@@ -64,7 +60,8 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
     const resolveSession = async () => {
       try {
         setHistoryResolved(false);
-        const requestedSessionId = searchParams.get('sessionId');
+        const currentSearchParams = new URLSearchParams(window.location.search);
+        const requestedSessionId = currentSearchParams.get('sessionId');
         const params = new URLSearchParams({ visitorId });
         if (requestedSessionId) {
           params.set('sessionId', requestedSessionId);
@@ -87,9 +84,10 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
         setResolvedSessionId(nextSessionId);
         setInitialMessages(Array.isArray(payload?.messages) ? payload.messages : []);
 
-        const currentUrlSessionId = searchParams.get('sessionId');
+        const latestSearchParams = new URLSearchParams(window.location.search);
+        const currentUrlSessionId = latestSearchParams.get('sessionId');
         if (currentUrlSessionId !== nextSessionId) {
-          const newUrl = `${pathname}?sessionId=${nextSessionId}`;
+          const newUrl = `${window.location.pathname}?sessionId=${nextSessionId}`;
           window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
         }
       } catch (error) {
@@ -98,13 +96,14 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
         }
 
         console.error('Failed to bootstrap public widget session:', error);
-        const fallbackSessionId = searchParams.get('sessionId') || `session-${Date.now()}`;
+        const latestSearchParams = new URLSearchParams(window.location.search);
+        const fallbackSessionId = latestSearchParams.get('sessionId') || `session-${Date.now()}`;
         setResolvedSessionId(fallbackSessionId);
         setInitialMessages([]);
 
-        const currentUrlSessionId = searchParams.get('sessionId');
+        const currentUrlSessionId = latestSearchParams.get('sessionId');
         if (currentUrlSessionId !== fallbackSessionId) {
-          const newUrl = `${pathname}?sessionId=${fallbackSessionId}`;
+          const newUrl = `${window.location.pathname}?sessionId=${fallbackSessionId}`;
           window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
         }
       } finally {
@@ -119,8 +118,8 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
     return () => {
       cancelled = true;
     };
-  }, [agent.id, pathname, searchParams, visitorId]);
-  
+  }, [agent.id, visitorId]);
+
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -147,8 +146,8 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  const { 
-    messages, 
+  const {
+    messages,
     setMessages,
     prompt,
     setPrompt,
@@ -167,15 +166,15 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
     visitorId,
   });
 
-  const { 
-    connectionState, 
-    toggleCall, 
-    liveTranscripts, 
-    isThinking, 
-    currentInput, 
-    currentOutput 
+  const {
+    connectionState,
+    toggleCall,
+    liveTranscripts,
+    isThinking,
+    currentInput,
+    currentOutput
   } = useLiveAgent(setMessages);
-  
+
   const isCallActive = connectionState !== 'idle' && connectionState !== 'error';
 
   useEffect(() => {
@@ -212,7 +211,7 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
       "h-full w-full flex flex-col bg-card overflow-hidden",
       isEmbedded && "rounded-2xl shadow-2xl"
     )}>
-      <ChatHeader 
+      <ChatHeader
         agentName={agentName}
         isDisplayNameEnabled={isDisplayNameEnabled}
         logoUrl={logoUrl}
@@ -220,7 +219,7 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
 
       {currentMode === 'chat' && (
         <div className="flex-1 flex flex-col bg-background overflow-hidden min-h-0">
-          <ChatMessages 
+          <ChatMessages
             messages={messages}
             liveTranscripts={liveTranscripts}
             isResponding={isResponding}
@@ -236,7 +235,7 @@ export function ChatWidgetPublic({ agent, workflowOverride }: ChatWidgetPublicPr
             agentId={agentId || 'public-agent'}
             sessionId={sessionId || 'public-session'}
           />
-          <ChatInput 
+          <ChatInput
             prompt={prompt}
             setPrompt={setPrompt}
             handleSendMessage={handleSendMessage}

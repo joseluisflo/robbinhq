@@ -1,11 +1,11 @@
 'use client';
 
-import type { ChatSession, EmailSession, CombinedMessage } from '@/lib/types';
+import type { ChatSession, EmailSession, CombinedMessage, PhoneCallSession } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Info, Globe, Monitor, Smartphone } from 'lucide-react';
+import { Info, Globe, Monitor, Phone, Smartphone } from 'lucide-react';
 import { format } from 'date-fns';
 
-type CombinedSession = (ChatSession | EmailSession) & { type: 'chat' | 'email' };
+type CombinedSession = (ChatSession | EmailSession | PhoneCallSession) & { type: 'chat' | 'email' | 'phone' };
 
 function toDate(value: unknown): Date | null {
     if (!value) return null;
@@ -41,6 +41,7 @@ interface SessionDetailsProps {
 
 export function SessionDetails({ session, messages }: SessionDetailsProps) {
     const visitorInfo = (session as ChatSession)?.visitorInfo;
+    const phoneSession = session.type === 'phone' ? (session as PhoneCallSession) : null;
     const DeviceIcon = visitorInfo?.device?.type === 'mobile' ? Smartphone : Monitor;
     const createdAt = toDate(session.createdAt);
     const lastActivity = toDate(session.lastActivity);
@@ -55,12 +56,29 @@ export function SessionDetails({ session, messages }: SessionDetailsProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                    <DetailRow label="Source" value={session.type === 'chat' ? 'Web Chat' : 'Email'} />
+                    <DetailRow label="Source" value={session.type === 'chat' ? 'Web Chat' : session.type === 'email' ? 'Email' : 'Phone'} />
                     <DetailRow label="Total Messages" value={messages.length} />
                     <DetailRow label="Started" value={createdAt ? format(createdAt, 'PPpp') : 'N/A'} />
                     <DetailRow label="Last Activity" value={lastActivity ? format(lastActivity, 'PPpp') : 'N/A'} />
                 </CardContent>
             </Card>
+
+            {phoneSession && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <Phone className="h-5 w-5" />
+                            Phone Call
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <DetailRow label="Status" value={phoneSession.status} />
+                        <DetailRow label="From" value={phoneSession.fromNumber} />
+                        <DetailRow label="To" value={phoneSession.toNumber} />
+                        <DetailRow label="Twilio Call SID" value={phoneSession.twilioCallSid} />
+                    </CardContent>
+                </Card>
+            )}
 
             {visitorInfo && (
                 <>

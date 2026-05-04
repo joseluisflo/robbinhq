@@ -70,6 +70,17 @@ export async function listWorkflowsByAgent(agentId: string): Promise<Workflow[]>
   return records.map(mapWorkflow);
 }
 
+export async function listEnabledWorkflowRecords(agentId: string): Promise<Workflow[]> {
+  const records = await prisma.workflow.findMany({
+    where: {
+      agentId,
+      status: "enabled",
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return records.map(mapWorkflow);
+}
+
 export async function getWorkflowById(agentId: string, workflowId: string): Promise<Workflow | null> {
   const record = await prisma.workflow.findFirst({
     where: { id: workflowId, agentId },

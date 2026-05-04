@@ -4,9 +4,9 @@
 import { useState } from 'react';
 import { ConversationList } from '@/components/chat-logs/ConversationList';
 import { ConversationView } from '@/components/chat-logs/ConversationView';
-import type { ChatSession, EmailSession } from '@/lib/types';
+import type { ChatSession, EmailSession, PhoneCallSession } from '@/lib/types';
 
-type CombinedSession = (ChatSession | EmailSession) & { type: 'chat' | 'email'; agentId?: string };
+type CombinedSession = (ChatSession | EmailSession | PhoneCallSession) & { type: 'chat' | 'email' | 'phone'; agentId?: string };
 
 export default function ChatLogsPage() {
     const [selectedSession, setSelectedSession] = useState<CombinedSession | null>(null);

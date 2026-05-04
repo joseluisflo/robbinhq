@@ -1,22 +1,43 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { ChatSession, EmailSession, CombinedMessage } from '@/lib/types';
+import type { ChatSession, EmailSession, CombinedMessage, PhoneCallSession } from '@/lib/types';
 import { MessageList } from './MessageList';
 import { SessionDetails } from './SessionDetails';
-import { useAgentSessionMessages } from '@/hooks/use-agent-domain';
+import { useAgentEmailMessages, useAgentPhoneMessages, useAgentSessionMessages } from '@/hooks/use-agent-domain';
 
-type CombinedSession = (ChatSession | EmailSession) & { type: 'chat' | 'email'; agentId?: string };
+type CombinedSession = (ChatSession | EmailSession | PhoneCallSession) & { type: 'chat' | 'email' | 'phone'; agentId?: string };
 
 interface ConversationViewProps {
     selectedSession: CombinedSession | null;
 }
 
 export function ConversationView({ selectedSession }: ConversationViewProps) {
-    const { messages, loading: messagesLoading } = useAgentSessionMessages(
-        selectedSession?.agentId,
-        selectedSession?.id
+    const chatMessages = useAgentSessionMessages(
+        selectedSession?.type === 'chat' ? selectedSession?.agentId : undefined,
+        selectedSession?.type === 'chat' ? selectedSession?.id : undefined
     );
+    const emailMessages = useAgentEmailMessages(
+        selectedSession?.type === 'email' ? selectedSession?.agentId : undefined,
+        selectedSession?.type === 'email' ? selectedSession?.id : undefined
+    );
+    const phoneMessages = useAgentPhoneMessages(
+        selectedSession?.type === 'phone' ? selectedSession?.agentId : undefined,
+        selectedSession?.type === 'phone' ? selectedSession?.id : undefined
+    );
+
+    const messages =
+        selectedSession?.type === 'email'
+            ? emailMessages.messages
+            : selectedSession?.type === 'phone'
+                ? phoneMessages.messages
+                : chatMessages.messages;
+    const messagesLoading =
+        selectedSession?.type === 'email'
+            ? emailMessages.loading
+            : selectedSession?.type === 'phone'
+                ? phoneMessages.loading
+                : chatMessages.loading;
 
 
     if (!selectedSession) {
