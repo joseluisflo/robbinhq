@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   ResizableHandle,
@@ -164,10 +164,12 @@ export function MockupHeroTraining() {
         {/* Preview Panel */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="flex h-full items-center justify-center p-8 bg-muted/30">
-            <ChatWidgetPreview 
-              agent={agentForPreview}
-              mode="chat" 
-            />
+            <Suspense>
+              <ChatWidgetPreview
+                agent={agentForPreview}
+                mode="chat"
+              />
+            </Suspense>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
