@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useTransition, useMemo } from 'react';
+import { useState, useEffect, useTransition, useMemo, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   ResizableHandle,
@@ -340,12 +340,16 @@ export default function DesignPage() {
             <div className="flex h-full flex-col">
               <TabsContent value="chat" className="flex-1 mt-0 data-[state=inactive]:hidden">
                 <div className="flex h-full items-center justify-center p-8 bg-muted/30">
+                  <Suspense>
                     <ChatWidgetPreview agent={agentForPreview} mode="chat" />
+                  </Suspense>
                 </div>
               </TabsContent>
               <TabsContent value="in-call" className="flex-1 mt-0 data-[state=inactive]:hidden">
                  <div className="flex h-full items-center justify-center p-8 bg-muted/30">
+                  <Suspense>
                     <ChatWidgetPreview agent={{...agentForPreview, orbColors}} mode="in-call" />
+                  </Suspense>
                  </div>
               </TabsContent>
             </div>
